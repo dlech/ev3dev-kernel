@@ -258,6 +258,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x224000 0x1000>;
+			status = "disabled";
 		};
 		eth0: ethernet@1e20000 {
 			compatible = "ti,davinci-dm6467-emac";
@@ -272,6 +273,7 @@
 					35
 					36
 					>;
+			status = "disabled";
 		};
 		gpio: gpio@1e26000 {
 			compatible = "ti,dm6441-gpio";

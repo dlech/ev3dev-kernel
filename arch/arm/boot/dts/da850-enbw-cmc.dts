@@ -26,5 +26,11 @@
 		serial2: serial@1d0d000 {
 			status = "okay";
 		};
+		mdio: mdio@1e24000 {
+			status = "okay";
+		};
+		eth0: ethernet@1e20000 {
+			status = "okay";
+		};
 	};
 };
