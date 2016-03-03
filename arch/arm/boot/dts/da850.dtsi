@@ -308,6 +308,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x224000 0x1000>;
+			status = "disabled";
 		};
 		eth0: ethernet@220000 {
 			compatible = "ti,davinci-dm6467-emac";
@@ -322,6 +323,7 @@
 					35
 					36
 					>;
+			status = "disabled";
 		};
 		usbphy: usbphy@14184 {
 			compatible = "ti,da830-usbphy";
