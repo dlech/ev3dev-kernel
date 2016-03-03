@@ -281,6 +281,16 @@
 			reg = <0x308000 0x80>;
 			status = "disabled";
 		};
+		spi0: spi@41000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "ti,da830-spi";
+			reg = <0x41000 0x1000>;
+			num-cs = <6>;
+			ti,davinci-spi-intr-line = <1>;
+			interrupts = <20>;
+			status = "disabled";
+		};
 		spi1: spi@30e000 {
 			#address-cells = <1>;
 			#size-cells = <0>;
