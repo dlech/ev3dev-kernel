@@ -42,18 +42,16 @@
 /* Maximum timeout to bail out state transition for module */
 #define STATE_TRANS_MAX_COUNT	0xffff
 
-static void __iomem *domain_transition_base;
-
 /**
  * struct clk_psc_data - PSC data
- * @control_base: Base address for a PSC control
- * @domain_base: Base address for a PSC domain
- * @domain_id: PSC domain id number
+ * @base: Base address for a PSC control
+ * @power_domain: PSC power domain id number
+ * @module_domain: PSC module (clock) domain id number (LPSC)
  */
 struct clk_psc_data {
-	void __iomem *control_base;
-	void __iomem *domain_base;
-	u32 domain_id;
+	void __iomem *base;
+	u32 power_domain;
+	u32 module_domain;
 };
 
 /**
@@ -72,36 +70,35 @@ static DEFINE_SPINLOCK(psc_lock);
 
 #define to_clk_psc(_hw) container_of(_hw, struct clk_psc, hw)
 
-static void psc_config(void __iomem *control_base, void __iomem *domain_base,
-						u32 next_state, u32 domain_id)
+static void psc_config(void __iomem *base, u32 next_state, u32 pd, u32 md)
 {
 	u32 ptcmd, pdstat, pdctl, mdstat, mdctl, ptstat;
 	u32 count = STATE_TRANS_MAX_COUNT;
 
-	mdctl = readl(control_base + MDCTL);
+	mdctl = readl(base + MDCTL + 4 * md);
 	mdctl &= ~MDSTAT_STATE_MASK;
 	mdctl |= next_state;
 	/* For disable, we always put the module in local reset */
 	if (next_state == PSC_STATE_DISABLE)
 		mdctl &= ~MDCTL_LRESET;
-	writel(mdctl, control_base + MDCTL);
+	writel(mdctl, base + MDCTL + 4 * md);
 
-	pdstat = readl(domain_base + PDSTAT);
+	pdstat = readl(base + PDSTAT + 4 * pd);
 	if (!(pdstat & PDSTAT_STATE_MASK)) {
-		pdctl = readl(domain_base + PDCTL);
+		pdctl = readl(base + PDCTL + 4 * pd);
 		pdctl |= PDCTL_NEXT;
-		writel(pdctl, domain_base + PDCTL);
+		writel(pdctl, base + PDCTL + 4 * pd);
 	}
 
-	ptcmd = 1 << domain_id;
-	writel(ptcmd, domain_transition_base + PTCMD);
+	ptcmd = 1 << pd;
+	writel(ptcmd, base + PTCMD);
 	do {
-		ptstat = readl(domain_transition_base + PTSTAT);
-	} while (((ptstat >> domain_id) & 1) && count--);
+		ptstat = readl(base + PTSTAT);
+	} while (((ptstat >> pd) & 1) && count--);
 
 	count = STATE_TRANS_MAX_COUNT;
 	do {
-		mdstat = readl(control_base + MDSTAT);
+		mdstat = readl(base + MDSTAT + 4 * md);
 	} while (!((mdstat & MDSTAT_STATE_MASK) == next_state) && count--);
 }
 
@@ -109,7 +106,7 @@ static int keystone_clk_is_enabled(struct clk_hw *hw)
 {
 	struct clk_psc *psc = to_clk_psc(hw);
 	struct clk_psc_data *data = psc->psc_data;
-	u32 mdstat = readl(data->control_base + MDSTAT);
+	u32 mdstat = readl(data->base + MDSTAT + 4 * data->module_domain);
 
 	return (mdstat & MDSTAT_MCKOUT) ? 1 : 0;
 }
@@ -123,8 +120,8 @@ static int keystone_clk_enable(struct clk_hw *hw)
 	if (psc->lock)
 		spin_lock_irqsave(psc->lock, flags);
 
-	psc_config(data->control_base, data->domain_base,
-				PSC_STATE_ENABLE, data->domain_id);
+	psc_config(data->base, PSC_STATE_ENABLE, data->power_domain,
+							data->module_domain);
 
 	if (psc->lock)
 		spin_unlock_irqrestore(psc->lock, flags);
@@ -141,8 +138,8 @@ static void keystone_clk_disable(struct clk_hw *hw)
 	if (psc->lock)
 		spin_lock_irqsave(psc->lock, flags);
 
-	psc_config(data->control_base, data->domain_base,
-				PSC_STATE_DISABLE, data->domain_id);
+	psc_config(data->base, PSC_STATE_DISABLE, data->power_domain,
+							data->module_domain);
 
 	if (psc->lock)
 		spin_unlock_irqrestore(psc->lock, flags);
@@ -204,7 +201,6 @@ static void __init of_psc_clk_init(struct device_node *node, spinlock_t *lock)
 	const char *parent_name;
 	struct clk_psc_data *data;
 	struct clk *clk;
-	int i;
 
 	data = kzalloc(sizeof(*data), GFP_KERNEL);
 	if (!data) {
@@ -212,31 +208,19 @@ static void __init of_psc_clk_init(struct device_node *node, spinlock_t *lock)
 		return;
 	}
 
-	i = of_property_match_string(node, "reg-names", "control");
-	data->control_base = of_iomap(node, i);
-	if (!data->control_base) {
-		pr_err("%s: control ioremap failed\n", __func__);
+	data->base = of_iomap(node, 0);
+	if (!data->base) {
+		pr_err("%s: ioremap failed\n", __func__);
 		goto out;
 	}
 
-	i = of_property_match_string(node, "reg-names", "domain");
-	data->domain_base = of_iomap(node, i);
-	if (!data->domain_base) {
-		pr_err("%s: domain ioremap failed\n", __func__);
-		goto unmap_ctrl;
-	}
-
-	of_property_read_u32(node, "domain-id", &data->domain_id);
-
-	/* Domain transition registers at fixed address space of domain_id 0 */
-	if (!domain_transition_base && !data->domain_id)
-		domain_transition_base = data->domain_base;
-
+	of_property_read_u32(node, "power-domain", &data->power_domain);
+	of_property_read_u32(node, "module-domain", &data->module_domain);
 	of_property_read_string(node, "clock-output-names", &clk_name);
 	parent_name = of_clk_get_parent_name(node, 0);
 	if (!parent_name) {
 		pr_err("%s: Parent clock not found\n", __func__);
-		goto unmap_domain;
+		goto unmap_base;
 	}
 
 	clk = clk_register_psc(NULL, clk_name, parent_name, data, lock);
@@ -247,10 +231,8 @@ static void __init of_psc_clk_init(struct device_node *node, spinlock_t *lock)
 
 	pr_err("%s: error registering clk %s\n", __func__, node->name);
 
-unmap_domain:
-	iounmap(data->domain_base);
-unmap_ctrl:
-	iounmap(data->control_base);
+unmap_base:
+	iounmap(data->base);
 out:
 	kfree(data);
 	return;
