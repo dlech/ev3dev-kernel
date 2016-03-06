@@ -165,9 +165,9 @@ clocks {
 		compatible = "ti,keystone,psc-clock";
 		clocks = <&chipclk16>;
 		clock-output-names = "modrst0";
-		reg = <0x02350000 0xb00>, <0x02350000 0x400>;
-		reg-names = "control", "domain";
-		domain-id = <0>;
+		reg = <0x02350000 0xb00>;
+		power-domain = <0>;
+		module-domain = <0>;
 	};
 
 
@@ -176,9 +176,9 @@ clocks {
 		compatible = "ti,keystone,psc-clock";
 		clocks = <&chipclk16>;
 		clock-output-names = "usb";
-		reg = <0x02350008 0xb00>, <0x02350000 0x400>;
-		reg-names = "control", "domain";
-		domain-id = <0>;
+		reg = <0x02350000 0xb00>;
+		power-domain = <0>;
+		module-domain = <2>;
 	};
 
 	clkaemifspi: clkaemifspi {
@@ -186,9 +186,9 @@ clocks {
 		compatible = "ti,keystone,psc-clock";
 		clocks = <&chipclk16>;
 		clock-output-names = "aemif-spi";
-		reg = <0x0235000c 0xb00>, <0x02350000 0x400>;
-		reg-names = "control", "domain";
-		domain-id = <0>;
+		reg = <0x02350000 0xb00>;
+		power-domain = <0>;
+		module-domain = <3>;
 	};
 
 
@@ -197,9 +197,9 @@ clocks {
 		compatible = "ti,keystone,psc-clock";
 		clocks = <&chipclk13>;
 		clock-output-names = "debugss-trc";
-		reg = <0x02350014 0xb00>, <0x02350000 0x400>;
-		reg-names = "control", "domain";
-		domain-id = <1>;
+		reg = <0x02350000 0xb00>;
+		power-domain = <1>;
+		module-domain = <5>;
 	};
 
 	clktetbtrc: clktetbtrc {
@@ -207,9 +207,9 @@ clocks {
 		compatible = "ti,keystone,psc-clock";
 		clocks = <&chipclk13>;
 		clock-output-names = "tetb-trc";
-		reg = <0x02350018 0xb00>, <0x02350004 0x400>;
-		reg-names = "control", "domain";
-		domain-id = <1>;
+		reg = <0x02350000 0xb00>;
+		power-domain = <1>;
+		module-domain = <6>;
 	};
 
 	clkpa: clkpa {
@@ -217,9 +217,9 @@ clocks {
 		compatible = "ti,keystone,psc-clock";
 		clocks = <&paclk13>;
 		clock-output-names = "pa";
-		reg = <0x0235001c 0xb00>, <0x02350008 0x400>;
-		reg-names = "control", "domain";
-		domain-id = <2>;
+		reg = <0x02350000 0xb00>;
+		power-domain = <2>;
+		module-domain = <7>;
 	};
 
 	clkcpgmac: clkcpgmac {
@@ -227,9 +227,9 @@ clocks {
 		compatible = "ti,keystone,psc-clock";
 		clocks = <&clkpa>;
 		clock-output-names = "cpgmac";
-		reg = <0x02350020 0xb00>, <0x02350008 0x400>;
-		reg-names = "control", "domain";
-		domain-id = <2>;
+		reg = <0x02350000 0xb00>;
+		power-domain = <2>;
+		module-domain = <8>;
 	};
 
 	clksa: clksa {
@@ -237,9 +237,9 @@ clocks {
 		compatible = "ti,keystone,psc-clock";
 		clocks = <&clkpa>;
 		clock-output-names = "sa";
-		reg = <0x02350024 0xb00>, <0x02350008 0x400>;
-		reg-names = "control", "domain";
-		domain-id = <2>;
+		reg = <0x02350000 0xb00>;
+		power-domain = <2>;
+		module-domain = <9>;
 	};
 
 	clkpcie: clkpcie {
@@ -247,9 +247,9 @@ clocks {
 		compatible = "ti,keystone,psc-clock";
 		clocks = <&chipclk12>;
 		clock-output-names = "pcie";
-		reg = <0x02350028 0xb00>, <0x0235000c 0x400>;
-		reg-names = "control", "domain";
-		domain-id = <3>;
+		reg = <0x02350000 0xb00>;
+		power-domain = <3>;
+		module-domain = <10>;
 	};
 
 	clksr: clksr {
@@ -257,9 +257,9 @@ clocks {
 		compatible = "ti,keystone,psc-clock";
 		clocks = <&chipclk1rstiso112>;
 		clock-output-names = "sr";
-		reg = <0x02350034 0xb00>, <0x02350018 0x400>;
-		reg-names = "control", "domain";
-		domain-id = <6>;
+		reg = <0x02350000 0xb00>;
+		power-domain = <6>;
+		module-domain = <13>;
 	};
 
 	clkgem0: clkgem0 {
@@ -267,9 +267,9 @@ clocks {
 		compatible = "ti,keystone,psc-clock";
 		clocks = <&chipclk1>;
 		clock-output-names = "gem0";
-		reg = <0x0235003c 0xb00>, <0x02350020 0x400>;
-		reg-names = "control", "domain";
-		domain-id = <8>;
+		reg = <0x02350000 0xb00>;
+		power-domain = <8>;
+		module-domain = <15>;
 	};
 
 	clkddr30: clkddr30 {
@@ -277,9 +277,9 @@ clocks {
 		compatible = "ti,keystone,psc-clock";
 		clocks = <&chipclk12>;
 		clock-output-names = "ddr3-0";
-		reg = <0x0235005c 0xb00>, <0x02350040 0x400>;
-		reg-names = "control", "domain";
-		domain-id = <16>;
+		reg = <0x02350000 0xb00>;
+		power-domain = <16>;
+		module-domain = <23>;
 	};
 
 	clkwdtimer0: clkwdtimer0 {
@@ -287,9 +287,9 @@ clocks {
 		compatible = "ti,keystone,psc-clock";
 		clocks = <&clkmodrst0>;
 		clock-output-names = "timer0";
-		reg = <0x02350000 0xb00>, <0x02350000 0x400>;
-		reg-names = "control", "domain";
-		domain-id = <0>;
+		reg = <0x02350000 0xb00>;
+		power-domain = <0>;
+		module-domain = <0>;
 	};
 
 	clkwdtimer1: clkwdtimer1 {
@@ -297,9 +297,9 @@ clocks {
 		compatible = "ti,keystone,psc-clock";
 		clocks = <&clkmodrst0>;
 		clock-output-names = "timer1";
-		reg = <0x02350000 0xb00>, <0x02350000 0x400>;
-		reg-names = "control", "domain";
-		domain-id = <0>;
+		reg = <0x02350000 0xb00>;
+		power-domain = <0>;
+		module-domain = <0>;
 	};
 
 	clkwdtimer2: clkwdtimer2 {
@@ -307,9 +307,9 @@ clocks {
 		compatible = "ti,keystone,psc-clock";
 		clocks = <&clkmodrst0>;
 		clock-output-names = "timer2";
-		reg = <0x02350000 0xb00>, <0x02350000 0x400>;
-		reg-names = "control", "domain";
-		domain-id = <0>;
+		reg = <0x02350000 0xb00>;
+		power-domain = <0>;
+		module-domain = <0>;
 	};
 
 	clkwdtimer3: clkwdtimer3 {
@@ -317,9 +317,9 @@ clocks {
 		compatible = "ti,keystone,psc-clock";
 		clocks = <&clkmodrst0>;
 		clock-output-names = "timer3";
-		reg = <0x02350000 0xb00>, <0x02350000 0x400>;
-		reg-names = "control", "domain";
-		domain-id = <0>;
+		reg = <0x02350000 0xb00>;
+		power-domain = <0>;
+		module-domain = <0>;
 	};
 
 	clktimer15: clktimer15 {
@@ -327,9 +327,9 @@ clocks {
 		compatible = "ti,keystone,psc-clock";
 		clocks = <&clkmodrst0>;
 		clock-output-names = "timer15";
-		reg = <0x02350000 0xb00>, <0x02350000 0x400>;
-		reg-names = "control", "domain";
-		domain-id = <0>;
+		reg = <0x02350000 0xb00>;
+		power-domain = <0>;
+		module-domain = <0>;
 	};
 
 	clkuart0: clkuart0 {
@@ -337,9 +337,9 @@ clocks {
 		compatible = "ti,keystone,psc-clock";
 		clocks = <&clkmodrst0>;
 		clock-output-names = "uart0";
-		reg = <0x02350000 0xb00>, <0x02350000 0x400>;
-		reg-names = "control", "domain";
-		domain-id = <0>;
+		reg = <0x02350000 0xb00>;
+		power-domain = <0>;
+		module-domain = <0>;
 	};
 
 	clkuart1: clkuart1 {
@@ -347,9 +347,9 @@ clocks {
 		compatible = "ti,keystone,psc-clock";
 		clocks = <&clkmodrst0>;
 		clock-output-names = "uart1";
-		reg = <0x02350000 0xb00>, <0x02350000 0x400>;
-		reg-names = "control", "domain";
-		domain-id = <0>;
+		reg = <0x02350000 0xb00>;
+		power-domain = <0>;
+		module-domain = <0>;
 	};
 
 	clkaemif: clkaemif {
@@ -357,9 +357,9 @@ clocks {
 		compatible = "ti,keystone,psc-clock";
 		clocks = <&clkaemifspi>;
 		clock-output-names = "aemif";
-		reg = <0x02350000 0xb00>, <0x02350000 0x400>;
-		reg-names = "control", "domain";
-		domain-id = <0>;
+		reg = <0x02350000 0xb00>;
+		power-domain = <0>;
+		module-domain = <0>;
 	};
 
 	clkusim: clkusim {
@@ -367,9 +367,9 @@ clocks {
 		compatible = "ti,keystone,psc-clock";
 		clocks = <&clkmodrst0>;
 		clock-output-names = "usim";
-		reg = <0x02350000 0xb00>, <0x02350000 0x400>;
-		reg-names = "control", "domain";
-		domain-id = <0>;
+		reg = <0x02350000 0xb00>;
+		power-domain = <0>;
+		module-domain = <0>;
 	};
 
 	clki2c: clki2c {
@@ -377,9 +377,9 @@ clocks {
 		compatible = "ti,keystone,psc-clock";
 		clocks = <&clkmodrst0>;
 		clock-output-names = "i2c";
-		reg = <0x02350000 0xb00>, <0x02350000 0x400>;
-		reg-names = "control", "domain";
-		domain-id = <0>;
+		reg = <0x02350000 0xb00>;
+		power-domain = <0>;
+		module-domain = <0>;
 	};
 
 	clkspi: clkspi {
@@ -387,9 +387,9 @@ clocks {
 		compatible = "ti,keystone,psc-clock";
 		clocks = <&clkaemifspi>;
 		clock-output-names = "spi";
-		reg = <0x02350000 0xb00>, <0x02350000 0x400>;
-		reg-names = "control", "domain";
-		domain-id = <0>;
+		reg = <0x02350000 0xb00>;
+		power-domain = <0>;
+		module-domain = <0>;
 	};
 
 	clkgpio: clkgpio {
@@ -397,9 +397,9 @@ clocks {
 		compatible = "ti,keystone,psc-clock";
 		clocks = <&clkmodrst0>;
 		clock-output-names = "gpio";
-		reg = <0x02350000 0xb00>, <0x02350000 0x400>;
-		reg-names = "control", "domain";
-		domain-id = <0>;
+		reg = <0x02350000 0xb00>;
+		power-domain = <0>;
+		module-domain = <0>;
 	};
 
 	clkkeymgr: clkkeymgr {
@@ -407,8 +407,8 @@ clocks {
 		compatible = "ti,keystone,psc-clock";
 		clocks = <&clkmodrst0>;
 		clock-output-names = "keymgr";
-		reg = <0x02350000 0xb00>, <0x02350000 0x400>;
-		reg-names = "control", "domain";
-		domain-id = <0>;
+		reg = <0x02350000 0xb00>;
+		power-domain = <0>;
+		module-domain = <0>;
 	};
 };

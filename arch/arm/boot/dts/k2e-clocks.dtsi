@@ -40,9 +40,9 @@ clocks {
 		compatible = "ti,keystone,psc-clock";
 		clocks = <&chipclk16>;
 		clock-output-names = "usb1";
-		reg = <0x02350004 0xb00>, <0x02350000 0x400>;
-		reg-names = "control", "domain";
-		domain-id = <0>;
+		reg = <0x02350000 0xb00>;
+		power-domain = <0>;
+		module-domain = <1>;
 	};
 
 	clkhyperlink0: clkhyperlink0 {
@@ -50,9 +50,9 @@ clocks {
 		compatible = "ti,keystone,psc-clock";
 		clocks = <&chipclk12>;
 		clock-output-names = "hyperlink-0";
-		reg = <0x02350030 0xb00>, <0x02350014 0x400>;
-		reg-names = "control", "domain";
-		domain-id = <5>;
+		reg = <0x02350000 0xb00>;
+		power-domain = <5>;
+		module-domain = <12>;
 	};
 
 	clkpcie1: clkpcie1 {
@@ -60,9 +60,9 @@ clocks {
 		compatible = "ti,keystone,psc-clock";
 		clocks = <&chipclk12>;
 		clock-output-names = "pcie1";
-		reg = <0x0235006c 0xb00>, <0x02350048 0x400>;
-		reg-names = "control", "domain";
-		domain-id = <18>;
+		reg = <0x02350000 0xb00>;
+		power-domain = <18>;
+		module-domain = <27>;
 	};
 
 	clkxge: clkxge {
@@ -70,8 +70,8 @@ clocks {
 		compatible = "ti,keystone,psc-clock";
 		clocks = <&chipclk13>;
 		clock-output-names = "xge";
-		reg = <0x023500c8 0xb00>, <0x02350074 0x400>;
-		reg-names = "control", "domain";
-		domain-id = <29>;
+		reg = <0x02350000 0xb00>;
+		power-domain = <29>;
+		module-domain = <50>;
 	};
 };
