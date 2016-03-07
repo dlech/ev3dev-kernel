@@ -255,7 +255,7 @@ static struct musb_hdrc_config musb_config = {
 
 static struct musb_hdrc_platform_data usb_data = {
 	/* OTG requires a Mini-AB connector */
-	.mode           = MUSB_OTG,
+	.mode		= MUSB_PERIPHERAL,
 	.clock		= "usb20",
 	.config		= &musb_config,
 };
