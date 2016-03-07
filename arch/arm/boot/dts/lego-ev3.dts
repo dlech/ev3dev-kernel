@@ -1,0 +1,676 @@
+/*
+ * Device tree for LEGO MINDSTORMS EV3
+ *
+ * Copyright (C) 2016 David Lechner <david@lechnology.com>
+ *
+ * This program is free software; you can redistribute  it and/or modify it
+ * under  the terms of  the GNU General  Public License as published by the
+ * Free Software Foundation, version 2.
+ */
+/dts-v1/;
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/linux-event-codes.h>
+#include <dt-bindings/pwm/pwm.h>
+
+#include "da850.dtsi"
+
+/ {
+	compatible = "lego,ev3", "ti,da850";
+	model = "LEGO MINDSTORMS EV3";
+
+	soc@1c00000 {
+		clocks {
+			/*
+			 * This is the main clock that drives most of the other
+			 * clocks.
+			 */
+			oscin: oscin {
+				#clock-cells = <0>;
+				compatible = "fixed-clock";
+				clock-frequency = <24000000>;
+			};
+
+			/*
+			 * scr_f2 and br_f7 are not actually clocks, but they
+			 * are controlled in the same way and we are not using
+			 * anything attached to them. (scr_f2 is uPP DMA, VPIF
+			 * DMA, SATA and br_f7 is LCDC to DDR bridge) Declaring
+			 * them here causes them to be automatically turned off
+			 * by the clock framework to save power.
+			 */
+
+			scr_f2@227000 {
+				#clock-cells = <0>;
+				compatible = "ti,keystone,psc-clock";
+				reg = <0x227000 0x1000>;
+				clocks = <&pll0_sysclk2>;
+				power-domain = <0>;
+				module-domain = <26>;
+			};
+
+			br_f7@227000 {
+				#clock-cells = <0>;
+				compatible = "ti,keystone,psc-clock";
+				reg = <0x227000 0x1000>;
+				clocks = <&pll0_sysclk2>;
+				power-domain = <0>;
+				module-domain = <30>;
+			};
+		};
+
+		/*
+		 * (ab)using pinctrl-single to disable all internal pullups/
+		 * pulldowns on I/O.
+		 */
+		pupd_ena@22c00c {
+			compatible = "pinctrl-single";
+			reg = <0x22c00c 0x4>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			pinctrl-single,bit-per-mux;
+			pinctrl-single,register-width = <32>;
+			pinctrl-single,function-mask = <0xf>;
+			/*
+			 * There is a bug in pinctrl-single that prevents us
+			 * from setting function-mask to 1, so doing things
+			 * in groups of 4. Doesn't really matter since we are
+			 * disabling all at once anyway.
+			 */
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&pupu_disable>;
+
+			pupu_disable: pinmux_all_pins {
+				pinctrl-single,bits = <
+					0x0 0x00000000 0xffffffff
+				>;
+			};
+		};
+	};
+
+	/*
+	 * The buttons on the EV3 are mapped to keyboard keys.
+	 */
+	gpio_keys {
+		compatible = "gpio-keys";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		label = "EV3 buttons";
+		pinctrl-names = "default";
+		pinctrl-0 = <&button_pins>;
+
+		enter {
+			label = "EV3 Button ENTER";
+			linux,code = <KEY_ENTER>;
+			/* GP1[13] */
+			gpios = <&gpio 29 GPIO_ACTIVE_HIGH>;
+		};
+		left {
+			label = "EV3 Button LEFT";
+			linux,code = <KEY_LEFT>;
+			/* GP6[6] */
+			gpios = <&gpio 102 GPIO_ACTIVE_HIGH>;
+		};
+		back {
+			label = "EV3 Button BACK";
+			linux,code = <KEY_BACKSPACE>;
+			/* GP6[10] */
+			gpios = <&gpio 106 GPIO_ACTIVE_HIGH>;
+		};
+		right {
+			label = "EV3 Button RIGHT";
+			linux,code = <KEY_RIGHT>;
+			/* GP7[12] */
+			gpios = <&gpio 124 GPIO_ACTIVE_HIGH>;
+		};
+		down {
+			label = "EV3 Button DOWN";
+			linux,code = <KEY_DOWN>;
+			/* GP7[14] */
+			gpios = <&gpio 126 GPIO_ACTIVE_HIGH>;
+		};
+		up {
+			label = "EV3 Button UP";
+			linux,code = <KEY_UP>;
+			/* GP7[15] */
+			gpios = <&gpio 127 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	/*
+	 * The EV3 has two built-in bi-color LEDs behind the buttons.
+	 */
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&led_pins>;
+
+		left_green {
+			label = "ev3:left:green:ev3dev";
+			/* GP6[7] */
+			gpios = <&gpio 103 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "mmc0";
+		};
+		right_red {
+			label = "ev3:right:red:ev3dev";
+			/* GP6[12] */
+			gpios = <&gpio 108 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "mmc0";
+		};
+		left_red {
+			label = "ev3:left:red:ev3dev";
+			/* GP6[13] */
+			gpios = <&gpio 109 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "mmc0";
+		};
+		right_green {
+			label = "ev3:right:green:ev3dev";
+			/* GP6[14] */
+			gpios = <&gpio 110 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "mmc0";
+		};
+	};
+
+	/*
+	 * The EV3 is powered down by turning off the main 5V supply.
+	 */
+	gpio-poweroff {
+		compatible = "gpio-poweroff";
+		/* low signal powers off the board */
+		gpios = <&gpio 107 GPIO_ACTIVE_LOW>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&system_power_pin>;
+	};
+
+	/*
+	 * The USB 1.1 port VBUS (5V) regulator also feeds pin 4 on the input
+	 * and output ports as well as powering the analog/digital converter.
+	 * So, a short circuit on the input or output ports can trigger a USB
+	 * over-current shutdown. Also, analog input won't work until it is
+	 * reset.
+	 */
+	vbus_reg: vbus_reg {
+		compatible = "regulator-fixed";
+		regulator-name = "usb11-vbus-supply";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&gpio 101 GPIO_ACTIVE_LOW>;
+		enable-active-high;
+		pinctrl-names = "default";
+		pinctrl-0 = <&usb11_pins>;
+		status = "okay";
+	};
+
+	/*
+	 * The Bluetooth chip requires a clock at 32768Hz. One of the PWMs
+	 * is used to generate this signal.
+	 */
+	bt-slow-clock {
+		status = "disabled";
+		compatible = "pwm-clock";
+		#clock-cells = <0>;
+		clock-frequency = <32768>;
+		clock-output-names = "slow_clk";
+		pwms = <&ecap2 0 30517>;
+	};
+
+	/*
+	 * This "regulator" is just a voltage divider on the 5V supply.
+	 */
+	ev3_adc_reg: adc-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "adc-regulator";
+		regulator-min-microvolt = <2500000>;
+		regulator-max-microvolt = <2500000>;
+		regulator-always-on;
+	};
+
+	ev3-battery {
+		compatible = "ev3dev,evb-battery";
+		io-channels = <&ev3_adc 4>;
+		io-channel-names = "voltage";
+		status = "disabled";
+	};
+
+	evb-ports {
+		compatible = "ev3dev,evb-ports";
+		status = "disabled";
+
+		in1 {
+			pinctrl-names = "default";
+			pinctrl-0 = <&in1_pins>;
+			compatible = "ev3dev,evb-input-port";
+			io-channels = <&ev3_adc 6>, <&ev3_adc 5>;
+			io-channel-names = "pin1", "pin6";
+			pin1-gpios = <&gpio 138 0>;
+			pin2-gpios = <&gpio 34 0>;
+			pin5-gpios = <&gpio 2 0>;
+			pin6-gpios = <&gpio 15 0>;
+			buf-ena-gpios = <&gpio 139 GPIO_ACTIVE_LOW>;
+			ev3dev,tty-name = "ttyS1";
+			status = "disabled";
+		};
+
+		in2 {
+			pinctrl-names = "default";
+			pinctrl-0 = <&in2_pins>;
+			compatible = "ev3dev,evb-input-port";
+			io-channels = <&ev3_adc 8>, <&ev3_adc 7>;
+			io-channel-names = "pin1", "pin6";
+			pin1-gpios = <&gpio 140 0>;
+			pin2-gpios = <&gpio 143 0>;
+			pin5-gpios = <&gpio 14 0>;
+			pin6-gpios = <&gpio 13 0>;
+			buf-ena-gpios = <&gpio 142 GPIO_ACTIVE_LOW>;
+			ev3dev,tty-name = "ttyS0";
+		};
+
+		in3 {
+			pinctrl-names = "default";
+			pinctrl-0 = <&in3_pins>;
+			compatible = "ev3dev,evb-input-port";
+			io-channels = <&ev3_adc 9>, <&ev3_adc 10>;
+			io-channel-names = "pin1", "pin6";
+			pin1-gpios = <&gpio 137 0>;
+			pin2-gpios = <&gpio 123 0>;
+			pin5-gpios = <&gpio 12 0>;
+			pin6-gpios = <&gpio 30 0>;
+			buf-ena-gpios = <&gpio 121 GPIO_ACTIVE_LOW>;
+			ev3dev,tty-name = "ttySU1";
+		};
+
+		in4 {
+			pinctrl-names = "default";
+			pinctrl-0 = <&in4_pins>;
+			compatible = "ev3dev,evb-input-port";
+			io-channels = <&ev3_adc 12>, <&ev3_adc 11>;
+			io-channel-names = "pin1", "pin6";
+			pin1-gpios = <&gpio 100 0>;
+			pin2-gpios = <&gpio 120 0>;
+			pin5-gpios = <&gpio 1 0>;
+			pin6-gpios = <&gpio 31 0>;
+			buf-ena-gpios = <&gpio 122 GPIO_ACTIVE_LOW>;
+			ev3dev,tty-name = "ttySU0";
+		};
+
+		outA {
+			pinctrl-names = "default";
+			pinctrl-0 = <&outa_pins>;
+			compatible = "ev3dev,evb-output-port";
+			io-channels = <&ev3_adc 1>;
+			io-channel-names = "pin5";
+			pin1-gpios = <&gpio 63 0>;
+			pin2-gpios = <&gpio 54 0>;
+			pin5-det-gpios = <&gpio 84 0>;
+			pin5-gpios = <&gpio 91 0>;
+			pin6-gpios = <&gpio 4 0>;
+			pwms = <&ehrpwm1 1 0 PWM_POLARITY_INVERTED>;
+			pwm-names = "motor";
+		};
+
+		outB {
+			pinctrl-names = "default";
+			pinctrl-0 = <&outb_pins>;
+			compatible = "ev3dev,evb-output-port";
+			io-channels = <&ev3_adc 0>;
+			io-channel-names = "pin5";
+			pin1-gpios = <&gpio 33 0>;
+			pin2-gpios = <&gpio 3 0>;
+			pin5-det-gpios = <&gpio 37 0>;
+			pin5-gpios = <&gpio 88 0>;
+			pin6-gpios = <&gpio 41 0>;
+			pwms = <&ehrpwm1 0 0 PWM_POLARITY_INVERTED>;
+			pwm-names = "motor";
+		};
+
+		outC {
+			pinctrl-names = "default";
+			pinctrl-0 = <&outc_pins>;
+			compatible = "ev3dev,evb-output-port";
+			io-channels = <&ev3_adc 13>;
+			io-channel-names = "pin5";
+			pin1-gpios = <&gpio 104 0>;
+			pin2-gpios = <&gpio 89 0>;
+			pin5-det-gpios = <&gpio 56 0>;
+			pin5-gpios = <&gpio 93 0>;
+			pin6-gpios = <&gpio 62 0>;
+			pwms = <&ecap0 0 0 PWM_POLARITY_INVERTED>;
+			pwm-names = "motor";
+		};
+
+		outD {
+			pinctrl-names = "default";
+			pinctrl-0 = <&outd_pins>;
+			compatible = "ev3dev,evb-output-port";
+			io-channels = <&ev3_adc 14>;
+			io-channel-names = "pin5";
+			pin1-gpios = <&gpio 83 0>;
+			pin2-gpios = <&gpio 90 0>;
+			pin5-det-gpios = <&gpio 95 0>;
+			pin5-gpios = <&gpio 105 0>;
+			pin6-gpios = <&gpio 40 0>;
+			pwms = <&ecap1 0 0 PWM_POLARITY_INVERTED>;
+			pwm-names = "motor";
+		};
+	};
+
+	ev3-sound {
+		status = "disabled";
+		pinctrl-names = "default";
+		pinctrl-0 = <&sound_pins>;
+		compatible = "ev3dev,evb-sound";
+		enable-gpios = <&gpio 111 GPIO_ACTIVE_HIGH>;
+		pwms = <&ehrpwm0 1 0 PWM_POLARITY_INVERTED>;
+		pwm-names = "speaker";
+	};
+};
+
+&intc {
+	/*
+	 * Need extra interrupts for iio triggers. There are 101 interrutps.
+	 * The last 4 are for mcbsp which we aren't using anyway. Really, this
+	 * needs to be fixed in the mach-davinci code or figure out how to
+	 * enable CONFIG_SPARSE_IRQ.
+	 */
+	ti,intc-size = <97>;
+};
+
+&pmx_core {
+	status = "okay";
+
+	serial0_pins: pinmux_serial0_pins {
+		pinctrl-single,bits = <
+			/* UART0_TXD,UART0_RXD */
+			0xc 0x00220000 0x00ff0000
+		>;
+	};
+	serial1_pins: pinmux_serial1_pins {
+		pinctrl-single,bits = <
+			/* UART1_TXD,UART1_RXD */
+			0x10 0x22000000 0xff000000
+		>;
+	};
+	serial2_pins: pinmux_serial2_pins {
+		pinctrl-single,bits = <
+			/* UART2_CTS,UART2_RTS */
+			0x0 0x44000000 0xff000000
+			/* UART2_TXD,UART2_RXD */
+			0x10 0x00220000 0x00ff0000
+		>;
+	};
+	spi0_pins: pinmux_spi0_pins {
+		pinctrl-single,bits = <
+			/* CS3, SIMO, SOMI, CLK */
+			0xc 0x01001101 0x0f00ff0f
+			/* CS0 */
+			0x10 0x00000010 0x000000f0
+		>;
+	};
+	mmc0_cd_pin: pinmux_mmc0_cd {
+		pinctrl-single,bits = <
+			/* GP5[14] */
+			0x2C 0x00000080 0x000000f0
+		>;
+	};
+	button_pins: pinmux_button_pins {
+		pinctrl-single,bits = <
+			/* GP1[13] */
+			0x8 0x00000800 0x00000f00
+			/* GP6[10] */
+			0x34 0x00800000 0x00f00000
+			/* GP6[6] */
+			0x38 0x00000080 0x000000f0
+			/* GP7[12], GP7[14], GP7[15] */
+			0x40 0x00808800 0x00f0ff00
+		>;
+	};
+	led_pins: pinmux_led_pins {
+		pinctrl-single,bits = <
+			/* GP6[12], GP6[13], GP6[14] */
+			0x34 0x00008880 0x0000fff0
+			/* GP6[7] */
+			0x38 0x00000008 0x0000000f
+		>;
+	};
+	system_power_pin: pinmux_system_power {
+		pinctrl-single,bits = <
+			/* GP6[11] */
+			0x34 0x00080000 0x000f0000
+		>;
+	};
+	in1_pins: pinmux_in1_pins {
+		pinctrl-single,bits = <
+			/* GP0[15] */
+			0x0 0x00000008 0x0000000f
+			/* GP0[2] */
+			0x4 0x00800000 0x00f00000
+			/* GP2[2] */
+			0x18 0x00800000 0x00f00000
+			/* GP8[10], GP8[11] */
+			0x48 0x88000000 0xff000000
+		>;
+	};
+	in2_pins: pinmux_in2_pins {
+		pinctrl-single,bits = <
+			/* GP0[13], GP0[14] */
+			0x0 0x00000880 0x00000ff0
+			/* GP8[12], GP8[14], GP8[15] */
+			0x48 0x00808800 0x00f0ff00
+		>;
+	};
+	in3_pins: pinmux_in3_pins {
+		pinctrl-single,bits = <
+			/* GP0[12] */
+			0x0 0x00008000 0x0000f000
+			/* GP1[14] */
+			0x8 0x00000080 0x000000f0
+			/* GP7[11] */
+			0x40 0x08000000 0x0f000000
+			/* GP7[9] */
+			0x44 0x00000008 0x0000000f
+			/* GP8[9] */
+			0x4c 0x00000008 0x0000000f
+		>;
+	};
+	in4_pins: pinmux_in4_pins {
+		pinctrl-single,bits = <
+			/* GP0[1] */
+			0x4 0x08000000 0x0f000000
+			/* GP1[15] */
+			0x8 0x00000008 0x0000000f
+			/* GP7[10] */
+			0x40 0x80000000 0xf0000000
+			/* GP7[8] */
+			0x44 0x00000080 0x000000f0
+			/* GP6[4] */
+			0x4c 0x00000800 0x00000f00
+		>;
+	};
+	outa_pins: pinmux_outa_pins {
+		pinctrl-single,bits = <
+			/* GP0[4] */
+			0x4 0x00008000 0x0000f000
+			/* GP3[15] */
+			0x1c 0x00000008 0x0000000f
+			/* GP3[6] */
+			0x20 0x00000080 0x000000f0
+			/* GP5[11] */
+			0x2c 0x00080000 0x000f0000
+			/* GP5[4] */
+			0x30 0x00008000 0x0000f000
+		>;
+	};
+	outb_pins: pinmux_outb_pins {
+		pinctrl-single,bits = <
+			/* GP0[3] */
+			0x4 0x00080000 0x000f0000
+			/* GP2[9] */
+			0x14 0x08000000 0x0f000000
+			/* GP2[1], GP2[5] */
+			0x18 0x08000800 0x0f000f00
+			/* GP5[11] */
+			0x2c 0x80000000 0xf0000000
+		>;
+	};
+	outc_pins: pinmux_outc_pins {
+		pinctrl-single,bits = <
+			/* GP3[8], GP3[14] */
+			0x1c 0x80000080 0xf00000f0
+			/* GP5[9], GP5[13] */
+			0x2c 0x08000800 0x0f000f00
+			/* GP6[8] */
+			0x34 0x80000000 0xf0000000
+		>;
+	};
+	outd_pins: pinmux_outd_pins {
+		pinctrl-single,bits = <
+			/* GP2[8] */
+			0x14 0x80000000 0xf0000000
+			/* GP5[10], GP5[15] */
+			0x2c 0x00800008 0x00f0000f
+			/* GP5[3] */
+			0x30 0x00080000 0x000f0000
+			/* GP6[9] */
+			0x34 0x08000000 0x0f000000
+		>;
+	};
+	sound_pins: pinmux_sound_pins {
+		pinctrl-single,bits = <
+			/* GP6[15] */
+			0x34 0x00000008 0x0000000f
+		>;
+	};
+	usb11_pins: pinmux_usb11_pins {
+		pinctrl-single,bits = <
+			/* GP6[5] */
+			0x40 0x00000080 0x000000f0
+			/* GP6[3] */
+			0x4c 0x00008000 0x0000f000
+		>;
+	};
+};
+
+/* Input port 2 */
+&serial0 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&serial0_pins>;
+};
+
+/* Input port 1 */
+&serial1 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&serial1_pins>;
+};
+
+/* Bluetooth */
+&serial2 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&serial2_pins>;
+};
+
+&rtc0 {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <400000>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c0_pins>;
+
+	/*
+	 * EEPROM contains the first stage bootloader, HW ID and Bluetooth MAC.
+	 */
+	eeprom@50 {
+		compatible = "at24,24c128";
+		pagesize = <64>;
+		read-only;
+		reg = <0x50>;
+	};
+};
+
+&wdt {
+	status = "okay";
+};
+
+&mmc0 {
+	status = "okay";
+	max-frequency = <50000000>;
+	bus-width = <4>;
+	cd-gpios = <&gpio 94 GPIO_ACTIVE_LOW>;
+	cap-sd-highspeed;
+	cap-mmc-highspeed;
+	pinctrl-names = "default";
+	pinctrl-0 = <&mmc0_pins &mmc0_cd_pin>;
+};
+
+&ehrpwm0 {
+	status = "okay";
+	pinctrl-names = "default";
+	/* SOUND_ARMA */
+	pinctrl-0 = <&ehrpwm0b_pins>;
+};
+
+&ehrpwm1 {
+	status = "disabled";
+	pinctrl-names = "default";
+	/* MBPWM, MAPWM */
+	pinctrl-0 = <&ehrpwm1a_pins &ehrpwm1b_pins>;
+};
+
+&ecap0 {
+	status = "okay";
+	pinctrl-names = "default";
+	/* MCPWM */
+	pinctrl-0 = <&ecap0_pins>;
+};
+
+&ecap1 {
+	status = "disabled";
+	pinctrl-names = "default";
+	/* MDPWM */
+	pinctrl-0 = <&ecap1_pins>;
+};
+
+&ecap2 {
+	status = "disabled";
+	pinctrl-names = "default";
+	/* BTSLOWCLK */
+	pinctrl-0 = <&ecap2_pins>;
+};
+
+&spi0 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi0_pins>;
+
+	ev3_adc: adc@3 {
+		compatible = "ti-ads7957";
+		reg = <3>;
+		spi-max-frequency = <10000000>;
+		refin-supply = <&ev3_adc_reg>;
+		#io-channel-cells = <1>;
+	};
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi1_pins &spi1_cs0_pin>;
+};
+
+&usbphy {
+	status = "okay";
+};
+
+&usb11 {
+	status = "okay";
+	vbus-supply = <&vbus_reg>;
+};
+
+&gpio {
+	status = "okay";
+};
