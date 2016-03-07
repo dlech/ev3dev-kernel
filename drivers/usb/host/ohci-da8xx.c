@@ -282,6 +282,86 @@ static const struct hc_driver ohci_da8xx_hc_driver = {
 
 /*-------------------------------------------------------------------------*/
 
+// static int da8xx_ohci_regulator_set_power(unsigned port, int on)
+// {
+// 	printk("%s: port: %u, on: %d\n", __func__, port, on);
+// 	return on ? regulator_enable(vbus_reg)
+// 		  : regulator_force_disable(vbus_reg);
+// }
+
+// static int da8xx_ohci_regulator_get_power(unsigned port)
+// {
+// 	printk("%s: port: %u\n", __func__, port);
+// 	return regulator_is_enabled(vbus_reg);
+// }
+
+// static int da8xx_ohci_gpio_get_oci(unsigned port)
+// {
+// 	printk("%s: port: %u\n", __func__, port);
+// 	return gpiod_get_value(oc_gpio);
+// }
+
+// static irqreturn_t da8xx_ohci_gpio_ocic_irq(int, void *);
+
+// static int da8xx_ohci_gpio_ocic_notify(da8xx_ocic_handler_t handler)
+// {
+// 	int irq = gpiod_to_irq(oc_gpio);
+// 	int ret = 0;
+
+// 	if (handler) {
+// 		gpio_ocic_handler = handler;
+
+// 		ret = request_irq(irq, da8xx_ohci_gpio_ocic_irq,
+// 				IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,
+// 				"OHCI over-current indicator", NULL);
+// 		if (ret)
+// 			pr_err("%s: could not request IRQ to watch "
+// 				"over-current indicator changes\n", __func__);
+// 	} else
+// 		free_irq(irq, NULL);
+
+// 	return ret;
+// }
+
+// static void da8xx_ohci_gpio_ocic_work(struct work_struct *work)
+// {
+// 	gpio_ocic_handler(&of_hub, 1);
+// }
+// DECLARE_WORK(ocic_work, da8xx_ohci_gpio_ocic_work);
+
+// static irqreturn_t da8xx_ohci_gpio_ocic_irq(int irq, void *dev_id)
+// {
+// 	/* disabling regulator can sleep, so can't be called from irq */
+// 	schedule_work(&ocic_work);
+
+// 	return IRQ_HANDLED;
+// }
+
+// struct da8xx_ohci_root_hub *ohci_da8xx_of_create_hub(struct device *dev)
+// {
+// 	struct device_node *node = dev->of_node;
+
+// 	if (!node)
+// 		return ERR_PTR(-ENODEV);
+
+// 	oc_gpio = devm_gpiod_get_optional(dev, "overcurrent", GPIOD_IN);
+// 	if (IS_ERR(oc_gpio)) {
+// 		dev_info(dev, "No overcurrent gpio specified.\n");
+// 		oc_gpio = NULL;
+// 	} else {
+// 		of_hub.get_oci = da8xx_ohci_gpio_get_oci;
+// 		of_hub.ocic_notify = da8xx_ohci_gpio_ocic_notify;
+// 	}
+
+// 	if (of_property_read_u8(node, "potpgt", &of_hub.potpgt)) {
+// 		dev_info(dev, "Using default potpgt.\n");
+// 		of_hub.potpgt = 10;
+// 	}
+// 	of_hub.potpgt = (of_hub.potpgt + 1) / 2;
+
+// 	dev->platform_data = &of_hub;
+// 	return &of_hub;
+// }
 
 /**
  * usb_hcd_da8xx_probe - initialize DA8xx-based HCDs
