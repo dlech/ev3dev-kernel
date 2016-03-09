@@ -342,7 +342,7 @@ static struct clock_event_device clockevent_davinci = {
 };
 
 
-void __init davinci_timer_init(void)
+static void __init davinci_timer_init_of(struct device_node *node)
 {
 	struct clk *timer_clk;
 	struct davinci_soc_info *soc_info = &davinci_soc_info;
@@ -380,7 +380,10 @@ void __init davinci_timer_init(void)
 		}
 	}
 
-	timer_clk = clk_get(NULL, "timer0");
+	if (node)
+		timer_clk = of_clk_get(node, 0);
+	if (IS_ERR(timer_clk))
+		timer_clk = clk_get(NULL, "timer0");
 	BUG_ON(IS_ERR(timer_clk));
 	clk_prepare_enable(timer_clk);
 
@@ -408,6 +411,13 @@ void __init davinci_timer_init(void)
 
 	for (i=0; i< ARRAY_SIZE(timers); i++)
 		timer32_config(&timers[i]);
+}
+
+CLOCKSOURCE_OF_DECLARE(davinci_timer, "ti,davinci-timer", davinci_timer_init_of);
+
+void __init davinci_timer_init(void)
+{
+	davinci_timer_init_of(NULL);
 }
 
 /* reset board using watchdog timer */
