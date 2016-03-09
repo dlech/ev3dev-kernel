@@ -230,6 +230,10 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
+		timer@20000 {
+			compatible = "ti,davinci-timer";
+			reg = <0x20000 0x1000>;
+		};
 		wdt: wdt@21000 {
 			compatible = "ti,davinci-wdt";
 			reg = <0x21000 0x1000>;
