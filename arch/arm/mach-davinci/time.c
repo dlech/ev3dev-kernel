@@ -417,6 +417,7 @@ CLOCKSOURCE_OF_DECLARE(davinci_timer, "ti,davinci-timer", davinci_timer_init_of)
 
 void __init davinci_timer_init(void)
 {
+printk("%s\n", __func__);
 	davinci_timer_init_of(NULL);
 }
 

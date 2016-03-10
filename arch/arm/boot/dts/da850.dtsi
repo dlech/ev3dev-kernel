@@ -31,6 +31,18 @@
 		ranges = <0x0 0x01c00000 0x400000>;
 		interrupt-parent = <&intc>;
 
+		pllctrl: pll-controller@1c11000 {
+			compatible = "ti,davinci-pllctrl", "syscon";
+			reg = <0x11000 0x1000>;
+		};
+		rstctrl: reset-controller {
+			compatible = "ti,davinci-reset";
+			ti,syscon-pll = <&pllctrl>;
+			status = "disabled";
+		};
+
+		/include/ "da850-clocks.dtsi"
+
 		pmx_core: pinmux@1c14120 {
 			compatible = "pinctrl-single";
 			reg = <0x14120 0x50>;
@@ -150,6 +162,10 @@
 			};
 
 		};
+		chip_config: cfgchip@1c1417c {
+			compatible = "ti,davinci-cfgchip", "syscon";
+			reg = <0x1417c 0x28>;
+		};
 		edma0: edma@01c00000 {
 			compatible = "ti,edma3-tpcc";
 			/* eDMA3 CC0: 0x01c0 0000 - 0x01c0 7fff */
@@ -178,6 +194,7 @@
 			reg = <0x42000 0x100>;
 			reg-shift = <2>;
 			interrupts = <25>;
+			clocks = <&uart0_clk>;
 			status = "disabled";
 		};
 		serial1: serial@1d0c000 {
@@ -185,6 +202,7 @@
 			reg = <0x10c000 0x100>;
 			reg-shift = <2>;
 			interrupts = <53>;
+			clocks = <&uart1_clk>;
 			status = "disabled";
 		};
 		serial2: serial@1d0d000 {
@@ -192,6 +210,7 @@
 			reg = <0x10d000 0x100>;
 			reg-shift = <2>;
 			interrupts = <61>;
+			clocks = <&uart2_clk>;
 			status = "disabled";
 		};
 		rtc0: rtc@1c23000 {
@@ -207,14 +226,17 @@
 			interrupts = <15>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			clocks = <&i2c0_clk>;
 			status = "disabled";
 		};
 		timer@1c20000 {
 			compatible = "ti,davinci-timer";
+			clocks = <&timer0_clk>;
 		};
 		wdt: wdt@1c21000 {
 			compatible = "ti,davinci-wdt";
 			reg = <0x21000 0x1000>;
+			clocks = <&timer1_clk>;
 			status = "disabled";
 		};
 		mmc0: mmc@1c40000 {
@@ -223,36 +245,47 @@
 			interrupts = <16>;
 			dmas = <&edma0 16 0>, <&edma0 17 0>;
 			dma-names = "rx", "tx";
+			clocks = <&mmc0_clk>;
 			status = "disabled";
 		};
 		ehrpwm0: ehrpwm@01f00000 {
 			compatible = "ti,da850-ehrpwm", "ti,am33xx-ehrpwm";
 			#pwm-cells = <3>;
 			reg = <0x300000 0x2000>;
+			clocks = <&ehrpwm_clk>;
+			clock-names = "fck";
 			status = "disabled";
 		};
 		ehrpwm1: ehrpwm@01f02000 {
 			compatible = "ti,da850-ehrpwm", "ti,am33xx-ehrpwm";
 			#pwm-cells = <3>;
 			reg = <0x302000 0x2000>;
+			clocks = <&ehrpwm_clk>;
+			clock-names = "fck";
 			status = "disabled";
 		};
 		ecap0: ecap@01f06000 {
 			compatible = "ti,da850-ecap", "ti,am33xx-ecap";
 			#pwm-cells = <3>;
 			reg = <0x306000 0x80>;
+			clocks = <&ecap_clk>;
+			clock-names = "fck";
 			status = "disabled";
 		};
 		ecap1: ecap@01f07000 {
 			compatible = "ti,da850-ecap", "ti,am33xx-ecap";
 			#pwm-cells = <3>;
 			reg = <0x307000 0x80>;
+			clocks = <&ecap_clk>;
+			clock-names = "fck";
 			status = "disabled";
 		};
 		ecap2: ecap@01f08000 {
 			compatible = "ti,da850-ecap", "ti,am33xx-ecap";
 			#pwm-cells = <3>;
 			reg = <0x308000 0x80>;
+			clocks = <&ecap_clk>;
+			clock-names = "fck";
 			status = "disabled";
 		};
 		spi0: spi@1c41000 {
@@ -263,6 +296,7 @@
 			num-cs = <6>;
 			ti,davinci-spi-intr-line = <1>;
 			interrupts = <20>;
+			clocks = <&spi0_clk>;
 			status = "disabled";
 		};
 		spi1: spi@1f0e000 {
@@ -275,6 +309,7 @@
 			interrupts = <56>;
 			dmas = <&edma0 18 0>, <&edma0 19 0>;
 			dma-names = "rx", "tx";
+			clocks = <&spi1_clk>;
 			status = "disabled";
 		};
 		mdio: mdio@1e24000 {
@@ -282,6 +317,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x224000 0x1000>;
+			clocks = <&emac_clk>;
 			status = "disabled";
 		};
 		eth0: ethernet@1e20000 {
@@ -297,6 +333,7 @@
 					35
 					36
 					>;
+			clocks = <&emac_clk>;
 			status = "disabled";
 		};
 		gpio: gpio@1e26000 {
@@ -311,6 +348,8 @@
 				49 IRQ_TYPE_EDGE_BOTH 50 IRQ_TYPE_EDGE_BOTH>;
 			ti,ngpio = <144>;
 			ti,davinci-gpio-unbanked = <0>;
+			clocks = <&gpio_clk>;
+			clock-names = "gpio";
 			status = "disabled";
 		};
 
@@ -321,6 +360,7 @@
 			reg-names = "mpu", "dat";
 			interrupts = <54>;
 			interrupt-names = "common";
+			clocks = <&mcasp0_clk>;
 			status = "disabled";
 			dmas = <&edma0 1 1>,
 				<&edma0 0 1>;

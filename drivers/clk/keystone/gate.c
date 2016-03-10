@@ -107,7 +107,8 @@ static int keystone_clk_is_enabled(struct clk_hw *hw)
 	struct clk_psc *psc = to_clk_psc(hw);
 	struct clk_psc_data *data = psc->psc_data;
 	u32 mdstat = readl(data->base + MDSTAT + 4 * data->module_domain);
-
+printk("%s: %s, %u\n", __func__, clk_hw_get_name(hw), data->module_domain);
+printk("%s: %u, %u, %u\n", __func__, data->base, data->power_domain, mdstat);
 	return (mdstat & MDSTAT_MCKOUT) ? 1 : 0;
 }
 
@@ -116,7 +117,7 @@ static int keystone_clk_enable(struct clk_hw *hw)
 	struct clk_psc *psc = to_clk_psc(hw);
 	struct clk_psc_data *data = psc->psc_data;
 	unsigned long flags = 0;
-
+printk("%s: %s, %d\n", __func__, clk_hw_get_name(hw), data->module_domain);
 	if (psc->lock)
 		spin_lock_irqsave(psc->lock, flags);
 
@@ -134,7 +135,7 @@ static void keystone_clk_disable(struct clk_hw *hw)
 	struct clk_psc *psc = to_clk_psc(hw);
 	struct clk_psc_data *data = psc->psc_data;
 	unsigned long flags = 0;
-
+printk("%s: %s, %d\n", __func__, clk_hw_get_name(hw), data->module_domain);
 	if (psc->lock)
 		spin_lock_irqsave(psc->lock, flags);
 
@@ -215,7 +216,7 @@ static void __init of_psc_clk_init(struct device_node *node, spinlock_t *lock)
 	}
 
 	of_property_read_u32(node, "power-domain", &data->power_domain);
-	of_property_read_u32(node, "clock-domain", &data->module_domain);
+	of_property_read_u32(node, "module-domain", &data->module_domain);
 	of_property_read_string(node, "clock-output-names", &clk_name);
 	parent_name = of_clk_get_parent_name(node, 0);
 	if (!parent_name) {

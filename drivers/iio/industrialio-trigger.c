@@ -458,6 +458,7 @@ static struct iio_trigger *viio_trigger_alloc(const char *fmt, va_list vargs)
 					  CONFIG_IIO_CONSUMERS_PER_TRIGGER,
 					  0);
 		if (trig->subirq_base < 0) {
+			printk("Failed to alloc irq. %d\n", trig->subirq_base);
 			kfree(trig);
 			return NULL;
 		}

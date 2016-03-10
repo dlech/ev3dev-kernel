@@ -114,12 +114,18 @@ int __init register_persistent_clock(clock_access_fn read_boot,
 
 void __init time_init(void)
 {
+printk("%s\n", __func__);
 	if (machine_desc->init_time) {
+printk("1\n");
 		machine_desc->init_time();
 	} else {
+printk("2\n");
 #ifdef CONFIG_COMMON_CLK
 		of_clk_init(NULL);
+printk("3\n");
 #endif
 		clocksource_probe();
+printk("4\n");
 	}
+printk("5\n");
 }

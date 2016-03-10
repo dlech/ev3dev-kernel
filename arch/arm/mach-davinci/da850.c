@@ -48,6 +48,7 @@
 #define CFGCHIP3_PLL1_MASTER_LOCK	BIT(5)
 #define CFGCHIP0_PLL_MASTER_LOCK	BIT(4)
 
+#ifdef CONFIG_DAVINCI_LEGACY_CLK
 static int da850_set_armrate(struct clk *clk, unsigned long rate);
 static int da850_round_armrate(struct clk *clk, unsigned long rate);
 static int da850_set_pll0rate(struct clk *clk, unsigned long armrate);
@@ -353,6 +354,7 @@ static void usb11_48_clk_enable(struct clk *clk)
 	u32 val;
 
 	val = readl(DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP2_REG));
+
 	/*
 	 * If USB 1.1 reference clock is sourced from USB 2.0 PHY, we
 	 * need to enable the USB 2.0 module clocking, start its PHY,
@@ -509,13 +511,16 @@ static struct clk_lookup da850_clks[] = {
 	CLK("spi_davinci.0",	NULL,		&spi0_clk),
 	CLK("spi_davinci.1",	NULL,		&spi1_clk),
 	CLK("vpif",		NULL,		&vpif_clk),
-	CLK("ahci_da850",		NULL,		&sata_clk),
+	CLK("ahci_da850",	NULL,		&sata_clk),
 	CLK("davinci-rproc.0",	NULL,		&dsp_clk),
 	CLK("ehrpwm",		"fck",		&ehrpwm_clk),
 	CLK("ehrpwm",		"tbclk",	&ehrpwm_tbclk),
 	CLK("ecap",		"fck",		&ecap_clk),
 	CLK(NULL,		NULL,		NULL),
 };
+#else
+#define da850_clks NULL
+#endif
 
 /*
  * Device specific mux setup
@@ -946,8 +951,10 @@ static struct davinci_timer_info da850_timer_info = {
 	.clocksource_id	= T0_TOP,
 };
 
+
 static void da850_set_async3_src(int pllnum)
 {
+#ifdef CONFIG_DAVINCI_LEGACY_CLK
 	struct clk *clk, *newparent = pllnum ? &pll1_sysclk2 : &pll0_sysclk2;
 	struct clk_lookup *c;
 	unsigned int v;
@@ -960,7 +967,7 @@ static void da850_set_async3_src(int pllnum)
 			WARN(ret, "DA850: unable to re-parent clock %s",
 								clk->name);
 		}
-       }
+	}
 
 	v = __raw_readl(DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP3_REG));
 	if (pllnum)
@@ -968,6 +975,7 @@ static void da850_set_async3_src(int pllnum)
 	else
 		v &= ~CFGCHIP3_ASYNC3_CLKSRC;
 	__raw_writel(v, DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP3_REG));
+#endif
 }
 
 #ifdef CONFIG_CPU_FREQ
@@ -1128,6 +1136,7 @@ int da850_register_cpufreq(char *async_clk)
 	return platform_device_register(&da850_cpufreq_device);
 }
 
+#ifdef CONFIG_DAVINCI_LEGACY_CLK
 static int da850_round_armrate(struct clk *clk, unsigned long rate)
 {
 	int ret = 0, diff;
@@ -1176,12 +1185,14 @@ static int da850_set_pll0rate(struct clk *clk, unsigned long index)
 
 	return 0;
 }
-#else
+#endif /* CONFIG_DAVINCI_LEGACY_CLK */
+#else /* CONFIG_CPU_FREQ */
 int __init da850_register_cpufreq(char *async_clk)
 {
 	return 0;
 }
 
+#ifdef CONFIG_DAVINCI_LEGACY_CLK
 static int da850_set_armrate(struct clk *clk, unsigned long rate)
 {
 	return -EINVAL;
@@ -1196,7 +1207,8 @@ static int da850_round_armrate(struct clk *clk, unsigned long rate)
 {
 	return clk->rate;
 }
-#endif
+#endif /* CONFIG_DAVINCI_LEGACY_CLK */
+#endif /* CONFIG_CPU_FREQ */
 
 int __init da850_register_pm(struct platform_device *pdev)
 {

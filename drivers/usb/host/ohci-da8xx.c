@@ -266,6 +266,15 @@ static const struct hc_driver ohci_da8xx_hc_driver = {
 
 /*-------------------------------------------------------------------------*/
 
+struct da8xx_ohci_root_hub *ohci_da8xx_of_create_hub(struct device *dev)
+{
+	struct device_node *node = dev->of_node;
+
+	if (!node)
+		return ERR_PTR(-ENODEV);
+
+	return ERR_PTR(-ENODEV);
+}
 
 /**
  * usb_hcd_da8xx_probe - initialize DA8xx-based HCDs
@@ -278,13 +287,15 @@ static const struct hc_driver ohci_da8xx_hc_driver = {
 static int usb_hcd_da8xx_probe(const struct hc_driver *driver,
 			       struct platform_device *pdev)
 {
-	struct da8xx_ohci_root_hub *hub	= dev_get_platdata(&pdev->dev);
+	struct da8xx_ohci_root_hub *hub = dev_get_platdata(&pdev->dev);
 	struct usb_hcd	*hcd;
 	struct resource *mem;
 	int error, irq;
 
-	if (hub == NULL)
-		return -ENODEV;
+	if (!hub)
+		hub = ohci_da8xx_of_create_hub(&pdev->dev);
+	if (IS_ERR(hub))
+		return PTR_ERR(hub);
 
 	usb11_clk = devm_clk_get(&pdev->dev, "usb11");
 	if (IS_ERR(usb11_clk))
@@ -414,6 +425,13 @@ static int ohci_da8xx_resume(struct platform_device *dev)
 }
 #endif
 
+static const struct of_device_id ohci_da8xx_dt_ids[] = {
+	{ .compatible = "ti,da8xx-ohci" },
+	{ }
+};
+
+MODULE_DEVICE_TABLE(of, ohci_da8xx_dt_ids);
+
 /*
  * Driver definition to register with platform structure.
  */
@@ -427,6 +445,7 @@ static struct platform_driver ohci_hcd_da8xx_driver = {
 #endif
 	.driver		= {
 		.name	= "ohci",
+		.of_match_table = ohci_da8xx_dt_ids,
 	},
 };
 

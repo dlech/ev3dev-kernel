@@ -138,6 +138,13 @@ config POWER_RESET_XGENE
 	help
 	  Reboot support for the APM SoC X-Gene Eval boards.
 
+config POWER_RESET_DAVINCI
+	bool "DaVinci reset driver"
+	depends on ARCH_DAVINCI
+	select MFD_SYSCON
+	help
+	  Reboot support for the DaVinci SoCs.
+
 config POWER_RESET_KEYSTONE
 	bool "Keystone reset driver"
 	depends on ARCH_KEYSTONE
