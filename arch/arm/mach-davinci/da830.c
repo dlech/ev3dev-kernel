@@ -12,6 +12,7 @@
 #include <linux/init.h>
 #include <linux/clk.h>
 #include <linux/platform_data/gpio-davinci.h>
+#include <linux/platform_data/usb-davinci.h>
 
 #include <asm/mach/map.h>
 
@@ -353,6 +354,48 @@ static struct clk usb11_clk = {
 	.gpsc		= 1,
 };
 
+static void usb11_48_clk_enable(struct clk *clk)
+{
+	u32 val;
+
+	val = readl(DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP2_REG));
+	/*
+	 * If USB 1.1 reference clock is sourced from USB 2.0 PHY, we
+	 * need to enable the USB 2.0 module clocking, start its PHY,
+	 * and not allow it to stop the clock during USB 2.0 suspend.
+	 */
+	if (!(val & CFGCHIP2_USB1PHYCLKMUX)) {
+		val &= ~(CFGCHIP2_RESET | CFGCHIP2_PHYPWRDN);
+		val |= CFGCHIP2_PHY_PLLON;
+		writel(val, DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP2_REG));
+
+		pr_info("Waiting for USB PHY clock good...\n");
+		while (!(readl(DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP2_REG))
+							 & CFGCHIP2_PHYCLKGD))
+			cpu_relax();
+	}
+
+	/* Enable USB 1.1 PHY */
+	val |= CFGCHIP2_USB1SUSPENDM;
+	writel(val, DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP2_REG));
+}
+
+static void usb11_48_clk_disable(struct clk *clk)
+{
+	u32 val;
+
+	val = readl(DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP2_REG));
+	/* Disable USB 1.1 PHY */
+	val &= ~CFGCHIP2_USB1SUSPENDM;
+	writel(val, DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP2_REG));
+}
+
+static struct clk usb11_48_clk = {
+	.name		= "usb11_48",
+	.parent		= &usb20_clk,
+	.clk_enable	= usb11_48_clk_enable,
+	.clk_disable	= usb11_48_clk_disable,
+};
 
 static struct clk emif3_clk = {
 	.name		= "emif3",
@@ -422,6 +465,7 @@ static struct clk_lookup da830_clks[] = {
 	CLK(NULL,		"gpio",		&gpio_clk),
 	CLK("i2c_davinci.2",	NULL,		&i2c1_clk),
 	CLK(NULL,		"usb11",	&usb11_clk),
+	CLK(NULL,		"usb11_48",	&usb11_48_clk),
 	CLK(NULL,		"emif3",	&emif3_clk),
 	CLK(NULL,		"arm",		&arm_clk),
 	CLK(NULL,		"rmii",		&rmii_clk),
