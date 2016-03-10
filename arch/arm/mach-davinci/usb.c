@@ -148,6 +148,11 @@ static struct resource da8xx_usb11_resources[] = {
 		.flags	= IORESOURCE_MEM,
 	},
 	[1] = {
+		.start	= DA8XX_SYSCFG0_BASE + DA8XX_CFGCHIP2_REG,
+		.end	= DA8XX_SYSCFG0_BASE + DA8XX_CFGCHIP2_REG + 4 - 1,
+		.flags	= IORESOURCE_MEM,
+	},
+	[2] = {
 		.start	= IRQ_DA8XX_IRQN,
 		.end	= IRQ_DA8XX_IRQN,
 		.flags	= IORESOURCE_IRQ,
