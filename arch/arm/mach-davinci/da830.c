@@ -353,6 +353,7 @@ static struct clk usb11_clk = {
 	.gpsc		= 1,
 };
 
+
 static struct clk emif3_clk = {
 	.name		= "emif3",
 	.parent		= &pll0_sysclk5,
