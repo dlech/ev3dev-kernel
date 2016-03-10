@@ -22,11 +22,38 @@
 #error "This file is DA8xx bus glue.  Define CONFIG_ARCH_DAVINCI_DA8XX."
 #endif
 
+#define USB1SUSPENDM	(1 << 7)
+
 static struct clk *usb11_clk;
 static struct clk *usb11_48_clk;
+static __iomem u32 *cfgchip2;
 
 /* Over-current indicator change bitmask */
 static volatile u16 ocic_mask;
+
+static void ohci_da8xx_enable(void)
+{
+	u32 val;
+
+	clk_prepare_enable(usb11_clk);
+	clk_prepare_enable(usb11_48_clk);
+
+	val = __raw_readl(cfgchip2);
+	val |= USB1SUSPENDM;
+	__raw_writel(val, cfgchip2);
+}
+
+static void ohci_da8xx_disable(void)
+{
+	u32 val;
+
+	val = __raw_readl(cfgchip2);
+	val &= ~USB1SUSPENDM;
+	__raw_writel(val, cfgchip2);
+
+	clk_disable_unprepare(usb11_48_clk);
+	clk_disable_unprepare(usb11_clk);
+}
 
 /*
  * Handle the port over-current indicator change.
@@ -51,8 +78,7 @@ static int ohci_da8xx_init(struct usb_hcd *hcd)
 
 	dev_dbg(dev, "starting USB controller\n");
 
-	clk_enable(usb11_clk);
-	clk_enable(usb11_48_clk);
+	ohci_da8xx_enable();
 
 	/*
 	 * DA8xx only have 1 port connected to the pins but the HC root hub
@@ -89,8 +115,7 @@ static int ohci_da8xx_init(struct usb_hcd *hcd)
 static void ohci_da8xx_stop(struct usb_hcd *hcd)
 {
 	ohci_stop(hcd);
-	clk_disable(usb11_48_clk);
-	clk_disable(usb11_clk);
+	ohci_da8xx_disable();
 }
 
 static int ohci_da8xx_start(struct usb_hcd *hcd)
@@ -277,10 +302,19 @@ static int usb_hcd_da8xx_probe(const struct hc_driver *driver,
 	hcd->regs = devm_ioremap_resource(&pdev->dev, mem);
 	if (IS_ERR(hcd->regs)) {
 		error = PTR_ERR(hcd->regs);
+		dev_err(&pdev->dev, "failed to map ohci.\n");
 		goto err;
 	}
 	hcd->rsrc_start = mem->start;
 	hcd->rsrc_len = resource_size(mem);
+
+	mem = platform_get_resource(pdev, IORESOURCE_MEM, 1);
+	cfgchip2 = devm_ioremap_resource(&pdev->dev, mem);
+	if (IS_ERR(cfgchip2)) {
+		error = PTR_ERR(cfgchip2);
+		dev_err(&pdev->dev, "failed to map cfgchip2.\n");
+		goto err;
+	}
 
 	ohci_hcd_init(hcd_to_ohci(hcd));
 
@@ -358,8 +392,7 @@ static int ohci_da8xx_suspend(struct platform_device *pdev,
 	if (ret)
 		return ret;
 
-	clk_disable(usb11_48_clk);
-	clk_disable(usb11_clk);
+	ohci_da8xx_disable();
 	hcd->state = HC_STATE_SUSPENDED;
 
 	return ret;
@@ -374,8 +407,7 @@ static int ohci_da8xx_resume(struct platform_device *dev)
 		msleep(5);
 	ohci->next_statechange = jiffies;
 
-	clk_enable(usb11_clk);
-	clk_enable(usb11_48_clk);
+	ohci_da8xx_enable();
 	dev->dev.power.power_state = PMSG_ON;
 	usb_hcd_resume_root_hub(hcd);
 	return 0;
