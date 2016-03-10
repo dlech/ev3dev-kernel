@@ -12,6 +12,7 @@
 #include <linux/init.h>
 #include <linux/clk.h>
 #include <linux/platform_data/gpio-davinci.h>
+#include <linux/platform_data/usb-davinci.h>
 
 #include <asm/mach/map.h>
 
@@ -346,11 +347,150 @@ static struct clk i2c1_clk = {
 	.gpsc		= 1,
 };
 
+static struct clk usb_ref_clk = {
+	.name		= "usb_ref_clk",
+	.rate		= 48000000,
+	.set_rate	= davinci_simple_set_rate,
+};
+
 static struct clk usb11_clk = {
 	.name		= "usb11",
 	.parent		= &pll0_sysclk4,
 	.lpsc		= DA8XX_LPSC1_USB11,
 	.gpsc		= 1,
+};
+
+static void usb20_phy_clk_enable(struct clk *clk)
+{
+	u32 val;
+
+	val = readl(DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP2_REG));
+
+	/*
+	 * Turn on the USB 2.0 PHY, but just the PLL, and not OTG. The USB 1.1
+	 * host may use the PLL clock without USB 2.0 OTG being used.
+	 */
+	val &= ~(CFGCHIP2_RESET | CFGCHIP2_PHYPWRDN);
+	val |= CFGCHIP2_PHY_PLLON;
+
+	writel(val, DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP2_REG));
+
+	pr_info("Waiting for USB 2.0 PHY clock good...\n");
+	while (!(readl(DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP2_REG))
+						& CFGCHIP2_PHYCLKGD))
+		cpu_relax();
+}
+
+static void usb20_phy_clk_disable(struct clk *clk)
+{
+	u32 val;
+
+	val = readl(DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP2_REG));
+	val |= CFGCHIP2_PHYPWRDN;
+	writel(val, DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP2_REG));
+}
+
+static int usb20_phy_clk_set_parent(struct clk *clk, struct clk *parent)
+{
+	u32 __iomem *cfgchip2;
+	u32 val;
+
+	/*
+	 * Can't use DA8XX_SYSCFG0_VIRT() here since this can be called before
+	 * da8xx_syscfg0_base is initialized.
+	 */
+	cfgchip2 = ioremap(DA8XX_SYSCFG0_BASE + DA8XX_CFGCHIP2_REG, 4);
+	val = readl(cfgchip2);
+
+	/* Set the mux depending on the parent clock. */
+	if (parent == &pll0_aux_clk)
+		val |= CFGCHIP2_USB2PHYCLKMUX;
+	else if (parent == &usb_ref_clk)
+		val &= ~CFGCHIP2_USB2PHYCLKMUX;
+	else {
+		pr_err("Bad parent on USB 2.0 PHY clock.\n");
+		return -EINVAL;
+	}
+
+	/* reference frequency also comes from parent clock */
+	val &= ~CFGCHIP2_REFFREQ;
+	switch (clk_get_rate(parent)) {
+	case 12000000:
+		val |= CFGCHIP2_REFFREQ_12MHZ;
+		break;
+	case 13000000:
+		val |= CFGCHIP2_REFFREQ_13MHZ;
+		break;
+	case 19200000:
+		val |= CFGCHIP2_REFFREQ_19_2MHZ;
+		break;
+	case 20000000:
+		val |= CFGCHIP2_REFFREQ_20MHZ;
+		break;
+	case 24000000:
+		val |= CFGCHIP2_REFFREQ_24MHZ;
+		break;
+	case 26000000:
+		val |= CFGCHIP2_REFFREQ_26MHZ;
+		break;
+	case 38400000:
+		val |= CFGCHIP2_REFFREQ_38_4MHZ;
+		break;
+	case 40000000:
+		val |= CFGCHIP2_REFFREQ_40MHZ;
+		break;
+	case 48000000:
+		val |= CFGCHIP2_REFFREQ_48MHZ;
+		break;
+	default:
+		pr_err("Bad parent clock rate on USB 2.0 PHY clock.\n");
+		return -EINVAL;
+	}
+
+	writel(val, cfgchip2);
+
+	return 0;
+}
+
+static struct clk usb20_phy_clk = {
+	.name		= "usb20_phy",
+	.parent		= &pll0_aux_clk,
+	.clk_enable	= usb20_phy_clk_enable,
+	.clk_disable	= usb20_phy_clk_disable,
+	.set_parent	= usb20_phy_clk_set_parent,
+};
+
+static int usb11_phy_clk_set_parent(struct clk *clk, struct clk *parent)
+{
+	u32 __iomem *cfgchip2;
+	u32 val;
+
+	/*
+	 * Can't use DA8XX_SYSCFG0_VIRT() here since this can be called before
+	 * da8xx_syscfg0_base is initialized.
+	 */
+	cfgchip2 = ioremap(DA8XX_SYSCFG0_BASE + DA8XX_CFGCHIP2_REG, 4);
+	val = readl(cfgchip2);
+
+	/* Set the USB 1.1 PHY clock mux based on the parent clock. */
+	if (parent == &usb20_phy_clk)
+		val &= ~CFGCHIP2_USB1PHYCLKMUX;
+	else if (parent == &usb_ref_clk)
+		val |= CFGCHIP2_USB1PHYCLKMUX;
+	else {
+		pr_err("Bad parent on USB 1.1 PHY clock.\n");
+		return -EINVAL;
+	}
+
+	writel(val, cfgchip2);
+
+	return 0;
+}
+
+static struct clk usb11_phy_clk = {
+	.name		= "usb11_phy",
+	.parent		= &usb20_phy_clk,
+	.set_parent	= usb11_phy_clk_set_parent,
 };
 
 static struct clk emif3_clk = {
@@ -420,7 +560,10 @@ static struct clk_lookup da830_clks[] = {
 	CLK("davinci_mdio.0",   "fck",          &emac_clk),
 	CLK(NULL,		"gpio",		&gpio_clk),
 	CLK("i2c_davinci.2",	NULL,		&i2c1_clk),
+	CLK(NULL,		"usb_ref_clk",	&usb_ref_clk),
 	CLK(NULL,		"usb11",	&usb11_clk),
+	CLK(NULL,		"usb20_phy",	&usb20_phy_clk),
+	CLK(NULL,		"usb11_phy",	&usb11_phy_clk),
 	CLK(NULL,		"emif3",	&emif3_clk),
 	CLK(NULL,		"arm",		&arm_clk),
 	CLK(NULL,		"rmii",		&rmii_clk),
