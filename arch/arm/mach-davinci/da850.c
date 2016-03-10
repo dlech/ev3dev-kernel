@@ -368,20 +368,11 @@ static void usb11_48_clk_enable(struct clk *clk)
 							 & CFGCHIP2_PHYCLKGD))
 			cpu_relax();
 	}
-
-	/* Enable USB 1.1 PHY */
-	val |= CFGCHIP2_USB1SUSPENDM;
-	writel(val, DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP2_REG));
 }
 
 static void usb11_48_clk_disable(struct clk *clk)
 {
-	u32 val;
-
-	val = readl(DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP2_REG));
-	/* Disable USB 1.1 PHY */
-	val &= ~CFGCHIP2_USB1SUSPENDM;
-	writel(val, DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP2_REG));
+	/* TODO: If USB 2.0 is not otherwise used, it can be shut down here. */
 }
 
 static struct clk usb11_48_clk = {
