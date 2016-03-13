@@ -14,6 +14,8 @@
 #include <linux/console.h>
 #include <linux/gpio.h>
 #include <linux/platform_data/gpio-davinci.h>
+#include <linux/regulator/fixed.h>
+#include <linux/regulator/machine.h>
 
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
@@ -180,65 +182,38 @@ mmc_setup_wp_fail:
 	gpio_free(DA850_HAWK_MMCSD_CD_PIN);
 }
 
-static irqreturn_t omapl138_hawk_usb_ocic_irq(int irq, void *dev_id);
-static da8xx_ocic_handler_t hawk_usb_ocic_handler;
-
 static const short da850_hawk_usb11_pins[] = {
 	DA850_GPIO2_4, DA850_GPIO6_13,
 	-1
 };
 
-static int hawk_usb_set_power(unsigned port, int on)
-{
-	gpio_set_value(DA850_USB1_VBUS_PIN, on);
-	return 0;
-}
+static struct regulator_consumer_supply da850_hawk_usb_regulator_consumer =
+	REGULATOR_SUPPLY("vbus", "ohci");
 
-static int hawk_usb_get_power(unsigned port)
-{
-	return gpio_get_value(DA850_USB1_VBUS_PIN);
-}
-
-static int hawk_usb_get_oci(unsigned port)
-{
-	return !gpio_get_value(DA850_USB1_OC_PIN);
-}
-
-static int hawk_usb_ocic_notify(da8xx_ocic_handler_t handler)
-{
-	int irq         = gpio_to_irq(DA850_USB1_OC_PIN);
-	int error       = 0;
-
-	if (handler != NULL) {
-		hawk_usb_ocic_handler = handler;
-
-		error = request_irq(irq, omapl138_hawk_usb_ocic_irq,
-					IRQF_TRIGGER_RISING |
-					IRQF_TRIGGER_FALLING,
-					"OHCI over-current indicator", NULL);
-		if (error)
-			pr_err("%s: could not request IRQ to watch "
-				"over-current indicator changes\n", __func__);
-	} else {
-		free_irq(irq, NULL);
-	}
-	return error;
-}
-
-static struct da8xx_ohci_root_hub omapl138_hawk_usb11_pdata = {
-	.set_power      = hawk_usb_set_power,
-	.get_power      = hawk_usb_get_power,
-	.get_oci        = hawk_usb_get_oci,
-	.ocic_notify    = hawk_usb_ocic_notify,
-	/* TPS2087 switch @ 5V */
-	.potpgt         = (3 + 1) / 2,  /* 3 ms max */
+static struct regulator_init_data da850_hawk_usb_regulator_init_data = {
+	.constraints = {
+		.valid_ops_mask	= REGULATOR_CHANGE_STATUS,
+	},
+	.consumer_supplies	= &da850_hawk_usb_regulator_consumer,
+	.num_consumer_supplies	= 1,
 };
 
-static irqreturn_t omapl138_hawk_usb_ocic_irq(int irq, void *dev_id)
-{
-	hawk_usb_ocic_handler(&omapl138_hawk_usb11_pdata, 1);
-	return IRQ_HANDLED;
-}
+static struct fixed_voltage_config da850_hawk_usb_regulator_pdata = {
+	.supply_name	= "vbus",
+	.microvolts	= 5000000, /* 5V */
+	.gpio		= DA850_USB1_VBUS_PIN,
+	.startup_delay	= 3000, /* 3ms */
+	.enable_high	= 1,
+	.init_data	= &da850_hawk_usb_regulator_init_data,
+};
+
+static struct platform_device da850_hawk_usb_regulator = {
+	.name = "reg-fixed-voltage",
+	.id = PLATFORM_DEVID_AUTO,
+	.dev = {
+		.platform_data = &da850_hawk_usb_regulator_pdata,
+	},
+};
 
 static __init void omapl138_hawk_usb_init(void)
 {
@@ -269,23 +244,21 @@ static __init void omapl138_hawk_usb_init(void)
 		pr_warn("%s: USB PHY registration failed: %d\n",
 			__func__, ret);
 
-	ret = gpio_request_one(DA850_USB1_VBUS_PIN,
-			GPIOF_DIR_OUT, "USB1 VBUS");
-	if (ret < 0) {
-		pr_err("%s: failed to request GPIO for USB 1.1 port "
-			"power control: %d\n", __func__, ret);
-		return;
-	}
+	/* Initialize vbus regulator */
+	ret = platform_device_register(&da850_hawk_usb_regulator);
+	if (ret)
+		pr_warn("%s: VBUS regulator registration failed: %d\n",
+			__func__, ret);
 
 	ret = gpio_request_one(DA850_USB1_OC_PIN,
 			GPIOF_DIR_IN, "USB1 OC");
 	if (ret < 0) {
 		pr_err("%s: failed to request GPIO for USB 1.1 port "
 			"over-current indicator: %d\n", __func__, ret);
-		goto usb11_setup_oc_fail;
+		return;
 	}
 
-	ret = da8xx_register_usb11(&omapl138_hawk_usb11_pdata);
+	ret = da8xx_register_usb11();
 	if (ret) {
 		pr_warn("%s: USB 1.1 registration failed: %d\n", __func__, ret);
 		goto usb11_setup_fail;
@@ -295,8 +268,6 @@ static __init void omapl138_hawk_usb_init(void)
 
 usb11_setup_fail:
 	gpio_free(DA850_USB1_OC_PIN);
-usb11_setup_oc_fail:
-	gpio_free(DA850_USB1_VBUS_PIN);
 }
 
 static __init void omapl138_hawk_init(void)

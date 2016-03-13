@@ -335,6 +335,14 @@
 			reg = <0x14184 4>;
 			status = "disabled";
 		};
+		usb11: usb11@225000 {
+			compatible = "ti,ohci-da8xx";
+			reg = <0x225000 0x1000>;
+			interrupts = <59>;
+			phys = <&usbphy 1>;
+			phy-names = "usbphy";
+			status = "disabled";
+		};
 		gpio: gpio@226000 {
 			compatible = "ti,dm6441-gpio";
 			gpio-controller;
