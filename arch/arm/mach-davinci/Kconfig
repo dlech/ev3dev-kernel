@@ -58,6 +58,8 @@ config MACH_DA8XX_DT
 	default y
 	depends on ARCH_DAVINCI_DA850
 	select PINCTRL
+	select COMMON_CLK if !DAVINCI_LEGACY_CLK
+	select COMMON_CLK_KEYSTONE if !DAVINCI_LEGACY_CLK
 	select CLKSRC_OF
 	help
 	  Say y here to include support for TI DaVinci DA850 based using
@@ -67,6 +69,7 @@ config MACH_DAVINCI_EVM
 	bool "TI DM644x EVM"
 	default ARCH_DAVINCI_DM644x
 	depends on ARCH_DAVINCI_DM644x
+	select DAVINCI_LEGACY_CLK
 	help
 	  Configure this option to specify the whether the board used
 	  for development is a DM644x EVM
@@ -74,6 +77,7 @@ config MACH_DAVINCI_EVM
 config MACH_SFFSDR
 	bool "Lyrtech SFFSDR"
 	depends on ARCH_DAVINCI_DM644x
+	select DAVINCI_LEGACY_CLK
 	help
 	  Say Y here to select the Lyrtech Small Form Factor
 	  Software Defined Radio (SFFSDR) board.
@@ -81,6 +85,7 @@ config MACH_SFFSDR
 config MACH_NEUROS_OSD2
 	bool "Neuros OSD2 Open Television Set Top Box"
 	depends on ARCH_DAVINCI_DM644x
+	select DAVINCI_LEGACY_CLK
 	help
 	  Configure this option to specify the whether the board used
 	  for development is a Neuros OSD2 Open Set Top Box.
@@ -89,6 +94,7 @@ config MACH_DAVINCI_DM355_EVM
 	bool "TI DM355 EVM"
 	default ARCH_DAVINCI_DM355
 	depends on ARCH_DAVINCI_DM355
+	select DAVINCI_LEGACY_CLK
 	help
 	  Configure this option to specify the whether the board used
 	  for development is a DM355 EVM
@@ -96,6 +102,7 @@ config MACH_DAVINCI_DM355_EVM
 config MACH_DM355_LEOPARD
 	bool "DM355 Leopard board"
 	depends on ARCH_DAVINCI_DM355
+	select DAVINCI_LEGACY_CLK
 	help
 	  Configure this option to specify the whether the board used
 	  for development is a DM355 Leopard board.
@@ -105,6 +112,7 @@ config MACH_DAVINCI_DM6467_EVM
 	default ARCH_DAVINCI_DM646x
 	depends on ARCH_DAVINCI_DM646x
 	select MACH_DAVINCI_DM6467TEVM
+	select DAVINCI_LEGACY_CLK
 	help
 	  Configure this option to specify the whether the board used
 	  for development is a DM6467 EVM
@@ -116,6 +124,7 @@ config MACH_DAVINCI_DM365_EVM
 	bool "TI DM365 EVM"
 	default ARCH_DAVINCI_DM365
 	depends on ARCH_DAVINCI_DM365
+	select DAVINCI_LEGACY_CLK
 	help
 	  Configure this option to specify whether the board used
 	  for development is a DM365 EVM
@@ -125,6 +134,7 @@ config MACH_DAVINCI_DA830_EVM
 	default ARCH_DAVINCI_DA830
 	depends on ARCH_DAVINCI_DA830
 	select GPIO_PCF857X if I2C
+	select DAVINCI_LEGACY_CLK
 	help
 	  Say Y here to select the TI DA830/OMAP-L137/AM17x Evaluation Module.
 
@@ -154,6 +164,7 @@ config MACH_DAVINCI_DA850_EVM
 	bool "TI DA850/OMAP-L138/AM18x Reference Platform"
 	default ARCH_DAVINCI_DA850
 	depends on ARCH_DAVINCI_DA850
+	select DAVINCI_LEGACY_CLK
 	help
 	  Say Y here to select the TI DA850/OMAP-L138/AM18x Evaluation Module.
 
@@ -193,6 +204,7 @@ endchoice
 config MACH_MITYOMAPL138
 	bool "Critical Link MityDSP-L138/MityARM-1808 SoM"
 	depends on ARCH_DAVINCI_DA850
+	select DAVINCI_LEGACY_CLK
 	help
 	  Say Y here to select the Critical Link MityDSP-L138/MityARM-1808
 	  System on Module.  Information on this SoM may be found at
@@ -201,6 +213,7 @@ config MACH_MITYOMAPL138
 config MACH_OMAPL138_HAWKBOARD
 	bool "TI AM1808 / OMAPL-138 Hawkboard platform"
 	depends on ARCH_DAVINCI_DA850
+	select DAVINCI_LEGACY_CLK
 	help
 	  Say Y here to select the TI AM1808 / OMAPL-138 Hawkboard platform .
 	  Information of this board may be found at
@@ -231,9 +244,16 @@ config DAVINCI_MUX_WARNINGS
 	  to change the pin multiplexing setup. When there are no warnings
 	  printed, it's safe to deselect DAVINCI_MUX for your product.
 
+config DAVINCI_LEGACY_CLK
+	bool "Legacy clocks for non-DT boards"
+	depends on ARCH_DAVINCI
+	help
+	  Choose Y here to use the legacy clock drivers in arch/arm/mach-davinci.
+	  This is only for boards that have not been ported to device tree yet.
+
 config DAVINCI_RESET_CLOCKS
 	bool "Reset unused clocks during boot"
-	depends on ARCH_DAVINCI
+	depends on DAVINCI_LEGACY_CLK
 	help
 	  Say Y if you want to reset unused clocks during boot.
 	  This option saves power, but assumes all drivers are
