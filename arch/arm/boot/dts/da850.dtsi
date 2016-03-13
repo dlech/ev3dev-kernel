@@ -303,6 +303,13 @@
 					>;
 			status = "disabled";
 		};
+		usb11: usb11@1e25000 {
+			compatible = "ti,ohci-da8xx";
+			reg = <0x225000 0x1000>, <0x14184 4>;
+			reg-names = "ohci", "cfgchip2";
+			interrupts = <59>;
+			status = "disabled";
+		};
 		gpio: gpio@1e26000 {
 			compatible = "ti,dm6441-gpio";
 			gpio-controller;
