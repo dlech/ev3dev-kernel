@@ -209,6 +209,12 @@ static int _regulator_can_change_status(struct regulator_dev *rdev)
 		return 0;
 }
 
+int regulator_can_change_status(struct regulator *regulator)
+{
+	return _regulator_can_change_status(regulator->rdev);
+}
+EXPORT_SYMBOL_GPL(regulator_can_change_status);
+
 /* Platform voltage constraint check */
 static int regulator_check_voltage(struct regulator_dev *rdev,
 				   int *min_uV, int *max_uV)
@@ -1356,6 +1362,12 @@ static int _regulator_get_enable_time(struct regulator_dev *rdev)
 	return rdev->desc->ops->enable_time(rdev);
 }
 
+int regulator_get_enable_time(struct regulator *regulator)
+{
+	return _regulator_get_enable_time(regulator->rdev);
+}
+EXPORT_SYMBOL_GPL(regulator_get_enable_time);
+
 static struct regulator_supply_alias *regulator_find_supply_alias(
 		struct device *dev, const char *supply)
 {
@@ -2475,6 +2487,21 @@ int regulator_is_enabled(struct regulator *regulator)
 	return ret;
 }
 EXPORT_SYMBOL_GPL(regulator_is_enabled);
+
+int regulator_is_overcurrent(struct regulator *regulator)
+{
+	int ret;
+
+	if (!regulator->rdev->desc->ops->get_status)
+		return 0;
+
+	mutex_lock(&regulator->rdev->mutex);
+	ret = regulator->rdev->desc->ops->get_status(regulator->rdev);
+	mutex_unlock(&regulator->rdev->mutex);
+
+	return ret == REGULATOR_STATUS_ERROR;
+}
+EXPORT_SYMBOL_GPL(regulator_is_overcurrent);
 
 /**
  * regulator_can_change_voltage - check if regulator can change voltage
