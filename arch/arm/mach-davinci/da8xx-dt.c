@@ -18,6 +18,7 @@
 #include "cp_intc.h"
 #include <mach/da8xx.h>
 
+#ifdef CONFIG_DAVINCI_LEGACY_CLK
 static struct of_dev_auxdata da850_auxdata_lookup[] __initdata = {
 	OF_DEV_AUXDATA("ti,davinci-i2c", 0x01c22000, "i2c_davinci.1", NULL),
 	OF_DEV_AUXDATA("ti,davinci-i2c", 0x01e28000, "i2c_davinci.2", NULL),
@@ -39,6 +40,9 @@ static struct of_dev_auxdata da850_auxdata_lookup[] __initdata = {
 	OF_DEV_AUXDATA("ti,da830-mcasp-audio", 0x01d00000, "davinci-mcasp.0", NULL),
 	{}
 };
+#else
+#define da850_auxdata_lookup NULL
+#endif
 
 #ifdef CONFIG_ARCH_DAVINCI_DA850
 
