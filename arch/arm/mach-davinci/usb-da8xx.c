@@ -20,6 +20,8 @@
 #define DA8XX_USB0_BASE		0x01e00000
 #define DA8XX_USB1_BASE		0x01e25000
 
+#ifdef CONFIG_DAVINCI_LEGACY_CLK
+
 static struct clk usb_refclkin = {
 	.name		= "usb_refclkin",
 	.set_rate	= davinci_simple_set_rate,
@@ -230,6 +232,8 @@ int __init da8xx_register_usb11_phy_clk(bool use_usb_refclkin)
 
 	return ret;
 }
+
+#endif
 
 static struct platform_device da8xx_usb_phy = {
 	.name		= "da8xx-usb-phy",
