@@ -15,6 +15,13 @@
 	model = "DA850/AM1808/OMAP-L138 EVM";
 
 	soc@1c00000 {
+		clocks {
+			oscin: oscin {
+				#clock-cells = <0>;
+				compatible = "fixed-clock";
+				clock-frequency = <24000000>;
+			};
+		};
 		pmx_core: pinmux@14120 {
 			status = "okay";
 

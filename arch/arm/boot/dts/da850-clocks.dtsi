@@ -1,0 +1,268 @@
+/*
+ * Copyright (C) 2016 David Lechner <david@lechnology.com>
+ *
+ * This program is free software; you can redistribute  it and/or modify it
+ * under  the terms of  the GNU General  Public License as published by the
+ * Free Software Foundation;  either version 2 of the  License, or (at your
+ * option) any later version.
+ */
+
+clocks {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	ranges;
+
+	/* fixed clocks */
+
+	usb_refclk: usb_refclkin {
+		#clock-cells = <0>;
+		compatible = "fixed-clock";
+		clock-frequency = <48000000>;
+	};
+
+	/* CFGCHIP */
+
+	ehrpwm_tbclk: ehrpwm_tbclk {
+		#clock-cells = <0>;
+		compatible = "ti,da830-cfgchip-clk-gate";
+		clocks = <&psc1 17>;
+		clock-output-names = "ehrpwm_tbclk";
+		ti,cfgchip = <1>;
+		bit-shift = <12>;
+	};
+
+	usb20_clk_mux: usb0phyclkmux {
+		#clock-cells = <0>;
+		compatible = "ti,da830-cfgchip-clk-usb0";
+		clocks = <&usb_refclk>, <&pll0_aux_clk>;
+		clock-output-names = "usb0phyclkmux";
+		ti,cfgchip = <2>;
+		bit-shift = <11>;
+	};
+
+	usb11_clk_mux: usb1phyclkmux {
+		#clock-cells = <0>;
+		compatible = "ti,da830-cfgchip-clk-mux";
+		clocks = <&usb20_clk_mux>, <&usb_refclk>;
+		clock-output-names = "usb1phyclkmux";
+		ti,cfgchip = <2>;
+		bit-shift = <12>;
+	};
+
+	async3: async3_clksrc {
+		#clock-cells = <0>;
+		compatible = "ti,da830-cfgchip-clk-mux";
+		clocks = <&pll0_sysclk2>, <&pll1_sysclk2>;
+		clock-output-names = "async3";
+		ti,cfgchip = <3>;
+		bit-shift = <4>;
+		assigned-clocks = <&async3>;
+		assigned-clock-parents = <&pll1_sysclk2>;
+	};
+
+	/* PLL0 */
+
+	pll0: pll0@11114 {
+		#clock-cells = <0>;
+		compatible = "ti,davinci,pll-clock";
+		clocks = <&oscin>;
+		clock-output-names = "pll0";
+		reg = <0x11114 4>, <0x11110 4>, <0x11128 4>;
+		reg-names = "pre-divider", "multiplier", "post-divider";
+	};
+
+	pll0_ext_mux: pll0_extclksrc@11100 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,pll-mux-clock";
+		clocks = <&oscin>, <&pll1_sysclk3>;
+		clock-output-names = "pll0_extclksrc";
+		reg = <0x11100 4>;
+		bit-shift = <9>;
+		bit-mask = <1>;
+		assigned-clocks = <&pll0_ext_mux>;
+		assigned-clock-parents = <&oscin>;
+	};
+
+	pll0_mux: pll0_pllen@11100 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,pll-mux-clock";
+		clocks = <&pll0_ext_mux>, <&pll0>;
+		clock-output-names = "pll0_pllen";
+		reg = <0x11100 4>;
+		bit-shift = <0>;
+		bit-mask = <1>;
+		assigned-clocks = <&pll0_mux>;
+		assigned-clock-parents = <&pll0>;
+	};
+
+	pll0_aux_clk: pll0_aux {
+		#clock-cells = <0>;
+		compatible = "fixed-factor-clock";
+		clocks = <&oscin>;
+		clock-div = <1>;
+		clock-mult = <1>;
+	};
+
+	i2c0_clk: i2c0 {
+		#clock-cells = <0>;
+		compatible = "fixed-factor-clock";
+		clocks = <&pll0_aux_clk>;
+		clock-output-names = "i2c0";
+		clock-div = <1>;
+		clock-mult = <1>;
+	};
+
+	timer0_clk: timer0 {
+		#clock-cells = <0>;
+		compatible = "fixed-factor-clock";
+		clocks = <&pll0_aux_clk>;
+		clock-output-names = "timer0";
+		clock-div = <1>;
+		clock-mult = <1>;
+	};
+
+	timer1_clk: timer1 {
+		#clock-cells = <0>;
+		compatible = "fixed-factor-clock";
+		clocks = <&pll0_aux_clk>;
+		clock-output-names = "timer1";
+		clock-mult = <1>;
+		clock-div = <1>;
+	};
+
+	pll0_sysclk1: pll0_sysclk1@11118 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,pll-divider-clock";
+		clocks = <&pll0_mux>;
+		reg = <0x11118 4>;
+		bit-shift = <0>;
+		bit-mask = <5>;
+	};
+
+	pll0_sysclk2: pll0_sysclk2@1111c {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,pll-divider-clock";
+		clocks = <&pll0_mux>;
+		reg = <0x1111c 4>;
+		bit-shift = <0>;
+		bit-mask = <5>;
+	};
+
+	pll0_sysclk3: pll0_sysclk3@11120 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,pll-divider-clock";
+		clocks = <&pll0_mux>;
+		reg = <0x11120 4>;
+		bit-shift = <0>;
+		bit-mask = <5>;
+	};
+
+	pll0_sysclk4: pll0_sysclk4@11160 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,pll-divider-clock";
+		clocks = <&pll0_mux>;
+		reg = <0x11160 4>;
+		bit-shift = <0>;
+		bit-mask = <5>;
+	};
+
+	/* PLL1 */
+
+	pll1: pll1@21a110 {
+		#clock-cells = <0>;
+		compatible = "ti,davinci,pll-clock";
+		clocks = <&oscin>;
+		reg = <0x21a110 4>, <0x21a128 4>;
+		reg-names = "multiplier", "post-divider";
+	};
+
+	pll1_mux: pllen@21a100 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,pll-mux-clock";
+		clocks = <&oscin>, <&pll1>;
+		reg = <0x21a100 4>;
+		bit-shift = <0>;
+		bit-mask = <1>;
+		assigned-clocks = <&pll1_mux>;
+		assigned-clock-parents = <&pll1>;
+	};
+
+	pll1_sysclk1: sysclk1@21a118 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,pll-divider-clock";
+		clocks = <&pll1_mux>;
+		reg = <0x21a118 4>;
+		bit-shift = <0>;
+		bit-mask = <5>;
+	};
+
+	pll1_sysclk2: sysclk2@21a11c {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,pll-divider-clock";
+		clocks = <&pll1_mux>;
+		reg = <0x21a11c 4>;
+		bit-shift = <0>;
+		bit-mask = <5>;
+	};
+
+	pll1_sysclk3: sysclk3@21a120 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,pll-divider-clock";
+		clocks = <&pll1_mux>;
+		reg = <0x21a120 4>;
+		bit-shift = <0>;
+		bit-mask = <5>;
+	};
+
+	psc0: psc@10000 {
+		#clock-cells = <1>;
+		compatible = "ti,davinci-psc";
+		reg = <0x10000 0x1000>;
+		clocks = <&pll0_sysclk2>, <&pll0_sysclk2>, <&pll0_sysclk2>,
+			 <&pll0_sysclk3>, <&pll0_sysclk2>, <&pll0_sysclk2>,
+			 <&pll0_sysclk2>, <&pll0_sysclk2>, <&pll0_sysclk1>;
+		clock-output-names = "tpcc0", "tptc0", "tptc1",
+				     "aemif", "spi0", "mmcsd0",
+				     "uart0", "pruss", "dsp";
+		clock-indices = <0>, <1>, <2>,
+				<3>, <4>, <5>,
+				<9>, <13>, <15>;
+		ti,power-domains = <0>, <0>, <0>,
+				   <0>, <0>, <0>,
+				   <0>, <0>, <1>;
+	};
+
+	psc1: psc@227000 {
+		#clock-cells = <1>;
+		compatible = "ti,davinci-psc";
+		reg = <0x227000 0x1000>;
+		clocks = <&pll0_sysclk2>, <&pll0_sysclk2>, <&pll0_sysclk4>,
+			 <&pll0_sysclk4>, <&pll0_sysclk2>, <&pll0_sysclk4>,
+			 <&async3>, <&pll0_sysclk2>, <&pll0_sysclk2>,
+			 <&async3>, <&pll0_sysclk4>, <&async3>,
+			 <&async3>, <&async3>, <&async3>,
+			 <&pll0_sysclk2>, <&async3>, <&pll0_sysclk2>,
+			 <&pll0_sysclk2>, <&async3>, <&pll0_sysclk2>;
+		clock-output-names = "tpcc1", "usb20", "usb11",
+				     "gpio", "hpi", "emac",
+				     "mcasp0", "sata", "vpif",
+				     "spi1", "i2c1", "uart1",
+				     "uart2","mcbsp0", "mcbsp1",
+				     "lcdc", "ehrpwm", "mmcsd1",
+				     "upp", "ecap", "tptc2";
+		clock-indices = <0>, <1>, <2>,
+				<3>, <4>, <5>,
+				<7>, <8>, <9>,
+				<10>, <11>, <12>,
+				<13>, <14>, <15>,
+				<16>, <17>, <18>,
+				<19>, <20>, <21>;
+		ti,power-domains = <0>, <0>, <0>,
+				   <0>, <0>, <0>,
+				   <0>, <0>, <0>,
+				   <0>, <0>, <0>,
+				   <0>, <0>, <0>,
+				   <0>, <0>, <0>,
+				   <0>, <0>, <0>;
+	};
+};
