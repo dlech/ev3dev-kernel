@@ -6,17 +6,24 @@ and PAPLL are controlled by the memory mapped register where as the Main
 PLL is controlled by a PLL controller registers along with memory mapped
 registers.
 
+Binding is also used for davinci PLLs.
+
 This binding uses the common clock binding[1].
 
 [1] Documentation/devicetree/bindings/clock/clock-bindings.txt
 
 Required properties:
 - #clock-cells : from common clock binding; shall be set to 0.
-- compatible : shall be "ti,keystone,main-pll-clock" or "ti,keystone,pll-clock"
+- compatible : shall be "ti,keystone,main-pll-clock", "ti,keystone,pll-clock"
+		or "ti,davinci,pll-clock"
 - clocks : parent clock phandle
-- reg - pll control0 and pll multipler registers
-- reg-names : control, multiplier and post-divider. The multiplier and
-		post-divider registers are applicable only for main pll clock
+- reg - pll registers
+- reg-names : control, multiplier, pre-divider and post-divider.
+		"ti,keystone,main-pll-clock" requires control, multiplier and
+		post-divider. "ti,keystone,pll-clock" requires only control.
+		"ti,davinci,pll-clock" requires multiplier and post-divider and
+		optionally uses pre-divider. In all cases, post-divider is
+		omitted when using fixed-postdiv.
 - fixed-postdiv : fixed post divider value. If absent, use clkod register bits
 		for postdiv
 
@@ -27,7 +34,6 @@ Example:
 		clocks = <&refclksys>;
 		reg = <0x02620350 4>, <0x02310110 4>, <0x02310108 4>;
 		reg-names = "control", "multiplier", "post-divider";
-		fixed-postdiv = <2>;
 	};
 
 	papllclk: papllclk@2620358 {
@@ -37,7 +43,18 @@ Example:
 		clock-output-names = "pa-pll-clk";
 		reg = <0x02620358 4>;
 		reg-names = "control";
+		fixed-postdiv = <2>;
 	};
+
+	pll0: pll@1c10000 {
+		#clock-cells = <0>;
+		compatible = "ti,davinci,pll-clock";
+		clocks = <&oscin>;
+		clock-output-names = "pll0";
+		reg = <0x11114 4>, <0x11110 4>, <0x11128 4>;
+		reg-names = "pre-divider", "multiplier", "post-divider";
+	};
+
 
 Required properties:
 - #clock-cells : from common clock binding; shall be set to 0.
