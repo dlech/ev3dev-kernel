@@ -251,6 +251,9 @@ int regulator_get_hardware_vsel_register(struct regulator *regulator,
 					 unsigned *vsel_mask);
 int regulator_list_hardware_vsel(struct regulator *regulator,
 				 unsigned selector);
+int regulator_get_enable_time(struct regulator *regulator);
+int regulator_can_change_status(struct regulator *regulator);
+int regulator_is_overcurrent(struct regulator *regulator);
 
 /* regulator notifier block */
 int regulator_register_notifier(struct regulator *regulator,
@@ -557,6 +560,17 @@ static inline int regulator_count_voltages(struct regulator *regulator)
 static inline int regulator_list_voltage(struct regulator *regulator, unsigned selector)
 {
 	return -EINVAL;
+}
+
+
+static inline int regulator_can_change_status(struct regulator *regulator)
+{
+	return 0;
+}
+
+static inline int regulator_is_overcurrent(struct regulator *regulator)
+{
+	return 0;
 }
 
 #endif
