@@ -1,0 +1,30 @@
+* OHCI controller for DaVinci DA8XX
+
+This binding is subject to change.
+
+Required properties:
+- compatible: must be "ti,ohci-da8xx"
+- reg: physical base address of the controller and length of memory mapped
+  region at index 0 and the base address of the CFGCHIP2 register at index 1.
+- interrupts: The OHCI interrupt
+- vbus-supply: phandle of the associated VBUS supply. This regulator is used to
+               enable/disable VBUS and handle overcurrent.
+
+Example:
+
+	vbus_reg: vbus_reg {
+		compatible = "regulator-fixed";
+		regulator-name = "usb11-vbus-supply";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&gpio 101 GPIO_ACTIVE_LOW>;
+		enable-active-high;
+	};
+
+	usb11: usb11@1e25000 {
+		compatible = "ti,ohci-da8xx";
+		reg = <0x225000 0x1000>, <0x14184 4>;
+		reg-names = "ohci", "cfgchip2";
+		interrupts = <59>;
+		vbus-supply = <&vbus_reg>;
+	};
