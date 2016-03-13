@@ -18,24 +18,75 @@
 #include <linux/of.h>
 #include <linux/module.h>
 
+/*
+ * The pll portion of this driver supports several different register layouts.
+ * PLLD = pre-divider, PLLM = multiplier, CKLOD = post-divider
+ *
+ * The main/core pll on Keystone arch uses 3 different registers.
+ *
+ *  COREPLLCTRL0
+ * +----------------------------------------------------------------+
+ * |                          |18.........12|           |5.........0|
+ * +----------------------------------------------------------------+
+ *                            PLLM bits 12-6                 PLLD
+ *  SECCTL
+ * +----------------------------------------------------------------+
+ * |                  |22...19|                                     |
+ * +----------------------------------------------------------------+
+ *                      CLKOD
+ *  PLLM
+ * +----------------------------------------------------------------+
+ * |                                                    |5.........0|
+ * +----------------------------------------------------------------+
+ *                                                      PLLM bits 5-0
+ *
+ * Other plls on keystone arch cram everything into one register.
+ *
+ *  xPLLCTRL0
+ * +----------------------------------------------------------------+
+ * |                  |22...19|18......................6|5.........0|
+ * +----------------------------------------------------------------+
+ *                      CLKOD             PLLM               PLLD
+ *
+ * This driver is also used by Davinci arch. It uses 3 registers differently.
+ *
+ *  PLLM
+ * +----------------------------------------------------------------+
+ * |                                                    |5.........0|
+ * +----------------------------------------------------------------+
+ *                                                          PLLM
+ *
+ *  PREDIV (optional)
+ * +----------------------------------------------------------------+
+ * |                                                    |5.........0|
+ * +----------------------------------------------------------------+
+ *                                                          PLLD
+ *
+ *  POSTDIV
+ * +----------------------------------------------------------------+
+ * |                                                    |5.........0|
+ * +----------------------------------------------------------------+
+ *                                                          CLKOD
+ */
+
 #define PLLM_LOW_MASK		0x3f
 #define PLLM_HIGH_MASK		0x7ffc0
 #define MAIN_PLLM_HIGH_MASK	0x7f000
 #define PLLM_HIGH_SHIFT		6
 #define PLLD_MASK		0x3f
-#define CLKOD_MASK		0x780000
-#define CLKOD_SHIFT		19
+#define CLKOD_LOW_MASK		0x3f
+#define CLKOD_HIGH_MASK		0x780000
+#define CLKOD_HIGH_SHIFT	19
+
+enum pll_flags {
+	PLL_FLAG_KEYSTONE_MAIN	= BIT(0),	/* Keystone main/core pll */
+	PLL_FLAG_DAVINCI	= BIT(1),	/* Davinci pll */
+};
 
 /**
  * struct clk_pll_data - pll data structure
- * @has_pllctrl: If set to non zero, lower 6 bits of multiplier is in pllm
- *	register of pll controller, else it is in the pll_ctrl0((bit 11-6)
- * @phy_pllm: Physical address of PLLM in pll controller. Used when
- *	has_pllctrl is non zero.
- * @phy_pll_ctl0: Physical address of PLL ctrl0. This could be that of
- *	Main PLL or any other PLLs in the device such as ARM PLL, DDR PLL
- *	or PA PLL available on keystone2. These PLLs are controlled by
- *	this register. Main PLL is controlled by a PLL controller.
+ * @flags: Flags indicating controller features.
+ * @plld: PLL register map address for pre-divider bits
  * @pllm: PLL register map address for multiplier bits
  * @pllod: PLL register map address for post divider bits
  * @pll_ctl0: PLL controller map address
@@ -49,9 +100,8 @@
  * @postdiv: Fixed post divider
  */
 struct clk_pll_data {
-	bool has_pllctrl;
-	u32 phy_pllm;
-	u32 phy_pll_ctl0;
+	enum pll_flags flags;
+	void __iomem *plld;
 	void __iomem *pllm;
 	void __iomem *pllod;
 	void __iomem *pll_ctl0;
@@ -82,36 +132,39 @@ static unsigned long clk_pllclk_recalc(struct clk_hw *hw,
 	struct clk_pll *pll = to_clk_pll(hw);
 	struct clk_pll_data *pll_data = pll->pll_data;
 	unsigned long rate = parent_rate;
-	u32  mult = 0, prediv, postdiv, val;
+	u32  mult = 0, prediv = 1, postdiv = 1, val;
 
-	/*
-	 * get bits 0-5 of multiplier from pllctrl PLLM register
-	 * if has_pllctrl is non zero
-	 */
-	if (pll_data->has_pllctrl) {
+	if (pll_data->pllm) {
 		val = readl(pll_data->pllm);
 		mult = (val & pll_data->pllm_lower_mask);
 	}
 
-	/* bit6-12 of PLLM is in Main PLL control register */
-	val = readl(pll_data->pll_ctl0);
-	mult |= ((val & pll_data->pllm_upper_mask)
-			>> pll_data->pllm_upper_shift);
-	prediv = (val & pll_data->plld_mask);
+	if (pll_data->pll_ctl0) {
+		val = readl(pll_data->pll_ctl0);
+		mult |= ((val & pll_data->pllm_upper_mask)
+				>> pll_data->pllm_upper_shift);
+		/* Assume pre/postdiv are in ctl reg. Will overwrite if not */
+		prediv = (val & pll_data->plld_mask) + 1;
+		postdiv = ((val & pll_data->clkod_mask)
+				>> pll_data->clkod_shift) + 1;
+	}
 
-	if (!pll_data->has_pllctrl)
-		/* read post divider from od bits*/
-		postdiv = ((val & pll_data->clkod_mask) >>
-				 pll_data->clkod_shift) + 1;
-	else if (pll_data->pllod) {
-		postdiv = readl(pll_data->pllod);
-		postdiv = ((postdiv & pll_data->clkod_mask) >>
-				pll_data->clkod_shift) + 1;
-	} else
-		postdiv = pll_data->postdiv;
+	mult++;
 
-	rate /= (prediv + 1);
-	rate = (rate * (mult + 1));
+	if (pll_data->plld) {
+		val = readl(pll_data->plld);
+		prediv = (val & pll_data->plld_mask) + 1;
+	}
+
+	if (pll_data->pllod) {
+		val = readl(pll_data->pllod);
+		postdiv = ((val & pll_data->clkod_mask)
+				>> pll_data->clkod_shift) + 1;
+	} else if (pll_data->postdiv)
+		postdiv = pll_data->postdiv - 1;
+
+	rate /= prediv;
+	rate *= mult;
 	rate /= postdiv;
 
 	return rate;
@@ -159,7 +212,8 @@ out:
  * @pllctrl: If true, lower 6 bits of multiplier is in pllm register of
  *		pll controller, else it is in the control register0(bit 11-6)
  */
-static void __init _of_pll_clk_init(struct device_node *node, bool pllctrl)
+static void __init _of_pll_clk_init(struct device_node *node,
+							enum pll_flags flags)
 {
 	struct clk_pll_data *pll_data;
 	const char *parent_name;
@@ -172,44 +226,59 @@ static void __init _of_pll_clk_init(struct device_node *node, bool pllctrl)
 		return;
 	}
 
+	pll_data->flags = flags;
+
 	parent_name = of_clk_get_parent_name(node, 0);
 	if (of_property_read_u32(node, "fixed-postdiv",	&pll_data->postdiv)) {
-		/* assume the PLL has output divider register bits */
-		pll_data->clkod_mask = CLKOD_MASK;
-		pll_data->clkod_shift = CLKOD_SHIFT;
-
 		/*
 		 * Check if there is an post-divider register. If not
 		 * assume od bits are part of control register.
 		 */
-		i = of_property_match_string(node, "reg-names",
-					     "post-divider");
+		i = of_property_match_string(node, "reg-names", "post-divider");
 		pll_data->pllod = of_iomap(node, i);
+		if (flags & PLL_FLAG_DAVINCI) {
+			if (!pll_data->pllod) {
+				pr_err("%s: post-divider reg is required\n",
+								__func__);
+				goto out;
+			}
+			pll_data->clkod_mask = CLKOD_LOW_MASK;
+		} else {
+			pll_data->clkod_mask = CLKOD_HIGH_MASK;
+			pll_data->clkod_shift = CLKOD_HIGH_SHIFT;
+		}
 	}
 
 	i = of_property_match_string(node, "reg-names", "control");
 	pll_data->pll_ctl0 = of_iomap(node, i);
-	if (!pll_data->pll_ctl0) {
-		pr_err("%s: ioremap failed\n", __func__);
+	if (!pll_data->pll_ctl0 && !(flags & PLL_FLAG_DAVINCI)) {
+		pr_err("%s: control reg is required\n", __func__);
 		iounmap(pll_data->pllod);
 		goto out;
 	}
 
 	pll_data->pllm_lower_mask = PLLM_LOW_MASK;
 	pll_data->pllm_upper_shift = PLLM_HIGH_SHIFT;
-	pll_data->plld_mask = PLLD_MASK;
-	pll_data->has_pllctrl = pllctrl;
-	if (!pll_data->has_pllctrl) {
-		pll_data->pllm_upper_mask = PLLM_HIGH_MASK;
-	} else {
+	if (flags & (PLL_FLAG_KEYSTONE_MAIN | PLL_FLAG_DAVINCI)) {
 		pll_data->pllm_upper_mask = MAIN_PLLM_HIGH_MASK;
 		i = of_property_match_string(node, "reg-names", "multiplier");
 		pll_data->pllm = of_iomap(node, i);
 		if (!pll_data->pllm) {
+			pr_err("%s: multiplier reg is required\n", __func__);
 			iounmap(pll_data->pll_ctl0);
 			iounmap(pll_data->pllod);
 			goto out;
 		}
+	} else {
+		pll_data->pllm_upper_mask = PLLM_HIGH_MASK;
+	}
+
+	pll_data->plld_mask = PLLD_MASK;
+	if (flags & PLL_FLAG_DAVINCI) {
+		i = of_property_match_string(node, "reg-names", "pre-divider");
+		pll_data->plld = of_iomap(node, i);
+	} else {
+		pll_data->plld = pll_data->pll_ctl0;
 	}
 
 	clk = clk_register_pll(NULL, node->name, parent_name, pll_data);
@@ -229,7 +298,7 @@ out:
  */
 static void __init of_keystone_pll_clk_init(struct device_node *node)
 {
-	_of_pll_clk_init(node, false);
+	_of_pll_clk_init(node, 0);
 }
 CLK_OF_DECLARE(keystone_pll_clock, "ti,keystone,pll-clock",
 					of_keystone_pll_clk_init);
@@ -240,10 +309,18 @@ CLK_OF_DECLARE(keystone_pll_clock, "ti,keystone,pll-clock",
  */
 static void __init of_keystone_main_pll_clk_init(struct device_node *node)
 {
-	_of_pll_clk_init(node, true);
+	_of_pll_clk_init(node, PLL_FLAG_KEYSTONE_MAIN);
 }
 CLK_OF_DECLARE(keystone_main_pll_clock, "ti,keystone,main-pll-clock",
 						of_keystone_main_pll_clk_init);
+
+
+static void __init of_davinci_pll_clk_init(struct device_node *node)
+{
+	_of_pll_clk_init(node, PLL_FLAG_DAVINCI);
+}
+CLK_OF_DECLARE(davinci_pll_clock, "ti,davinci,pll-clock",
+						of_davinci_pll_clk_init);
 
 /**
  * of_pll_div_clk_init - PLL divider setup function
