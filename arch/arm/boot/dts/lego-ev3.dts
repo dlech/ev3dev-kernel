@@ -228,6 +228,7 @@
 		compatible = "ev3dev,evb-battery";
 		io-channels = <&ev3_adc 4>;
 		io-channel-names = "voltage";
+		status = "disabled";
 	};
 
 	evb-ports {
