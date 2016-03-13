@@ -17,6 +17,13 @@
 	model = "EnBW CMC";
 
 	soc@1c00000 {
+		clocks {
+			oscin: oscin {
+				#clock-cells = <0>;
+				compatible = "fixed-clock";
+				clock-frequency = <24000000>;
+			};
+		};
 		serial0: serial@42000 {
 			status = "okay";
 		};

@@ -1,0 +1,574 @@
+/*
+ * Copyright (C) 2016 David Lechner <david@lechnology.com>
+ *
+ * This program is free software; you can redistribute  it and/or modify it
+ * under  the terms of  the GNU General  Public License as published by the
+ * Free Software Foundation;  either version 2 of the  License, or (at your
+ * option) any later version.
+ */
+
+clocks {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	ranges;
+
+	/* fixed clocks */
+
+	usb_refclk: usb_refclkin {
+		#clock-cells = <0>;
+		compatible = "fixed-clock";
+		clock-frequency = <48000000>;
+	};
+
+	/* CFGCHIP */
+
+	async3: async3@14188 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,pll-mux-clock";
+		clocks = <&pll0_sysclk2>, <&pll1_sysclk2>;
+		clock-output-names = "async3";
+		reg = <0x14188 0x4>;
+		bit-shift = <4>;
+		bit-mask = <1>;
+		assigned-clocks = <&async3>;
+		assigned-clock-parents = <&pll1_sysclk2>;
+	};
+
+	usb11_clk_mux: usb1phyclkmux@14184 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,pll-mux-clock";
+		clocks = <&usb20_clk>, <&usb_refclk>;
+		clock-output-names = "usb11_clk_mux";
+		reg = <0x14184 0x4>;
+		bit-shift = <12>;
+		bit-mask = <1>;
+		assigned-clocks = <&usb11_clk_mux>;
+		assigned-clock-parents = <&usb20_clk>;
+	};
+
+	/* PLL0 */
+
+	pll0: pll0@11114 {
+		#clock-cells = <0>;
+		compatible = "ti,davinci,pll-clock";
+		clocks = <&oscin>;
+		clock-output-names = "pll0";
+		reg = <0x11114 4>, <0x11110 4>, <0x11128 4>;
+		reg-names = "pre-divider", "multiplier", "post-divider";
+	};
+
+	pll0_ext_mux: pll0_extclksrc@11100 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,pll-mux-clock";
+		clocks = <&oscin>, <&pll1_sysclk3>;
+		clock-output-names = "pll0_extclksrc";
+		reg = <0x11100 4>;
+		bit-shift = <9>;
+		bit-mask = <1>;
+		assigned-clocks = <&pll0_ext_mux>;
+		assigned-clock-parents = <&oscin>;
+	};
+
+	pll0_mux: pll0_pllen@11100 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,pll-mux-clock";
+		clocks = <&pll0_ext_mux>, <&pll0>;
+		clock-output-names = "pll0_pllen";
+		reg = <0x11100 4>;
+		bit-shift = <0>;
+		bit-mask = <1>;
+		assigned-clocks = <&pll0_mux>;
+		assigned-clock-parents = <&pll0>;
+	};
+
+	pll0_aux_clk: pll0_aux {
+		#clock-cells = <0>;
+		compatible = "fixed-factor-clock";
+		clocks = <&oscin>;
+		clock-div = <1>;
+		clock-mult = <1>;
+	};
+
+	i2c0_clk: i2c0 {
+		#clock-cells = <0>;
+		compatible = "fixed-factor-clock";
+		clocks = <&pll0_aux_clk>;
+		clock-output-names = "i2c0";
+		clock-div = <1>;
+		clock-mult = <1>;
+	};
+
+	timer0_clk: timer0 {
+		#clock-cells = <0>;
+		compatible = "fixed-factor-clock";
+		clocks = <&pll0_aux_clk>;
+		clock-output-names = "timer0";
+		clock-div = <1>;
+		clock-mult = <1>;
+	};
+
+	timer1_clk: timer1 {
+		#clock-cells = <0>;
+		compatible = "fixed-factor-clock";
+		clocks = <&pll0_aux_clk>;
+		clock-output-names = "timer1";
+		clock-mult = <1>;
+		clock-div = <1>;
+	};
+
+	pll0_sysclk1: pll0_sysclk1@11118 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,pll-divider-clock";
+		clocks = <&pll0_mux>;
+		reg = <0x11118 4>;
+		bit-shift = <0>;
+		bit-mask = <5>;
+	};
+
+	pll0_sysclk2: pll0_sysclk2@1111c {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,pll-divider-clock";
+		clocks = <&pll0_mux>;
+		reg = <0x1111c 4>;
+		bit-shift = <0>;
+		bit-mask = <5>;
+	};
+
+	pll0_sysclk3: pll0_sysclk3@11120 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,pll-divider-clock";
+		clocks = <&pll0_mux>;
+		reg = <0x11120 4>;
+		bit-shift = <0>;
+		bit-mask = <5>;
+	};
+
+	pll0_sysclk4: pll0_sysclk4@11160 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,pll-divider-clock";
+		clocks = <&pll0_mux>;
+		reg = <0x11160 4>;
+		bit-shift = <0>;
+		bit-mask = <5>;
+	};
+
+	pll0_sysclk5: pll0_sysclk5@11164 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,pll-divider-clock";
+		clocks = <&pll0_mux>;
+		reg = <0x11164 4>;
+		bit-shift = <0>;
+		bit-mask = <5>;
+	};
+
+	pll0_sysclk6: pll0_sysclk6@11168 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,pll-divider-clock";
+		clocks = <&pll0_mux>;
+		reg = <0x11168 4>;
+		bit-shift = <0>;
+		bit-mask = <5>;
+	};
+
+	pll0_sysclk7: pll0_sysclk7@1116c {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,pll-divider-clock";
+		clocks = <&pll0_mux>;
+		reg = <0x1116c 4>;
+		bit-shift = <0>;
+		bit-mask = <5>;
+	};
+
+	/* PLL1 */
+
+	pll1: pll1@21a110 {
+		#clock-cells = <0>;
+		compatible = "ti,davinci,pll-clock";
+		clocks = <&oscin>;
+		reg = <0x21a110 4>, <0x21a128 4>;
+		reg-names = "multiplier", "post-divider";
+	};
+
+	pll1_mux: pllen@21a100 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,pll-mux-clock";
+		clocks = <&oscin>, <&pll1>;
+		reg = <0x21a100 4>;
+		bit-shift = <0>;
+		bit-mask = <1>;
+		assigned-clocks = <&pll1_mux>;
+		assigned-clock-parents = <&pll1>;
+	};
+
+	pll1_sysclk1: sysclk1@21a118 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,pll-divider-clock";
+		clocks = <&pll1_mux>;
+		reg = <0x21a118 4>;
+		bit-shift = <0>;
+		bit-mask = <5>;
+	};
+
+	pll1_sysclk2: sysclk2@21a11c {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,pll-divider-clock";
+		clocks = <&pll1_mux>;
+		reg = <0x21a11c 4>;
+		bit-shift = <0>;
+		bit-mask = <5>;
+	};
+
+	pll1_sysclk3: sysclk3@21a120 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,pll-divider-clock";
+		clocks = <&pll1_mux>;
+		reg = <0x21a120 4>;
+		bit-shift = <0>;
+		bit-mask = <5>;
+	};
+
+	/* PSC0 */
+/*
+	edma3_0_cc0_clk: edma3_0_cc0@10000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x10000 0x1000>;
+		clocks = <&pll0_sysclk2>;
+		clock-output-names = "edma3_0_cc0";
+		power-domain = <0>;
+		module-domain = <0>;
+	};
+
+	edma3_0_tc0_clk: edma3_0_tc0@10000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x10000 0x1000>;
+		clocks = <&pll0_sysclk2>;
+		clock-output-names = "edma3_0_tc0";
+		power-domain = <0>;
+		module-domain = <1>;
+	};
+
+	edma3_0_tc1_clk: edma3_0_tc1@10000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x10000 0x1000>;
+		clocks = <&pll0_sysclk2>;
+		clock-output-names = "edma3_0_tc1";
+		power-domain = <0>;
+		module-domain = <2>;
+	};
+*/
+	emifa_clk: emifa@10000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x10000 0x1000>;
+		clocks = <&pll0_sysclk3>;
+		clock-output-names = "emifa";
+		power-domain = <0>;
+		module-domain = <3>;
+	};
+
+	spi0_clk: spi0@10000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x10000 0x1000>;
+		clocks = <&pll0_sysclk2>;
+		clock-output-names = "spi0";
+		power-domain = <0>;
+		module-domain = <4>;
+	};
+
+	mmc0_clk: mmc0@10000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x10000 0x1000>;
+		clocks = <&pll0_sysclk2>;
+		clock-output-names = "mmc0";
+		power-domain = <0>;
+		module-domain = <5>;
+	};
+/*
+	aintc_clk: aintc@10000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x10000 0x1000>;
+		clocks = <&pll0_sysclk4>;
+		clock-output-names = "aintc";
+		power-domain = <0>;
+		module-domain = <6>;
+	};
+*/
+	arm_rom_clk: arm_rom@10000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x10000 0x1000>;
+		clocks = <&pll0_sysclk2>;
+		clock-output-names = "arm_rom";
+		power-domain = <0>;
+		module-domain = <7>;
+	};
+
+	uart0_clk: uart0@10000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x10000 0x1000>;
+		clocks = <&pll0_sysclk2>;
+		clock-output-names = "uart0";
+		power-domain = <0>;
+		module-domain = <9>;
+	};
+
+	pru_clk: pru@10000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x10000 0x1000>;
+		clocks = <&pll0_sysclk2>;
+		clock-output-names = "pru";
+		power-domain = <0>;
+		module-domain = <13>;
+	};
+/*
+	arm_clk: arm@10000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x10000 0x1000>;
+		clocks = <&pll0_sysclk6>;
+		clock-output-names = "arm";
+		power-domain = <0>;
+		module-domain = <14>;
+	};
+*/
+	/* PSC1 */
+
+	edma3_1_cc0_clk: edma3_1_cc0@227000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x227000 0x1000>;
+		clocks = <&pll0_sysclk2>;
+		clock-output-names = "edma3_1_cc0";
+		power-domain = <0>;
+		module-domain = <0>;
+	};
+
+	usb20_clk: usb20@227000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x227000 0x1000>;
+		clocks = <&pll0_sysclk2>;
+		clock-output-names = "usb20";
+		power-domain = <0>;
+		module-domain = <1>;
+	};
+
+	usb11_clk: usb11@227000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x227000 0x1000>;
+		clocks = <&pll0_sysclk4>;
+		clock-output-names = "usb11";
+		power-domain = <0>;
+		module-domain = <2>;
+	};
+
+	gpio_clk: gpio@227000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x227000 0x1000>;
+		clocks = <&pll0_sysclk4>;
+		clock-output-names = "gpio";
+		power-domain = <0>;
+		module-domain = <3>;
+	};
+
+	hpi_clk: hpi@227000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x227000 0x1000>;
+		clocks = <&pll0_sysclk2>;
+		clock-output-names = "hpi";
+		power-domain = <0>;
+		module-domain = <4>;
+	};
+
+	emac_clk: emac@227000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x227000 0x1000>;
+		clocks = <&pll0_sysclk4>;
+		clock-output-names = "emac";
+		power-domain = <0>;
+		module-domain = <5>;
+	};
+/*
+	ddr_clk: ddr@227000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x227000 0x1000>;
+		clocks = <&pll0_sysclk2>;
+		clock-output-names = "ddr";
+		power-domain = <0>;
+		module-domain = <6>;
+	};
+*/
+	mcasp0_clk: mcasp0@227000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x227000 0x1000>;
+		clocks = <&async3>;
+		clock-output-names = "mcasp0";
+		power-domain = <0>;
+		module-domain = <7>;
+	};
+
+	sata_clk: sata@227000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x227000 0x1000>;
+		clocks = <&pll0_sysclk2>;
+		clock-output-names = "sata";
+		power-domain = <0>;
+		module-domain = <8>;
+	};
+
+	vpif_clk: vpif@227000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x227000 0x1000>;
+		clocks = <&pll0_sysclk2>;
+		clock-output-names = "vpif";
+		power-domain = <0>;
+		module-domain = <9>;
+	};
+
+	spi1_clk: spi1@227000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x227000 0x1000>;
+		clocks = <&async3>;
+		clock-output-names = "spi1";
+		power-domain = <0>;
+		module-domain = <10>;
+	};
+
+	i2c1_clk: i2c1@227000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x227000 0x1000>;
+		clocks = <&pll0_sysclk4>;
+		clock-output-names = "i2c1";
+		power-domain = <0>;
+		module-domain = <11>;
+	};
+
+	uart1_clk: uart1@227000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x227000 0x1000>;
+		clocks = <&async3>;
+		clock-output-names = "uart1";
+		power-domain = <0>;
+		module-domain = <12>;
+	};
+
+	uart2_clk: uart2@227000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x227000 0x1000>;
+		clocks = <&async3>;
+		clock-output-names = "uart2";
+		power-domain = <0>;
+		module-domain = <13>;
+	};
+
+	mcbsp0_clk: mcbsp0@227000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x227000 0x1000>;
+		clocks = <&async3>;
+		clock-output-names = "mcbsp0";
+		power-domain = <0>;
+		module-domain = <14>;
+	};
+
+	mcbsp1_clk: mcbsp1@227000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x227000 0x1000>;
+		clocks = <&async3>;
+		clock-output-names = "mcbsp1";
+		power-domain = <0>;
+		module-domain = <15>;
+	};
+
+	lcdc_clk: lcdc@227000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x227000 0x1000>;
+		clocks = <&pll0_sysclk2>;
+		clock-output-names = "lcdc";
+		power-domain = <0>;
+		module-domain = <16>;
+	};
+
+	ehrpwm_clk: ehrpwm@227000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x227000 0x1000>;
+		clocks = <&async3>;
+		clock-output-names = "ehrpwm";
+		power-domain = <0>;
+		module-domain = <17>;
+	};
+
+	mmc1_clk: mmc1@227000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x227000 0x1000>;
+		clocks = <&pll0_sysclk2>;
+		clock-output-names = "mmc1";
+		power-domain = <0>;
+		module-domain = <18>;
+	};
+
+	upp_clk: upp@227000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x227000 0x1000>;
+		clocks = <&pll0_sysclk2>;
+		clock-output-names = "upp";
+		power-domain = <0>;
+		module-domain = <19>;
+	};
+
+	ecap_clk: ecap@227000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x227000 0x1000>;
+		clocks = <&async3>;
+		clock-output-names = "ecap";
+		power-domain = <0>;
+		module-domain = <20>;
+	};
+
+	edma3_1_tc0_clk: edma3_1_tc0@227000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x227000 0x1000>;
+		clocks = <&pll0_sysclk2>;
+		clock-output-names = "edma3_1_tc0";
+		power-domain = <0>;
+		module-domain = <21>;
+	};
+/*
+	on_chip_ram_clk: on_chip_ram@227000 {
+		#clock-cells = <0>;
+		compatible = "ti,keystone,psc-clock";
+		reg = <0x227000 0x1000>;
+		clocks = <&pll0_sysclk2>;
+		clock-output-names = "on_chip_ram";
+		power-domain = <1>;
+		module-domain = <31>;
+	};
+*/
+};
