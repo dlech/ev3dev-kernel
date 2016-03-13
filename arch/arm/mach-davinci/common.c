@@ -20,7 +20,11 @@
 #include <mach/common.h>
 #include <mach/cputype.h>
 
+#ifdef CONFIG_DAVINCI_LEGACY_CLK
 #include "clock.h"
+#else
+#include <linux/clk-provider.h>
+#endif
 
 struct davinci_soc_info davinci_soc_info;
 EXPORT_SYMBOL(davinci_soc_info);
@@ -103,6 +107,8 @@ void __init davinci_common_init(struct davinci_soc_info *soc_info)
 	if (ret < 0)
 		goto err;
 
+#ifdef CONFIG_DAVINCI_LEGACY_CLK
+#endif
 
 	return;
 

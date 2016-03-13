@@ -4,10 +4,10 @@
 #
 
 # Common objects
-obj-y 			:= time.o clock.o serial.o psc.o \
-			   usb.o common.o sram.o aemif.o
+obj-y 			:= time.o serial.o usb.o common.o sram.o aemif.o
 
 obj-$(CONFIG_DAVINCI_MUX)		+= mux.o
+obj-$(CONFIG_DAVINCI_LEGACY_CLK)	+= clock.o psc.o
 
 # Chip specific
 obj-$(CONFIG_ARCH_DAVINCI_DM644x)       += dm644x.o devices.o
