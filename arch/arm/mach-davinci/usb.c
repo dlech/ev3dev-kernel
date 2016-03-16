@@ -4,7 +4,7 @@
 #include <linux/init.h>
 #include <linux/platform_device.h>
 #include <linux/dma-mapping.h>
-
+#include <linux/phy/phy.h>
 #include <linux/usb/musb.h>
 
 #include <mach/common.h>
@@ -17,6 +17,28 @@
 
 #define DA8XX_USB0_BASE 	0x01e00000
 #define DA8XX_USB1_BASE 	0x01e25000
+
+#ifdef CONFIG_ARCH_DAVINCI_DA8XX
+static struct resource da8xx_usbphy_resources[] = {
+	[0] = {
+		.start	= DA8XX_SYSCFG0_BASE + DA8XX_CFGCHIP2_REG,
+		.end	= DA8XX_SYSCFG0_BASE + DA8XX_CFGCHIP2_REG + 4 - 1,
+		.flags	= IORESOURCE_MEM,
+	},
+};
+
+static struct platform_device da8xx_usbphy = {
+	.name		= "da8xx-usbphy",
+	.id		= 0,
+	.num_resources	= ARRAY_SIZE(da8xx_usbphy_resources),
+	.resource	= da8xx_usbphy_resources,
+};
+
+int __init da8xx_register_usbphy(void)
+{
+	return platform_device_register(&da8xx_usbphy);
+}
+#endif /* CONFIG_ARCH_DAVINCI_DA8XX */
 
 #if IS_ENABLED(CONFIG_USB_MUSB_HDRC)
 static struct musb_hdrc_eps_bits musb_eps[] = {
