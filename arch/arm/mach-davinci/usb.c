@@ -4,7 +4,6 @@
 #include <linux/init.h>
 #include <linux/platform_device.h>
 #include <linux/dma-mapping.h>
-
 #include <linux/usb/musb.h>
 
 #include <mach/common.h>
@@ -13,6 +12,7 @@
 #include <linux/platform_data/usb-davinci.h>
 
 #define DAVINCI_USB_OTG_BASE	0x01c64000
+
 
 #if IS_ENABLED(CONFIG_USB_MUSB_HDRC)
 

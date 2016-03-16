@@ -5,6 +5,7 @@
 #include <linux/init.h>
 #include <linux/platform_device.h>
 #include <linux/dma-mapping.h>
+#include <linux/phy/phy.h>
 #include <linux/usb/musb.h>
 
 #include <asm/delay.h>
@@ -245,6 +246,16 @@ int __init da8xx_register_usb11_phy_clk(bool use_usb_refclkin)
 	clk_put(parent);
 
 	return ret;
+}
+
+static struct platform_device da8xx_usbphy = {
+	.name		= "da8xx-usbphy",
+	.id		= 0,
+};
+
+int __init da8xx_register_usbphy(void)
+{
+	return platform_device_register(&da8xx_usbphy);
 }
 
 #if IS_ENABLED(CONFIG_USB_MUSB_HDRC)
