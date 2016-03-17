@@ -1,0 +1,34 @@
+TI DaVinci DA8XX USB PHY
+
+Required properties:
+ - compatible: must be "ti,da830-usbphy".
+ - #phy-cells: must be 1.
+ - reg : Address and length of the CFGCHIP2 register.
+
+This device controls the PHY for both the USB 1.1 OHCI and USB 2.0 OTG
+controllers on DA8XX SoCs. Consumers of this device should use index 1 for
+the USB 1.1 phy device and index 2 for the USB 2.0 phy device.
+
+Example:
+
+	usbphy: usbphy@1c14184 {
+		compatible = "ti,da830-usbphy";
+		#phy-cells = <1>;
+		reg = <0x14184 4>;
+	};
+
+	usb11: usb11@1e25000 {
+		compatible = "ti,da830-ohci";
+		reg = <0x225000 0x1000>;
+		interrupts = <59>;
+		phys = <&usbphy 1>;
+		phy-names = "usbphy";
+	};
+
+	usb20: usb@1e00000 {
+		compatible = "ti,da830-musb";
+		reg = <0x200000 0x1000>;
+		interrupts = <58>;
+		phys = <&usbphy 2>;
+		phy-names = "usbphy";
+	};
