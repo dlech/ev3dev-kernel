@@ -1052,6 +1052,7 @@ void __init dm355_init(void)
 {
 	davinci_common_init(&davinci_soc_info_dm355);
 	davinci_map_sysmod();
+	DAVINCI_CLK_INIT(&davinci_soc_info_dm355);
 }
 
 int __init dm355_init_video(struct vpfe_config *vpfe_cfg,

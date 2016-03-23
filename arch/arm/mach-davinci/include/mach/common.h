@@ -84,6 +84,10 @@ extern void davinci_init_ide(void);
 void davinci_restart(enum reboot_mode mode, const char *cmd);
 void davinci_init_late(void);
 
+#define DAVINCI_CLK_INIT(soc_info) \
+if ((soc_info)->cpu_clks && davinci_clk_init((soc_info)->cpu_clks)) \
+	panic("DAVINCI_CLK_INIT: Failed to init clocks.\n");
+
 #ifdef CONFIG_DAVINCI_RESET_CLOCKS
 int davinci_clk_disable_unused(void);
 #else
