@@ -141,6 +141,10 @@ static __init void da830_evm_usb_init(void)
 		pr_warn("%s: USB 1.1 PHY CLK registration failed: %d\n",
 			__func__, ret);
 
+	ret = da8xx_register_cfgchip();
+	if (ret)
+		pr_warn("%s: CFGCHIP registration failed: %d\n", __func__, ret);
+
 	ret = davinci_cfg_reg(DA830_USB0_DRVVBUS);
 	if (ret)
 		pr_warn("%s: USB 2.0 PinMux setup failed: %d\n", __func__, ret);
