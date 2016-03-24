@@ -15,3 +15,17 @@ Generic DaVinci Boards
 DA850/OMAP-L138/AM18x generic board
 Required root node properties:
     - compatible = "ti,da850";
+
+System Configuration
+--------------------
+
+Required syscon node: some subnode of the soc node must be a
+  system controller node pointing to the CFGCHIPn registers,
+  with the compatible string set to "ti,da830-cfgchip", "syscon"
+
+Example:
+
+cfgchip: cfgchip@1417c {
+	compatible = "ti,da830-cfgchip", "syscon";
+	reg = <0x1417c 0x14>;
+};
