@@ -13,6 +13,7 @@
  * GNU General Public License for more details.
  */
 
+#include <linux/clk.h>
 #include <linux/dmaengine.h>
 #include <linux/dma-mapping.h>
 #include <linux/edma.h>
@@ -206,6 +207,7 @@ struct edma_cc;
 
 struct edma_tc {
 	struct device_node		*node;
+	struct clk			*clk;
 	u16				id;
 };
 
@@ -225,6 +227,7 @@ struct edma_chan {
 
 struct edma_cc {
 	struct device			*dev;
+	struct clk			*clk;
 	struct edma_soc_info		*info;
 	void __iomem			*base;
 	int				id;
@@ -2223,6 +2226,12 @@ static int edma_probe(struct platform_device *pdev)
 	if (IS_ERR(ecc->base))
 		return PTR_ERR(ecc->base);
 
+	ecc->clk = devm_clk_get(dev, NULL);
+	if (IS_ERR(ecc->clk))
+		ecc->clk = NULL;
+	else
+		clk_prepare_enable(ecc->clk);
+
 	platform_set_drvdata(pdev, ecc);
 
 	/* Get eDMA3 configuration from IP */
@@ -2395,6 +2404,8 @@ static int edma_remove(struct platform_device *pdev)
 	if (ecc->dma_memcpy)
 		dma_async_device_unregister(ecc->dma_memcpy);
 	edma_free_slot(ecc, ecc->dummy_slot);
+	if (ecc->clk)
+		clk_disable_unprepare(ecc->clk);
 
 	return 0;
 }
@@ -2461,6 +2472,12 @@ static struct platform_driver edma_driver = {
 
 static int edma_tptc_probe(struct platform_device *pdev)
 {
+	struct clk *clk;
+
+	clk = devm_clk_get(&pdev->dev, NULL);
+	if (!IS_ERR(clk))
+		clk_prepare_enable(clk);
+
 	pm_runtime_enable(&pdev->dev);
 	return pm_runtime_get_sync(&pdev->dev);
 }
