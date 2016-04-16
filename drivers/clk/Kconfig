@@ -165,6 +165,13 @@ config COMMON_CLK_XGENE
 	---help---
 	  Sypport for the APM X-Gene SoC reference, PLL, and device clocks.
 
+config COMMON_CLK_DAVINCI
+	tristate "Clock drivers for TI DaVinci based SOCs"
+	depends on (ARCH_DAVINCI || COMPILE_TEST)
+	---help---
+	  Supports clock drivers for DaVinci based SOCs. These SOCs have local a
+	  power sleep control module that gate the clock to the IPs and PLLs.
+
 config COMMON_CLK_KEYSTONE
 	tristate "Clock drivers for Keystone and DaVinci based SOCs"
 	depends on (ARCH_KEYSTONE || ARCH_DAVINCI || COMPILE_TEST) && OF
