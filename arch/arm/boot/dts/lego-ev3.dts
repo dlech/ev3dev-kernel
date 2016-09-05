@@ -171,7 +171,7 @@
 		enable-active-high;
 		pinctrl-names = "default";
 		pinctrl-0 = <&usb11_pins>;
-		status = "okay";
+		status = "disabled";
 	};
 
 	/*
@@ -634,13 +634,13 @@
 };
 
 &usb_phy {
-	status = "okay";
+	status = "disabled";
 	assigned-clocks = <&usb20_clk_mux>, <&usb11_clk_mux>;
 	assigned-clock-parents = <&pll0_aux_clk>, <&usb20_clk_mux>;
 };
 
 &usb11 {
-	status = "okay";
+	status = "disabled";
 	vbus-supply = <&vbus_reg>;
 };
 

@@ -355,7 +355,7 @@ static __init void legoev3_usb_init(void)
 	// cfgchip2 |=  CFGCHIP2_SESENDEN | CFGCHIP2_VBDTCTEN;
 
 	// __raw_writel(cfgchip2, DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP2_REG));
-#if 0
+#if 1
 	ret = da8xx_register_usb20_phy_clk(false);
 	if (ret)
 		pr_warn("%s: USB 2.0 PHY clock registration failed: %d\n",
