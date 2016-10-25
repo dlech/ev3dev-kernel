@@ -21,6 +21,7 @@
 			#interrupt-cells = <1>;
 			ti,intc-size = <101>;
 			reg = <0xfffee000 0x2000>;
+			power-domains = <&psc0 6>, <&psc0 7>, <&psc0 10>;
 		};
 	};
 	soc@1c00000 {
@@ -31,6 +32,22 @@
 		ranges = <0x0 0x01c00000 0x400000>;
 		interrupt-parent = <&intc>;
 
+		psc0: power-controller@10000 {
+			compatible = "ti,da830-psc";
+			reg = <0x10000 0x1000>;
+			#power-domain-cells = <1>;
+			num-domains = <16>;
+			power-domains = <&psc0 12>;
+		};
+
+		psc1: power-controller@227000 {
+			compatible = "ti,da830-psc";
+			reg = <0x227000 0x1000>;
+			#power-domain-cells = <1>;
+			num-domains = <32>;
+			power-domains = <&psc1 27>, <&psc0 12>;
+		};
+
 		pmx_core: pinmux@14120 {
 			compatible = "pinctrl-single";
 			reg = <0x14120 0x50>;
@@ -39,6 +56,7 @@
 			pinctrl-single,bit-per-mux;
 			pinctrl-single,register-width = <32>;
 			pinctrl-single,function-mask = <0xf>;
+			power-domains = <&psc0 12>;
 			status = "disabled";
 
 			serial0_rtscts_pins: pinmux_serial0_rtscts_pins {
@@ -212,6 +230,7 @@
 		cfgchip: cfgchip@1417c {
 			compatible = "ti,da830-cfgchip", "syscon";
 			reg = <0x1417c 0x14>;
+			power-domains = <&psc0 12>;
 		};
 		edma0: edma@0 {
 			compatible = "ti,edma3-tpcc";
@@ -220,6 +239,7 @@
 			reg-names = "edma3_cc";
 			interrupts = <11 12>;
 			interrupt-names = "edma3_ccint", "edma3_ccerrint";
+			power-domains = <&psc0 0>, <&psc0 11>, <&psc0 12>;
 			#dma-cells = <2>;
 
 			ti,tptcs = <&edma0_tptc0 7>, <&edma0_tptc1 0>;
@@ -229,12 +249,14 @@
 			reg =	<0x8000 0x400>;
 			interrupts = <13>;
 			interrupt-names = "edm3_tcerrint";
+			power-domains = <&psc0 1>, <&psc0 11>, <&psc0 12>;
 		};
 		edma0_tptc1: tptc@8400 {
 			compatible = "ti,edma3-tptc";
 			reg =	<0x8400 0x400>;
 			interrupts = <32>;
 			interrupt-names = "edm3_tcerrint";
+			power-domains = <&psc0 2>, <&psc0 11>, <&psc0 12>;
 		};
 		edma1: edma@230000 {
 			compatible = "ti,edma3-tpcc";
@@ -243,6 +265,7 @@
 			reg-names = "edma3_cc";
 			interrupts = <93 94>;
 			interrupt-names = "edma3_ccint", "edma3_ccerrint";
+			power-domains = <&psc1 0>, <&psc0 11>, <&psc0 12>;
 			#dma-cells = <2>;
 
 			ti,tptcs = <&edma1_tptc0 7>;
@@ -252,12 +275,14 @@
 			reg =	<0x238000 0x400>;
 			interrupts = <95>;
 			interrupt-names = "edm3_tcerrint";
+			power-domains = <&psc1 21>, <&psc0 11>, <&psc0 12>;
 		};
 		serial0: serial@42000 {
 			compatible = "ns16550a";
 			reg = <0x42000 0x100>;
 			reg-shift = <2>;
 			interrupts = <25>;
+			power-domains = <&psc0 9>, <&psc0 12>;
 			status = "disabled";
 		};
 		serial1: serial@10c000 {
@@ -265,6 +290,7 @@
 			reg = <0x10c000 0x100>;
 			reg-shift = <2>;
 			interrupts = <53>;
+			power-domains = <&psc1 12>, <&psc1 28>, <&psc0 12>;
 			status = "disabled";
 		};
 		serial2: serial@10d000 {
@@ -272,6 +298,7 @@
 			reg = <0x10d000 0x100>;
 			reg-shift = <2>;
 			interrupts = <61>;
+			power-domains = <&psc1 13>, <&psc1 28>, <&psc0 12>;
 			status = "disabled";
 		};
 		rtc0: rtc@23000 {
@@ -279,12 +306,14 @@
 			reg = <0x23000 0x1000>;
 			interrupts = <19
 				      19>;
+			power-domains = <&psc0 12>;
 			status = "disabled";
 		};
 		i2c0: i2c@22000 {
 			compatible = "ti,davinci-i2c";
 			reg = <0x22000 0x1000>;
 			interrupts = <15>;
+			power-domains = <&psc0 12>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -293,6 +322,7 @@
 			compatible = "ti,davinci-i2c";
 			reg = <0x228000 0x1000>;
 			interrupts = <51>;
+			power-domains = <&psc1 11>, <&psc1 27>, <&psc0 12>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -300,12 +330,14 @@
 		wdt: wdt@21000 {
 			compatible = "ti,davinci-wdt";
 			reg = <0x21000 0x1000>;
+			power-domains = <&psc0 12>;
 			status = "disabled";
 		};
 		mmc0: mmc@40000 {
 			compatible = "ti,da830-mmc";
 			reg = <0x40000 0x1000>;
 			interrupts = <16>;
+			power-domains = <&psc0 5>, <&psc0 12>;
 			dmas = <&edma0 16 0>, <&edma0 17 0>;
 			dma-names = "rx", "tx";
 			status = "disabled";
@@ -314,6 +346,7 @@
 			compatible = "ti,da830-mmc";
 			reg = <0x21b000 0x1000>;
 			interrupts = <72>;
+			power-domains = <&psc1 18>, <&psc0 12>;
 			dmas = <&edma1 28 0>, <&edma1 29 0>;
 			dma-names = "rx", "tx";
 			status = "disabled";
@@ -323,6 +356,7 @@
 				     "ti,am33xx-ehrpwm";
 			#pwm-cells = <3>;
 			reg = <0x300000 0x2000>;
+			power-domains = <&psc1 17>, <&psc1 29>, <&psc0 12>;
 			status = "disabled";
 		};
 		ehrpwm1: pwm@302000 {
@@ -330,6 +364,7 @@
 				     "ti,am33xx-ehrpwm";
 			#pwm-cells = <3>;
 			reg = <0x302000 0x2000>;
+			power-domains = <&psc1 17>, <&psc1 29>, <&psc0 12>;
 			status = "disabled";
 		};
 		ecap0: ecap@306000 {
@@ -337,6 +372,7 @@
 				     "ti,am33xx-ecap";
 			#pwm-cells = <3>;
 			reg = <0x306000 0x80>;
+			power-domains = <&psc1 20>, <&psc1 29>, <&psc0 12>;
 			status = "disabled";
 		};
 		ecap1: ecap@307000 {
@@ -344,6 +380,7 @@
 				     "ti,am33xx-ecap";
 			#pwm-cells = <3>;
 			reg = <0x307000 0x80>;
+			power-domains = <&psc1 20>, <&psc1 29>, <&psc0 12>;
 			status = "disabled";
 		};
 		ecap2: ecap@308000 {
@@ -351,6 +388,7 @@
 				     "ti,am33xx-ecap";
 			#pwm-cells = <3>;
 			reg = <0x308000 0x80>;
+			power-domains = <&psc1 20>, <&psc1 29>, <&psc0 12>;
 			status = "disabled";
 		};
 		spi0: spi@41000 {
@@ -361,6 +399,7 @@
 			num-cs = <6>;
 			ti,davinci-spi-intr-line = <1>;
 			interrupts = <20>;
+			power-domains = <&psc0 4>, <&psc0 12>;
 			dmas = <&edma0 14 0>, <&edma0 15 0>;
 			dma-names = "rx", "tx";
 			status = "disabled";
@@ -373,6 +412,7 @@
 			num-cs = <4>;
 			ti,davinci-spi-intr-line = <1>;
 			interrupts = <56>;
+			power-domains = <&psc1 10>, <&psc1 29>, <&psc0 12>;
 			dmas = <&edma0 18 0>, <&edma0 19 0>;
 			dma-names = "rx", "tx";
 			status = "disabled";
@@ -382,6 +422,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x224000 0x1000>;
+			power-domains = <&psc1 5>, <&psc1 27>, <&psc0 12>;
 			status = "disabled";
 		};
 		eth0: ethernet@220000 {
@@ -397,6 +438,7 @@
 					35
 					36
 					>;
+			power-domains = <&psc1 5>, <&psc1 27>,<&psc0 12>;
 			status = "disabled";
 		};
 		usb_phy: usb-phy {
@@ -410,6 +452,7 @@
 			interrupts = <58>;
 			interrupt-names = "mc";
 			dr_mode = "otg";
+			power-domains = <&psc1 1>, <&psc0 12>;
 			phys = <&usb_phy 0>;
 			phy-names = "usb-phy";
 			status = "disabled";
@@ -418,6 +461,7 @@
 			compatible = "ti,da830-ohci";
 			reg = <0x225000 0x1000>;
 			interrupts = <59>;
+			power-domains = <&psc1 2>, <&psc1 27>, <&psc0 12>;
 			phys = <&usb_phy 1>;
 			phy-names = "usb-phy";
 			status = "disabled";
@@ -432,6 +476,7 @@
 				45 IRQ_TYPE_EDGE_BOTH 46 IRQ_TYPE_EDGE_BOTH
 				47 IRQ_TYPE_EDGE_BOTH 48 IRQ_TYPE_EDGE_BOTH
 				49 IRQ_TYPE_EDGE_BOTH 50 IRQ_TYPE_EDGE_BOTH>;
+			power-domains = <&psc1 3>, <&psc1 27>, <&psc0 12>;
 			ti,ngpio = <144>;
 			ti,davinci-gpio-unbanked = <0>;
 			status = "disabled";
@@ -444,6 +489,7 @@
 			reg-names = "mpu", "dat";
 			interrupts = <54>;
 			interrupt-names = "common";
+			power-domains = <&psc1 7>, <&psc1 28>, <&psc0 12>;
 			status = "disabled";
 			dmas = <&edma0 1 1>,
 				<&edma0 0 1>;
@@ -465,6 +511,7 @@
 		reg = <0x68000000 0x00008000>;
 		ranges = <0 0 0x60000000 0x08000000
 			  1 0 0x68000000 0x00008000>;
+		power-domains = <&psc0 3>, <&psc1 30>, <&psc0 12>;
 		status = "disabled";
 	};
 };
