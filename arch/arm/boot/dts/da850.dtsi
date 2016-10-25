@@ -383,7 +383,17 @@
 			#phy-cells = <1>;
 			status = "disabled";
 		};
-		usb: usb@0225000 {
+		usb0: usb@200000 {
+			compatible = "ti,da830-musb";
+			reg = <0x200000 0x1000>;
+			interrupts = <58>;
+			interrupt-names = "mc";
+			dr_mode = "otg";
+			phys = <&usb_phy 0>;
+			phy-names = "usb-phy";
+			status = "disabled";
+		};
+		usb1: usb@225000 {
 			compatible = "ti,da830-ohci";
 			reg = <0x225000 0x1000>;
 			interrupts = <59>;

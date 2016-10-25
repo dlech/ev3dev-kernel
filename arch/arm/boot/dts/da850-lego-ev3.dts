@@ -150,6 +150,25 @@
 		clock-output-names = "slow_clk";
 		pwms = <&ecap2 0 30517>;
 	};
+
+	/*
+	 * The USB 1.1 port VBUS (5V) regulator also feeds pin 4 on the input
+	 * and output ports as well as powering the analog/digital converter.
+	 * So, a short circuit on the input or output ports can trigger a USB
+	 * over-current shutdown. Also, analog input won't work until it is
+	 * reset.
+	*/
+	vbus_reg: vbus-reg {
+		compatible = "regulator-fixed";
+		pinctrl-names = "default";
+		pinctrl-0 = <&usb11_pins>;
+		gpio = <&gpio 101 GPIO_ACTIVE_LOW>;
+		oc-gpio = <&gpio 99 0>;
+		enable-active-high;
+		regulator-name = "vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+	};
 };
 
 &pmx_core {
@@ -293,6 +312,14 @@
 		pinctrl-single,bits = <
 			/* GP6[15] */
 			0x34 0x00000008 0x0000000f
+		>;
+	};
+	usb11_pins: pinmux_usb11_pins {
+		pinctrl-single,bits = <
+			/* GP6[5] */
+			0x40 0x00000080 0x000000f0
+			/* GP6[3] */
+			0x4c 0x00008000 0x0000f000
 		>;
 	};
 };
@@ -453,4 +480,18 @@
 	pinctrl-0 = <&in1_pins>, <&in2_pins>, <&in3_pins>, <&in4_pins>,
 		    <&outa_pins>, <&outb_pins>, <&outc_pins>, <&outd_pins>,
 		    <&sound_pins>;
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&usb0 {
+	status = "okay";
+	dr_mode = "peripheral";
+};
+
+&usb1 {
+	status = "okay";
+	vbus-supply = <&vbus_reg>;
 };
