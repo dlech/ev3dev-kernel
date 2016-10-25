@@ -20,6 +20,7 @@
 #include <linux/of.h>
 #include <linux/of_platform.h>
 #include <linux/platform_device.h>
+#include <linux/pm_runtime.h>
 
 #define TA_SHIFT	2
 #define RHOLD_SHIFT	4
@@ -395,6 +396,9 @@ static int aemif_probe(struct platform_device *pdev)
 			goto error;
 	}
 
+	pm_runtime_enable(dev);
+	pm_runtime_get_sync(dev);
+
 	return 0;
 error:
 	clk_disable_unprepare(aemif->clk);
@@ -405,6 +409,8 @@ static int aemif_remove(struct platform_device *pdev)
 {
 	struct aemif_device *aemif = platform_get_drvdata(pdev);
 
+	pm_runtime_put(&pdev->dev);
+	pm_runtime_disable(&pdev->dev);
 	clk_disable_unprepare(aemif->clk);
 	return 0;
 }

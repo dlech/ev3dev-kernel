@@ -31,6 +31,136 @@
 		ranges = <0x0 0x01c00000 0x400000>;
 		interrupt-parent = <&intc>;
 
+		psc0: power-controller@10000 {
+			compatible = "ti,da830-psc";
+			reg = <0x10000 0x1000>;
+			#address-cells = <2>;
+			#size-cells = <0>;
+
+			edma_cc0_lpsc: edma_cc0@0 {
+				#power-domain-cells = <0>;
+				reg = <0 0>;
+			};
+			edma_tc0_lpsc: edma_tc0@1 {
+				#power-domain-cells = <0>;
+				reg = <1 0>;
+			};
+			edma_tc1_lpsc: edma_tc1@2 {
+				#power-domain-cells = <0>;
+				reg = <2 0>;
+			};
+			aemif_lpsc: aemif@3 {
+				#power-domain-cells = <0>;
+				reg = <3 0>;
+			};
+			spi0_lpsc: spi0@4 {
+				#power-domain-cells = <0>;
+				reg = <4 0>;
+			};
+			mmc0_lpsc: mmc0@5 {
+				#power-domain-cells = <0>;
+				reg = <5 0>;
+			};
+			uart0_lpsc: uart0@9 {
+				#power-domain-cells = <0>;
+				reg = <9 0>;
+			};
+			pruss_lpsc: pruss@13 {
+				#power-domain-cells = <0>;
+				reg = <13 0>;
+			};
+		};
+
+		psc1: power-controller@227000 {
+			compatible = "ti,da830-psc";
+			reg = <0x227000 0x1000>;
+			#address-cells = <2>;
+			#size-cells = <0>;
+
+			edma_cc1_lpsc: edma_cc1@0 {
+				#power-domain-cells = <0>;
+				reg = <0 0>;
+			};
+			usb0_lpsc: usb0@1 {
+				#power-domain-cells = <0>;
+				reg = <1 0>;
+			};
+			usb1_lpsc: usb1@2 {
+				#power-domain-cells = <0>;
+				reg = <2 0>;
+				status = "disabled";
+			};
+			gpio_lpsc: gpio@3 {
+				#power-domain-cells = <0>;
+				reg = <3 0>;
+				status = "disabled";
+			};
+			emac_lpsc: emac@5 {
+				#power-domain-cells = <0>;
+				reg = <5 0>;
+			};
+			mcasp0_lpsc: mcasp0@7 {
+				#power-domain-cells = <0>;
+				reg = <7 0>;
+			};
+			sata_lpsc: sata@8 {
+				#power-domain-cells = <0>;
+				reg = <8 0>;
+			};
+			vpif_lpsc: vpif@9 {
+				#power-domain-cells = <0>;
+				reg = <9 0>;
+			};
+			spi1_lpsc: spi1@10 {
+				#power-domain-cells = <0>;
+				reg = <10 0>;
+			};
+			i2c1_lpsc: i2c1@11 {
+				#power-domain-cells = <0>;
+				reg = <11 0>;
+			};
+			uart1_lpsc: uart1@12 {
+				#power-domain-cells = <0>;
+				reg = <12 0>;
+			};
+			uart2_lpsc: uart2@13 {
+				#power-domain-cells = <0>;
+				reg = <13 0>;
+			};
+			mcbsb0_lpsc: mcbsb0@14 {
+				#power-domain-cells = <0>;
+				reg = <14 0>;
+			};
+			mcbsp1_lpsc: mcbsp1@15 {
+				#power-domain-cells = <0>;
+				reg = <15 0>;
+			};
+			lcdc_lpsc: lcdc@16 {
+				#power-domain-cells = <0>;
+				reg = <16 0>;
+			};
+			ehrpwm_lpsc: ehrpwm@17 {
+				#power-domain-cells = <0>;
+				reg = <17 0>;
+			};
+			mmc1_lpsc: mmc1@18 {
+				#power-domain-cells = <0>;
+				reg = <18 0>;
+			};
+			upp_lpsc: upp@19 {
+				#power-domain-cells = <0>;
+				reg = <19 0>;
+			};
+			ecap_lpsc: ecap@20 {
+				#power-domain-cells = <0>;
+				reg = <20 0>;
+			};
+			edma_tc2_lpsc: edma_tc2@21 {
+				#power-domain-cells = <0>;
+				reg = <21 0>;
+			};
+		};
+
 		pmx_core: pinmux@14120 {
 			compatible = "pinctrl-single";
 			reg = <0x14120 0x50>;
@@ -226,6 +356,7 @@
 			reg-names = "edma3_cc";
 			interrupts = <11 12>;
 			interrupt-names = "edma3_ccint", "edma3_ccerrint";
+			power-domains = <&edma_cc0_lpsc>;
 			#dma-cells = <2>;
 
 			ti,tptcs = <&edma0_tptc0 7>, <&edma0_tptc1 0>;
@@ -235,12 +366,14 @@
 			reg =	<0x8000 0x400>;
 			interrupts = <13>;
 			interrupt-names = "edm3_tcerrint";
+			power-domains = <&edma_tc0_lpsc>;
 		};
 		edma0_tptc1: tptc@8400 {
 			compatible = "ti,edma3-tptc";
 			reg =	<0x8400 0x400>;
 			interrupts = <32>;
 			interrupt-names = "edm3_tcerrint";
+			power-domains = <&edma_tc1_lpsc>;
 		};
 		edma1: edma@230000 {
 			compatible = "ti,edma3-tpcc";
@@ -249,6 +382,7 @@
 			reg-names = "edma3_cc";
 			interrupts = <93 94>;
 			interrupt-names = "edma3_ccint", "edma3_ccerrint";
+			power-domains = <&edma_cc1_lpsc>;
 			#dma-cells = <2>;
 
 			ti,tptcs = <&edma1_tptc0 7>;
@@ -258,12 +392,14 @@
 			reg =	<0x238000 0x400>;
 			interrupts = <95>;
 			interrupt-names = "edm3_tcerrint";
+			power-domains = <&edma_tc2_lpsc>;
 		};
 		serial0: serial@42000 {
 			compatible = "ns16550a";
 			reg = <0x42000 0x100>;
 			reg-shift = <2>;
 			interrupts = <25>;
+			power-domains = <&uart0_lpsc>;
 			status = "disabled";
 		};
 		serial1: serial@10c000 {
@@ -271,6 +407,7 @@
 			reg = <0x10c000 0x100>;
 			reg-shift = <2>;
 			interrupts = <53>;
+			power-domains = <&uart1_lpsc>;
 			status = "disabled";
 		};
 		serial2: serial@10d000 {
@@ -278,6 +415,7 @@
 			reg = <0x10d000 0x100>;
 			reg-shift = <2>;
 			interrupts = <61>;
+			power-domains = <&uart2_lpsc>;
 			status = "disabled";
 		};
 		rtc0: rtc@23000 {
@@ -299,6 +437,7 @@
 			compatible = "ti,davinci-i2c";
 			reg = <0x228000 0x1000>;
 			interrupts = <51>;
+			power-domains = <&i2c1_lpsc>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -312,6 +451,7 @@
 			compatible = "ti,da830-mmc";
 			reg = <0x40000 0x1000>;
 			interrupts = <16>;
+			power-domains = <&mmc0_lpsc>;
 			dmas = <&edma0 16 0>, <&edma0 17 0>;
 			dma-names = "rx", "tx";
 			status = "disabled";
@@ -320,6 +460,7 @@
 			compatible = "ti,da830-mmc";
 			reg = <0x21b000 0x1000>;
 			interrupts = <72>;
+			power-domains = <&mmc1_lpsc>;
 			dmas = <&edma1 28 0>, <&edma1 29 0>;
 			dma-names = "rx", "tx";
 			status = "disabled";
@@ -329,6 +470,7 @@
 				     "ti,am33xx-ehrpwm";
 			#pwm-cells = <3>;
 			reg = <0x300000 0x2000>;
+			power-domains = <&ehrpwm_lpsc>;
 			status = "disabled";
 		};
 		ehrpwm1: pwm@302000 {
@@ -336,6 +478,7 @@
 				     "ti,am33xx-ehrpwm";
 			#pwm-cells = <3>;
 			reg = <0x302000 0x2000>;
+			power-domains = <&ehrpwm_lpsc>;
 			status = "disabled";
 		};
 		ecap0: ecap@306000 {
@@ -343,6 +486,7 @@
 				     "ti,am33xx-ecap";
 			#pwm-cells = <3>;
 			reg = <0x306000 0x80>;
+			power-domains = <&ehrpwm_lpsc>;
 			status = "disabled";
 		};
 		ecap1: ecap@307000 {
@@ -350,6 +494,7 @@
 				     "ti,am33xx-ecap";
 			#pwm-cells = <3>;
 			reg = <0x307000 0x80>;
+			power-domains = <&ecap_lpsc>;
 			status = "disabled";
 		};
 		ecap2: ecap@308000 {
@@ -357,6 +502,7 @@
 				     "ti,am33xx-ecap";
 			#pwm-cells = <3>;
 			reg = <0x308000 0x80>;
+			power-domains = <&ecap_lpsc>;
 			status = "disabled";
 		};
 		spi0: spi@41000 {
@@ -367,6 +513,7 @@
 			num-cs = <6>;
 			ti,davinci-spi-intr-line = <1>;
 			interrupts = <20>;
+			power-domains = <&spi0_lpsc>;
 			dmas = <&edma0 14 0>, <&edma0 15 0>;
 			dma-names = "rx", "tx";
 			status = "disabled";
@@ -379,6 +526,7 @@
 			num-cs = <4>;
 			ti,davinci-spi-intr-line = <1>;
 			interrupts = <56>;
+			power-domains = <&spi1_lpsc>;
 			dmas = <&edma0 18 0>, <&edma0 19 0>;
 			dma-names = "rx", "tx";
 			status = "disabled";
@@ -388,6 +536,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x224000 0x1000>;
+			power-domains = <&emac_lpsc>;
 			status = "disabled";
 		};
 		eth0: ethernet@220000 {
@@ -403,6 +552,7 @@
 					35
 					36
 					>;
+			power-domains = <&emac_lpsc>;
 			status = "disabled";
 		};
 		usb0: usb@200000 {
@@ -411,6 +561,7 @@
 			interrupts = <58>;
 			interrupt-names = "mc";
 			dr_mode = "otg";
+			power-domains = <&usb0_lpsc>;
 			phys = <&usb_phy 0>;
 			phy-names = "usb-phy";
 			status = "disabled";
@@ -419,6 +570,7 @@
 			compatible = "ti,da830-ohci";
 			reg = <0x225000 0x1000>;
 			interrupts = <59>;
+			power-domains = <&usb1_lpsc>;
 			phys = <&usb_phy 1>;
 			phy-names = "usb-phy";
 			status = "disabled";
@@ -433,6 +585,7 @@
 				45 IRQ_TYPE_EDGE_BOTH 46 IRQ_TYPE_EDGE_BOTH
 				47 IRQ_TYPE_EDGE_BOTH 48 IRQ_TYPE_EDGE_BOTH
 				49 IRQ_TYPE_EDGE_BOTH 50 IRQ_TYPE_EDGE_BOTH>;
+			power-domains = <&gpio_lpsc>;
 			ti,ngpio = <144>;
 			ti,davinci-gpio-unbanked = <0>;
 			status = "disabled";
@@ -445,6 +598,7 @@
 			reg-names = "mpu", "dat";
 			interrupts = <54>;
 			interrupt-names = "common";
+			power-domains = <&mcasp0_lpsc>;
 			status = "disabled";
 			dmas = <&edma0 1 1>,
 				<&edma0 0 1>;
@@ -455,6 +609,7 @@
 			compatible = "ti,da850-tilcdc";
 			reg = <0x213000 0x1000>;
 			interrupts = <52>;
+			power-domains = <&lcdc_lpsc>;
 			status = "disabled";
 		};
 	};
@@ -466,6 +621,7 @@
 		reg = <0x68000000 0x00008000>;
 		ranges = <0 0 0x60000000 0x08000000
 			  1 0 0x68000000 0x00008000>;
+		power-domains = <&aemif_lpsc>;
 		status = "disabled";
 	};
 };

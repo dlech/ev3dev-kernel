@@ -18,6 +18,7 @@
 #include <linux/of_address.h>
 #include <linux/of_irq.h>
 #include <linux/of_platform.h>
+#include <linux/pm_runtime.h>
 #include <linux/clk.h>
 
 #include "8250.h"
@@ -229,6 +230,10 @@ static int of_platform_serial_probe(struct platform_device *ofdev)
 	info->type = port_type;
 	info->line = ret;
 	platform_set_drvdata(ofdev, info);
+
+	pm_runtime_enable(&ofdev->dev);
+	pm_runtime_get_sync(&ofdev->dev);
+
 	return 0;
 out:
 	kfree(info);
@@ -250,6 +255,9 @@ static int of_platform_serial_remove(struct platform_device *ofdev)
 		/* need to add code for these */
 		break;
 	}
+
+	pm_runtime_put(&ofdev->dev);
+	pm_runtime_disable(&ofdev->dev);
 
 	if (info->clk)
 		clk_disable_unprepare(info->clk);
