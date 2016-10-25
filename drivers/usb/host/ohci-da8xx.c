@@ -37,7 +37,6 @@ static int (*orig_ohci_hub_status_data)(struct usb_hcd *hcd, char *buf);
 
 struct da8xx_ohci_hcd {
 	struct usb_hcd *hcd;
-	struct clk *usb11_clk;
 	struct phy *usb11_phy;
 	struct regulator *vbus_reg;
 	struct notifier_block nb;
@@ -50,13 +49,9 @@ static int ohci_da8xx_enable(struct usb_hcd *hcd)
 	struct da8xx_ohci_hcd *da8xx_ohci = to_da8xx_ohci(hcd);
 	int ret;
 
-	ret = clk_prepare_enable(da8xx_ohci->usb11_clk);
-	if (ret)
-		return ret;
-
 	ret = phy_init(da8xx_ohci->usb11_phy);
 	if (ret)
-		goto err_phy_init;
+		return ret;
 
 	ret = phy_power_on(da8xx_ohci->usb11_phy);
 	if (ret)
@@ -66,8 +61,6 @@ static int ohci_da8xx_enable(struct usb_hcd *hcd)
 
 err_phy_power_on:
 	phy_exit(da8xx_ohci->usb11_phy);
-err_phy_init:
-	clk_disable_unprepare(da8xx_ohci->usb11_clk);
 
 	return ret;
 }
@@ -78,7 +71,6 @@ static void ohci_da8xx_disable(struct usb_hcd *hcd)
 
 	phy_power_off(da8xx_ohci->usb11_phy);
 	phy_exit(da8xx_ohci->usb11_phy);
-	clk_disable_unprepare(da8xx_ohci->usb11_clk);
 }
 
 static int ohci_da8xx_set_power(struct usb_hcd *hcd, int on)
@@ -293,13 +285,6 @@ static int ohci_da8xx_probe(struct platform_device *pdev)
 
 	da8xx_ohci = to_da8xx_ohci(hcd);
 	da8xx_ohci->hcd = hcd;
-
-	da8xx_ohci->usb11_clk = devm_clk_get(&pdev->dev, "usb11");
-	if (IS_ERR(da8xx_ohci->usb11_clk)) {
-		if (PTR_ERR(da8xx_ohci->usb11_clk) != -EPROBE_DEFER)
-			dev_err(&pdev->dev, "Failed to get clock.\n");
-		return PTR_ERR(da8xx_ohci->usb11_clk);
-	}
 
 	da8xx_ohci->usb11_phy = devm_phy_get(&pdev->dev, "usb-phy");
 	if (IS_ERR(da8xx_ohci->usb11_phy)) {

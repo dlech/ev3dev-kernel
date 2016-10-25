@@ -842,6 +842,10 @@ static int serial8250_probe(struct platform_device *dev)
 				p->irq, ret);
 		}
 	}
+
+	pm_runtime_enable(&dev->dev);
+	pm_runtime_get_sync(&dev->dev);
+
 	return 0;
 }
 
@@ -858,6 +862,10 @@ static int serial8250_remove(struct platform_device *dev)
 		if (up->port.dev == &dev->dev)
 			serial8250_unregister_port(i);
 	}
+
+	pm_runtime_put(&dev->dev);
+	pm_runtime_disable(&dev->dev);
+
 	return 0;
 }
 

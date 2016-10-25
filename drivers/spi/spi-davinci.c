@@ -26,6 +26,7 @@
 #include <linux/of.h>
 #include <linux/of_device.h>
 #include <linux/of_gpio.h>
+#include <linux/pm_runtime.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/spi_bitbang.h>
 #include <linux/slab.h>
@@ -1062,6 +1063,9 @@ static int davinci_spi_probe(struct platform_device *pdev)
 	if (ret)
 		goto free_dma;
 
+	pm_runtime_enable(&pdev->dev);
+	pm_runtime_get_sync(&pdev->dev);
+
 	dev_info(&pdev->dev, "Controller at 0x%p\n", dspi->base);
 
 	return ret;
@@ -1097,6 +1101,9 @@ static int davinci_spi_remove(struct platform_device *pdev)
 	dspi = spi_master_get_devdata(master);
 
 	spi_bitbang_stop(&dspi->bitbang);
+
+	pm_runtime_put(&pdev->dev);
+	pm_runtime_disable(&pdev->dev);
 
 	clk_disable_unprepare(dspi->clk);
 	spi_master_put(master);

@@ -35,8 +35,8 @@
 #include <linux/mmc/mmc.h>
 #include <linux/of.h>
 #include <linux/of_device.h>
-
 #include <linux/platform_data/mmc-davinci.h>
+#include <linux/pm_runtime.h>
 
 /*
  * Register Definitions
@@ -1342,6 +1342,9 @@ static int __init davinci_mmcsd_probe(struct platform_device *pdev)
 
 	rename_region(mem, mmc_hostname(mmc));
 
+	pm_runtime_enable(&pdev->dev);
+	pm_runtime_get_sync(&pdev->dev);
+
 	dev_info(mmc_dev(host->mmc), "Using %s, %d-bit mode\n",
 		host->use_dma ? "DMA" : "PIO",
 		(mmc->caps & MMC_CAP_4_BIT_DATA) ? 4 : 1);
@@ -1371,6 +1374,8 @@ static int __exit davinci_mmcsd_remove(struct platform_device *pdev)
 	mmc_remove_host(host->mmc);
 	mmc_davinci_cpufreq_deregister(host);
 	davinci_release_dma_channels(host);
+	pm_runtime_put(&pdev->dev);
+	pm_runtime_disable(&pdev->dev);
 	clk_disable_unprepare(host->clk);
 	mmc_free_host(host->mmc);
 

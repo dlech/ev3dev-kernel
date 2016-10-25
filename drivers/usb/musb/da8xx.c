@@ -30,7 +30,6 @@
  */
 
 #include <linux/module.h>
-#include <linux/clk.h>
 #include <linux/err.h>
 #include <linux/io.h>
 #include <linux/phy/phy.h>
@@ -85,7 +84,6 @@ struct da8xx_glue {
 	struct device		*dev;
 	struct platform_device	*musb;
 	struct platform_device	*usb_phy;
-	struct clk		*clk;
 	struct phy		*phy;
 };
 
@@ -376,26 +374,18 @@ static int da8xx_musb_init(struct musb *musb)
 	struct da8xx_glue *glue = dev_get_drvdata(musb->controller->parent);
 	void __iomem *reg_base = musb->ctrl_base;
 	u32 rev;
-	int ret = -ENODEV;
+	int ret;
 
 	musb->mregs += DA8XX_MENTOR_CORE_OFFSET;
-
-	ret = clk_prepare_enable(glue->clk);
-	if (ret) {
-		dev_err(glue->dev, "failed to enable clock\n");
-		return ret;
-	}
 
 	/* Returns zero if e.g. not clocked */
 	rev = musb_readl(reg_base, DA8XX_USB_REVISION_REG);
 	if (!rev)
-		goto fail;
+		return -ENODEV;
 
 	musb->xceiv = usb_get_phy(USB_PHY_TYPE_USB2);
-	if (IS_ERR_OR_NULL(musb->xceiv)) {
-		ret = -EPROBE_DEFER;
-		goto fail;
-	}
+	if (IS_ERR_OR_NULL(musb->xceiv))
+		return -EPROBE_DEFER;
 
 	setup_timer(&otg_workaround, otg_timer, (unsigned long)musb);
 
@@ -427,7 +417,8 @@ static int da8xx_musb_init(struct musb *musb)
 err_phy_power_on:
 	phy_exit(glue->phy);
 fail:
-	clk_disable_unprepare(glue->clk);
+	usb_put_phy(musb->xceiv);
+
 	return ret;
 }
 
@@ -439,7 +430,6 @@ static int da8xx_musb_exit(struct musb *musb)
 
 	phy_power_off(glue->phy);
 	phy_exit(glue->phy);
-	clk_disable_unprepare(glue->clk);
 
 	usb_put_phy(musb->xceiv);
 
@@ -498,19 +488,12 @@ static int da8xx_probe(struct platform_device *pdev)
 	struct musb_hdrc_platform_data	*pdata = dev_get_platdata(&pdev->dev);
 	struct da8xx_glue		*glue;
 	struct platform_device_info	pinfo;
-	struct clk			*clk;
 	struct device_node		*np = pdev->dev.of_node;
 	int				ret;
 
 	glue = devm_kzalloc(&pdev->dev, sizeof(*glue), GFP_KERNEL);
 	if (!glue)
 		return -ENOMEM;
-
-	clk = devm_clk_get(&pdev->dev, "usb20");
-	if (IS_ERR(clk)) {
-		dev_err(&pdev->dev, "failed to get clock\n");
-		return PTR_ERR(clk);
-	}
 
 	glue->phy = devm_phy_get(&pdev->dev, "usb-phy");
 	if (IS_ERR(glue->phy)) {
@@ -520,7 +503,6 @@ static int da8xx_probe(struct platform_device *pdev)
 	}
 
 	glue->dev			= &pdev->dev;
-	glue->clk			= clk;
 
 	if (IS_ENABLED(CONFIG_OF) && np) {
 		pdata = devm_kzalloc(&pdev->dev, sizeof(*pdata), GFP_KERNEL);
@@ -568,6 +550,8 @@ static int da8xx_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "failed to register musb device: %d\n", ret);
 		usb_phy_generic_unregister(glue->usb_phy);
 	}
+	pm_runtime_enable(&pdev->dev);
+	pm_runtime_get_sync(&pdev->dev);
 
 	return ret;
 }
@@ -576,6 +560,8 @@ static int da8xx_remove(struct platform_device *pdev)
 {
 	struct da8xx_glue		*glue = platform_get_drvdata(pdev);
 
+	pm_runtime_put(&pdev->dev);
+	pm_runtime_disable(&pdev->dev);
 	platform_device_unregister(glue->musb);
 	usb_phy_generic_unregister(glue->usb_phy);
 

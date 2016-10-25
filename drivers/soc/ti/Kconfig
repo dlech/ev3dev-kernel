@@ -28,6 +28,12 @@ config KEYSTONE_NAVIGATOR_DMA
 
 	  If unsure, say N.
 
+config TI_PSC
+	bool "TI PSC"
+	depends on ARCH_DAVINCI_DA8XX
+	help
+	  Say y to enable support for TI PSC. This is a power domain driver.
+
 config WKUP_M3_IPC
 	tristate "TI AMx3 Wkup-M3 IPC Driver"
 	depends on WKUP_M3_RPROC
