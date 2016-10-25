@@ -47,9 +47,25 @@ static struct of_dev_auxdata da850_auxdata_lookup[] __initdata = {
 
 #ifdef CONFIG_ARCH_DAVINCI_DA850
 
+static struct davinci_pm_config da850_pm_pdata = {
+	.sleepcount = 128,
+};
+
+static struct platform_device da850_pm_device = {
+	.name	= "pm-davinci",
+	.dev	= {
+		.platform_data	= &da850_pm_pdata,
+	},
+	.id	= -1,
+};
+
 static void __init da850_init_machine(void)
 {
 	int ret;
+
+	ret = da850_register_pm(&da850_pm_device);
+	if (ret)
+		pr_warn("%s: suspend registration failed: %d\n", __func__, ret);
 
 	ret = da8xx_register_usb20_phy_clk(false);
 	if (ret)
