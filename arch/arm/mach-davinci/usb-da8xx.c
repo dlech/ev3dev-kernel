@@ -180,7 +180,7 @@ static void usb20_phy_clk_enable(struct clk *clk)
 		udelay(1);
 	}
 
-	pr_err("Timeout waiting for USB 2.0 PHY clock good.\n");
+	pr_err("Timeout waiting for USB 2.0 PHY clock good\n");
 done:
 	clk_disable_unprepare(usb20_clk);
 	clk_put(usb20_clk);
@@ -207,7 +207,7 @@ static int usb20_phy_clk_set_parent(struct clk *clk, struct clk *parent)
 	} else if (strcmp(parent->name, "pll0_aux_clk") == 0) {
 		val |= CFGCHIP2_USB2PHYCLKMUX;
 	} else {
-		pr_err("Bad parent on USB 2.0 PHY clock.\n");
+		pr_err("Bad parent on USB 2.0 PHY clock\n");
 		return -EINVAL;
 	}
 
@@ -242,7 +242,7 @@ static int usb20_phy_clk_set_parent(struct clk *clk, struct clk *parent)
 		val |= CFGCHIP2_REFFREQ_48MHZ;
 		break;
 	default:
-		pr_err("Bad parent clock rate on USB 2.0 PHY clock.\n");
+		pr_err("Bad parent clock rate on USB 2.0 PHY clock\n");
 		return -EINVAL;
 	}
 
@@ -298,7 +298,7 @@ static int usb11_phy_clk_set_parent(struct clk *clk, struct clk *parent)
 	} else if (parent == &usb_refclkin) {
 		val |= CFGCHIP2_USB1PHYCLKMUX;
 	} else {
-		pr_err("Bad parent on USB 1.1 PHY clock.\n");
+		pr_err("Bad parent on USB 1.1 PHY clock\n");
 		return -EINVAL;
 	}
 
