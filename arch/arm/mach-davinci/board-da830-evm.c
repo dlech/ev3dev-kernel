@@ -27,6 +27,7 @@
 #include <linux/platform_data/mtd-davinci-aemif.h>
 #include <linux/platform_data/spi-davinci.h>
 #include <linux/platform_data/usb-davinci.h>
+#include <linux/mfd/da8xx-cfgchip.h>
 
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>

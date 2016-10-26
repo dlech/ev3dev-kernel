@@ -14,6 +14,7 @@
 #include <linux/console.h>
 #include <linux/gpio.h>
 #include <linux/platform_data/gpio-davinci.h>
+#include <linux/mfd/da8xx-cfgchip.h>
 
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
