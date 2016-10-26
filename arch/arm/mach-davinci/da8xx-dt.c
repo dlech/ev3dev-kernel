@@ -38,6 +38,7 @@ static struct of_dev_auxdata da850_auxdata_lookup[] __initdata = {
 		       NULL),
 	OF_DEV_AUXDATA("ti,da830-mcasp-audio", 0x01d00000, "davinci-mcasp.0", NULL),
 	OF_DEV_AUXDATA("ti,da850-aemif", 0x68000000, "ti-aemif", NULL),
+	OF_DEV_AUXDATA("ti,da830-usb-phy", 0x01c00000, "da8xx-usb-phy", NULL),
 	{}
 };
 

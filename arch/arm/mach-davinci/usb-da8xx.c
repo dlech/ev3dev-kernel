@@ -25,6 +25,14 @@
 static struct platform_device da8xx_usb_phy = {
 	.name		= "da8xx-usb-phy",
 	.id		= -1,
+	.dev		= {
+		/*
+		 * Setting init_name so that clock lookup will work in
+		 * da8xx_register_usb11_phy_clk() even if this device is not
+		 * registered yet.
+		 */
+		.init_name	= "da8xx-usb-phy",
+	},
 };
 
 int __init da8xx_register_usb_phy(void)
@@ -326,7 +334,10 @@ int __init da8xx_register_usb11_phy_clk(bool use_usb_refclkin)
 	struct clk *parent;
 	int ret = 0;
 
-	parent = clk_get(NULL, use_usb_refclkin ? "usb_refclkin" : "usb20_phy");
+	if (use_usb_refclkin)
+		parent = clk_get(NULL, "usb_refclkin");
+	else
+		parent = clk_get(&da8xx_usb_phy.dev, "usb20_phy");
 	if (IS_ERR(parent))
 		return PTR_ERR(parent);
 
