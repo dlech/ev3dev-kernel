@@ -374,9 +374,7 @@ static int da8xx_musb_set_mode(struct musb *musb, u8 musb_mode)
 	case MUSB_HOST:		/* Force VBUS valid, ID = 0 */
 		phy_mode = PHY_MODE_USB_HOST;
 		break;
-	case MUSB_PERIPHERAL:	/* Force VBUS valid, ID = 1 */
-		phy_mode = PHY_MODE_USB_DEVICE;
-		break;
+	case MUSB_PERIPHERAL:
 	case MUSB_OTG:		/* Don't override the VBUS/ID comparators */
 		phy_mode = PHY_MODE_USB_OTG;
 		break;
