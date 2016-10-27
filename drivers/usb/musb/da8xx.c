@@ -29,13 +29,16 @@
  *
  */
 
-#include <linux/module.h>
 #include <linux/clk.h>
+#include <linux/dma-mapping.h>
 #include <linux/err.h>
 #include <linux/io.h>
+#include <linux/mfd/da8xx-cfgchip.h>
+#include <linux/mfd/syscon.h>
+#include <linux/module.h>
 #include <linux/phy/phy.h>
 #include <linux/platform_device.h>
-#include <linux/dma-mapping.h>
+#include <linux/regmap.h>
 #include <linux/usb/usb_phy_generic.h>
 
 #include "musb_core.h"
@@ -87,6 +90,7 @@ struct da8xx_glue {
 	struct platform_device	*usb_phy;
 	struct clk		*clk;
 	struct phy		*phy;
+	struct regmap		*cfgchip;
 };
 
 /*
@@ -130,6 +134,18 @@ static void da8xx_musb_disable(struct musb *musb)
 }
 
 #define portstate(stmt)		stmt
+
+static int da8xx_musb_vbus_status(struct musb *musb)
+{
+	struct da8xx_glue *glue = dev_get_drvdata(musb->controller->parent);
+	int ret, val;
+
+	ret = regmap_read(glue->cfgchip, CFGCHIP(2), &val);
+	if (ret)
+		return ret;
+
+	return val & CFGCHIP2_VBUSSENSE ? 1 : 0;
+}
 
 static void da8xx_musb_set_vbus(struct musb *musb, int is_on)
 {
@@ -477,6 +493,7 @@ static const struct musb_platform_ops da8xx_ops = {
 	.set_mode	= da8xx_musb_set_mode,
 	.try_idle	= da8xx_musb_try_idle,
 
+	.vbus_status	= da8xx_musb_vbus_status,
 	.set_vbus	= da8xx_musb_set_vbus,
 };
 
@@ -517,6 +534,16 @@ static int da8xx_probe(struct platform_device *pdev)
 		if (PTR_ERR(glue->phy) != -EPROBE_DEFER)
 			dev_err(&pdev->dev, "failed to get phy\n");
 		return PTR_ERR(glue->phy);
+	}
+
+	if (np)
+		glue->cfgchip = syscon_regmap_lookup_by_compatible(
+							"ti,da830-cfgchip");
+	else
+		glue->cfgchip = syscon_regmap_lookup_by_pdevname("syscon");
+	if (IS_ERR(glue->cfgchip)) {
+		dev_err(&pdev->dev, "Failed to get cfgchip\n");
+		return PTR_ERR(glue->cfgchip);
 	}
 
 	glue->dev			= &pdev->dev;
