@@ -279,6 +279,11 @@ static int ohci_da8xx_probe(struct platform_device *pdev)
 	struct resource *mem;
 	int error, irq;
 
+	hcd = usb_create_hcd(&ohci_da8xx_hc_driver, &pdev->dev,
+				dev_name(&pdev->dev));
+	if (!hcd)
+		return -ENOMEM;
+
 	da8xx_ohci = to_da8xx_ohci(hcd);
 	da8xx_ohci->hcd = hcd;
 
