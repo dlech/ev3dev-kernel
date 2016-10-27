@@ -501,7 +501,6 @@ static int da8xx_probe(struct platform_device *pdev)
 	struct clk			*clk;
 	struct device_node		*np = pdev->dev.of_node;
 	int				ret;
-	struct resource *res;
 
 	glue = devm_kzalloc(&pdev->dev, sizeof(*glue), GFP_KERNEL);
 	if (!glue)
