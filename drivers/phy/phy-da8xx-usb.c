@@ -74,6 +74,8 @@ static int da8xx_usb20_phy_power_on(struct phy *phy)
 		return ret;
 
 	regmap_write_bits(d_phy->regmap, CFGCHIP(2), CFGCHIP2_OTGPWRDN, 0);
+	regmap_write_bits(d_phy->regmap, CFGCHIP(2), CFGCHIP2_SESENDEN, CFGCHIP2_SESENDEN);
+	regmap_write_bits(d_phy->regmap, CFGCHIP(2), CFGCHIP2_VBDTCTEN, CFGCHIP2_VBDTCTEN);
 
 	return 0;
 }
