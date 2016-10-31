@@ -228,9 +228,15 @@
 
 		};
 		cfgchip: cfgchip@1417c {
-			compatible = "ti,da830-cfgchip", "syscon";
+			compatible = "ti,da830-cfgchip", "syscon", "simple-mfd";
 			reg = <0x1417c 0x14>;
 			power-domains = <&psc0 12>;
+
+			usb_phy: usb-phy {
+				compatible = "ti,da830-usb-phy";
+				#phy-cells = <1>;
+				status = "disabled";
+			};
 		};
 		edma0: edma@0 {
 			compatible = "ti,edma3-tpcc";
@@ -441,17 +447,11 @@
 			power-domains = <&psc1 5>, <&psc1 27>,<&psc0 12>;
 			status = "disabled";
 		};
-		usb_phy: usb-phy {
-			compatible = "ti,da830-usb-phy";
-			#phy-cells = <1>;
-			status = "disabled";
-		};
 		usb0: usb@200000 {
 			compatible = "ti,da830-musb";
 			reg = <0x200000 0x10000>;
 			interrupts = <58>;
 			interrupt-names = "mc";
-			dr_mode = "otg";
 			power-domains = <&psc1 1>, <&psc0 12>;
 			phys = <&usb_phy 0>;
 			phy-names = "usb-phy";
