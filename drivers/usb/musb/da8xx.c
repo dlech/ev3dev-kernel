@@ -91,6 +91,7 @@ struct da8xx_glue {
 	struct clk		*clk;
 	struct phy		*phy;
 	struct regmap		*cfgchip;
+	u8			 mode;
 };
 
 /*
@@ -159,6 +160,7 @@ static struct timer_list otg_workaround;
 static void otg_timer(unsigned long _musb)
 {
 	struct musb		*musb = (void *)_musb;
+	// struct da8xx_glue *glue = dev_get_drvdata(musb->controller->parent);
 	void __iomem		*mregs = musb->mregs;
 	u8			devctl;
 	unsigned long		flags;
@@ -171,8 +173,8 @@ static void otg_timer(unsigned long _musb)
 	 * controller must act as host or device, we can safely exit OTG is
 	 * not in use.
 	 */
-	if (musb->port_mode != MUSB_PORT_MODE_DUAL_ROLE)
-		return;
+	// if (glue->mode != MUSB_PORT_MODE_DUAL_ROLE)
+	// 	return;
 
 	/*
 	 * We poll because DaVinci's won't expose several OTG-critical
@@ -190,6 +192,7 @@ static void otg_timer(unsigned long _musb)
 
 		devctl = musb_readb(musb->mregs, MUSB_DEVCTL);
 		if (devctl & MUSB_DEVCTL_BDEVICE) {
+			printk("%s\n", __func__);
 			musb->xceiv->otg->state = OTG_STATE_B_IDLE;
 			MUSB_DEV_MODE(musb);
 		} else {
@@ -227,10 +230,12 @@ static void otg_timer(unsigned long _musb)
 		 */
 		musb_writeb(mregs, MUSB_DEVCTL, devctl | MUSB_DEVCTL_SESSION);
 		devctl = musb_readb(mregs, MUSB_DEVCTL);
-		if (devctl & MUSB_DEVCTL_BDEVICE)
+		if (devctl & MUSB_DEVCTL_BDEVICE) {
 			mod_timer(&otg_workaround, jiffies + POLL_SECONDS * HZ);
-		else
+		} else {
+			MUSB_HST_MODE(musb);
 			musb->xceiv->otg->state = OTG_STATE_A_IDLE;
+		}
 		break;
 	default:
 		break;
@@ -304,10 +309,14 @@ static irqreturn_t da8xx_musb_interrupt(int irq, void *hci)
 	 * Also, DRVVBUS pulses for SRP (but not at 5 V)...
 	 */
 	if (status & (DA8XX_INTR_DRVVBUS << DA8XX_INTR_USB_SHIFT)) {
+		struct da8xx_glue *glue =
+				dev_get_drvdata(musb->controller->parent);
 		int drvvbus = musb_readl(reg_base, DA8XX_USB_STAT_REG);
 		void __iomem *mregs = musb->mregs;
 		u8 devctl = musb_readb(mregs, MUSB_DEVCTL);
-		int err;
+		int cfgchip2, err;
+
+		regmap_read(glue->cfgchip, CFGCHIP(2), &cfgchip2);
 
 		err = musb->int_usb & MUSB_INTR_VBUSERROR;
 		if (err) {
@@ -332,10 +341,25 @@ static irqreturn_t da8xx_musb_interrupt(int irq, void *hci)
 			musb->xceiv->otg->state = OTG_STATE_A_WAIT_VRISE;
 			portstate(musb->port1_status |= USB_PORT_STAT_POWER);
 			del_timer(&otg_workaround);
+		} else if ((cfgchip2 & CFGCHIP2_OTGMODE_MASK)
+			   == CFGCHIP2_OTGMODE_FORCE_HOST) {
+			/*
+			 * If we are forcing host mode, VBUSDRV is turned off
+			 * after a device is disconnected. We need to toggle the
+			 * VBUS/ID override to trigger turn it back on, which
+			 * has the effect of triggering DA8XX_INTR_DRVVBUS again.
+			 */
+			regmap_write_bits(glue->cfgchip, CFGCHIP(2),
+				CFGCHIP2_OTGMODE_MASK,
+				CFGCHIP2_OTGMODE_NO_OVERRIDE);
+			regmap_write_bits(glue->cfgchip, CFGCHIP(2),
+				CFGCHIP2_OTGMODE_MASK,
+				CFGCHIP2_OTGMODE_FORCE_HOST);
 		} else {
 			musb->is_active = 0;
 			MUSB_DEV_MODE(musb);
 			otg->default_a = 0;
+			printk("%s\n", __func__);
 			musb->xceiv->otg->state = OTG_STATE_B_IDLE;
 			portstate(musb->port1_status &= ~USB_PORT_STAT_POWER);
 		}
@@ -369,6 +393,7 @@ static int da8xx_musb_set_mode(struct musb *musb, u8 musb_mode)
 {
 	struct da8xx_glue *glue = dev_get_drvdata(musb->controller->parent);
 	enum phy_mode phy_mode;
+	int ret;
 
 	switch (musb_mode) {
 	case MUSB_HOST:		/* Force VBUS valid, ID = 0 */
@@ -382,7 +407,13 @@ static int da8xx_musb_set_mode(struct musb *musb, u8 musb_mode)
 		return -EINVAL;
 	}
 
-	return phy_set_mode(glue->phy, phy_mode);
+	ret = phy_set_mode(glue->phy, phy_mode);
+	if (ret)
+		return ret;
+
+	glue->mode = musb_mode;
+
+	return 0;
 }
 
 static int da8xx_musb_init(struct musb *musb)
