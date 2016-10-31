@@ -49,7 +49,6 @@ my $scm = 0;
 my $web = 0;
 my $subsystem = 0;
 my $status = 0;
-my $letters = "";
 my $keywords = 1;
 my $sections = 0;
 my $file_emails = 0;
@@ -242,7 +241,6 @@ if (!GetOptions(
 		'status!' => \$status,
 		'scm!' => \$scm,
 		'web!' => \$web,
-		'letters=s' => \$letters,
 		'pattern-depth=i' => \$pattern_depth,
 		'k|keywords!' => \$keywords,
 		'sections!' => \$sections,
@@ -273,8 +271,7 @@ $output_multiline = 0 if ($output_separator ne ", ");
 $output_rolestats = 1 if ($interactive);
 $output_roles = 1 if ($output_rolestats);
 
-if ($sections || $letters ne "") {
-    $sections = 1;
+if ($sections) {
     $email = 0;
     $email_list = 0;
     $scm = 0;
@@ -685,10 +682,8 @@ sub get_maintainers {
 			$line =~ s/\\\./\./g;       	##Convert \. to .
 			$line =~ s/\.\*/\*/g;       	##Convert .* to *
 		    }
-		    my $count = $line =~ s/^([A-Z]):/$1:\t/g;
-		    if ($letters eq "" || (!$count || $letters =~ /$1/i)) {
-			print("$line\n");
-		    }
+		    $line =~ s/^([A-Z]):/$1:\t/g;
+		    print("$line\n");
 		}
 		print("\n");
 	    }
@@ -819,7 +814,6 @@ Other options:
   --pattern-depth => Number of pattern directory traversals (default: 0 (all))
   --keywords => scan patch for keywords (default: $keywords)
   --sections => print all of the subsystem sections with pattern matches
-  --letters => print all matching 'letter' types from all matching sections
   --mailmap => use .mailmap file (default: $email_use_mailmap)
   --version => show version
   --help => show this help information
