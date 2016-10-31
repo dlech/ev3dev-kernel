@@ -102,6 +102,9 @@ void __init da8xx_board_usb_init(const short pins[],
 		struct da8xx_ohci_root_hub *usb11_pdata);
 int da8xx_register_usb20(unsigned mA, unsigned potpgt);
 int da8xx_register_usb11(struct da8xx_ohci_root_hub *pdata);
+int da8xx_register_usb_refclkin(int rate);
+int da8xx_register_usb20_phy_clk(bool use_usb_refclkin);
+int da8xx_register_usb11_phy_clk(bool use_usb_refclkin);
 int da8xx_register_emac(void);
 int da8xx_register_pru_suart(void);
 int da8xx_register_uio_pruss(void);
