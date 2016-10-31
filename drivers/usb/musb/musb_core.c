@@ -855,7 +855,7 @@ b_host:
 
 		musb_host_poke_root_hub(musb);
 
-		musb_dbg(musb, "CONNECT (%s) devctl %02x",
+		printk("CONNECT (%s) devctl %02x",
 				usb_otg_state_string(musb->xceiv->otg->state), devctl);
 	}
 
@@ -2272,6 +2272,7 @@ musb_init_controller(struct device *dev, int nIrq, void __iomem *ctrl)
 		musb->xceiv->otg->state = OTG_STATE_A_IDLE;
 	} else {
 		MUSB_DEV_MODE(musb);
+		printk("%s\n", __func__);
 		musb->xceiv->otg->state = OTG_STATE_B_IDLE;
 	}
 
