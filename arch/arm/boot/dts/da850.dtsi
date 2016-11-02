@@ -37,6 +37,10 @@
 			reg = <0x10000 0x1000>;
 			#power-domain-cells = <1>;
 			num-domains = <16>;
+			domain-names = "edma_cc0", "edma_tc0", "edma_tc1",
+				"aemif", "spi0", "mmc0", "aintc", "ram_rom",
+				"reserved", "uart0", "scr0", "scr1", "scr2",
+				"pruss", "arm", "reserved";
 			power-domains = <&psc0 12>;
 		};
 
@@ -45,6 +49,13 @@
 			reg = <0x227000 0x1000>;
 			#power-domain-cells = <1>;
 			num-domains = <32>;
+			domain-names = "edma_cc1", "usb0", "usb1", "gpio",
+				"uhpi", "emac", "ddr2", "mcasp0", "sata",
+				"vpif", "spi1", "i2c1", "uart1", "uart2",
+				"mcbsb0", "mcbsp1", "lcdc", "ehrpwm", "mmc1",
+				"upp", "ecap", "edma_tc2", "reserved",
+				"reserved", "scr_f0", "src_f1", "scr_f2",
+				"scr_f6", "scr_f7", "scr_f8", "br_f7", "ram";
 			power-domains = <&psc1 27>, <&psc0 12>;
 		};
 
