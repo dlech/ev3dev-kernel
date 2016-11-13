@@ -2754,7 +2754,7 @@ static int _regulator_set_voltage_time(struct regulator_dev *rdev,
 		ramp_delay = rdev->desc->ramp_delay;
 
 	if (ramp_delay == 0) {
-		rdev_warn(rdev, "ramp_delay not set\n");
+		rdev_dbg(rdev, "ramp_delay not set\n");
 		return 0;
 	}
 
@@ -3358,6 +3358,39 @@ unsigned int regulator_get_mode(struct regulator *regulator)
 	return _regulator_get_mode(regulator->rdev);
 }
 EXPORT_SYMBOL_GPL(regulator_get_mode);
+
+static int _regulator_get_error_flags(struct regulator_dev *rdev,
+					unsigned int *flags)
+{
+	int ret;
+
+	mutex_lock(&rdev->mutex);
+
+	/* sanity check */
+	if (!rdev->desc->ops->get_error_flags) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	ret = rdev->desc->ops->get_error_flags(rdev, flags);
+out:
+	mutex_unlock(&rdev->mutex);
+	return ret;
+}
+
+/**
+ * regulator_get_error_flags - get regulator error information
+ * @regulator: regulator source
+ * @flags: pointer to store error flags
+ *
+ * Get the current regulator error information.
+ */
+int regulator_get_error_flags(struct regulator *regulator,
+				unsigned int *flags)
+{
+	return _regulator_get_error_flags(regulator->rdev, flags);
+}
+EXPORT_SYMBOL_GPL(regulator_get_error_flags);
 
 /**
  * regulator_set_load - set regulator load

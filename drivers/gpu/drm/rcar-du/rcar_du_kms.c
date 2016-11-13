@@ -231,8 +231,16 @@ static int rcar_du_atomic_check(struct drm_device *dev,
 	struct rcar_du_device *rcdu = dev->dev_private;
 	int ret;
 
-	ret = drm_atomic_helper_check(dev, state);
-	if (ret < 0)
+	ret = drm_atomic_helper_check_modeset(dev, state);
+	if (ret)
+		return ret;
+
+	ret = drm_atomic_normalize_zpos(dev, state);
+	if (ret)
+		return ret;
+
+	ret = drm_atomic_helper_check_planes(dev, state);
+	if (ret)
 		return ret;
 
 	if (rcar_du_has(rcdu, RCAR_DU_FEATURE_VSP1_SOURCE))
@@ -264,7 +272,7 @@ static void rcar_du_atomic_complete(struct rcar_du_commit *commit)
 
 	drm_atomic_helper_cleanup_planes(dev, old_state);
 
-	drm_atomic_state_free(old_state);
+	drm_atomic_state_put(old_state);
 
 	/* Complete the commit, wake up any waiter. */
 	spin_lock(&rcdu->commit.wait.lock);
@@ -330,6 +338,7 @@ static int rcar_du_atomic_commit(struct drm_device *dev,
 	/* Swap the state, this is the point of no return. */
 	drm_atomic_helper_swap_state(state, true);
 
+	drm_atomic_state_get(state);
 	if (nonblock)
 		schedule_work(&commit->work);
 	else

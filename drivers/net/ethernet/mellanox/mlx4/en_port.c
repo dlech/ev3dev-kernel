@@ -166,7 +166,7 @@ int mlx4_en_DUMP_ETH_STATS(struct mlx4_en_dev *mdev, u8 port, u8 reset)
 		return PTR_ERR(mailbox);
 	err = mlx4_cmd_box(mdev->dev, 0, mailbox->dma, in_mod, 0,
 			   MLX4_CMD_DUMP_ETH_STATS, MLX4_CMD_TIME_CLASS_B,
-			   MLX4_CMD_WRAPPED);
+			   MLX4_CMD_NATIVE);
 	if (err)
 		goto out;
 
@@ -179,6 +179,9 @@ int mlx4_en_DUMP_ETH_STATS(struct mlx4_en_dev *mdev, u8 port, u8 reset)
 	priv->port_stats.rx_chksum_good = 0;
 	priv->port_stats.rx_chksum_none = 0;
 	priv->port_stats.rx_chksum_complete = 0;
+	priv->xdp_stats.rx_xdp_drop    = 0;
+	priv->xdp_stats.rx_xdp_tx      = 0;
+	priv->xdp_stats.rx_xdp_tx_full = 0;
 	for (i = 0; i < priv->rx_ring_num; i++) {
 		stats->rx_packets += priv->rx_ring[i]->packets;
 		stats->rx_bytes += priv->rx_ring[i]->bytes;
@@ -186,6 +189,9 @@ int mlx4_en_DUMP_ETH_STATS(struct mlx4_en_dev *mdev, u8 port, u8 reset)
 		priv->port_stats.rx_chksum_good += priv->rx_ring[i]->csum_ok;
 		priv->port_stats.rx_chksum_none += priv->rx_ring[i]->csum_none;
 		priv->port_stats.rx_chksum_complete += priv->rx_ring[i]->csum_complete;
+		priv->xdp_stats.rx_xdp_drop    += priv->rx_ring[i]->xdp_drop;
+		priv->xdp_stats.rx_xdp_tx      += priv->rx_ring[i]->xdp_tx;
+		priv->xdp_stats.rx_xdp_tx_full += priv->rx_ring[i]->xdp_tx_full;
 	}
 	stats->tx_packets = 0;
 	stats->tx_bytes = 0;
@@ -196,8 +202,8 @@ int mlx4_en_DUMP_ETH_STATS(struct mlx4_en_dev *mdev, u8 port, u8 reset)
 	priv->port_stats.tso_packets = 0;
 	priv->port_stats.xmit_more = 0;
 
-	for (i = 0; i < priv->tx_ring_num; i++) {
-		const struct mlx4_en_tx_ring *ring = priv->tx_ring[i];
+	for (i = 0; i < priv->tx_ring_num[TX]; i++) {
+		const struct mlx4_en_tx_ring *ring = priv->tx_ring[TX][i];
 
 		stats->tx_packets += ring->packets;
 		stats->tx_bytes += ring->bytes;
@@ -322,7 +328,7 @@ int mlx4_en_DUMP_ETH_STATS(struct mlx4_en_dev *mdev, u8 port, u8 reset)
 		err = mlx4_cmd_box(mdev->dev, 0, mailbox->dma,
 				   in_mod | MLX4_DUMP_ETH_STATS_FLOW_CONTROL,
 				   0, MLX4_CMD_DUMP_ETH_STATS,
-				   MLX4_CMD_TIME_CLASS_B, MLX4_CMD_WRAPPED);
+				   MLX4_CMD_TIME_CLASS_B, MLX4_CMD_NATIVE);
 		if (err)
 			goto out;
 	}

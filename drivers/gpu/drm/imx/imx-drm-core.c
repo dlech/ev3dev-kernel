@@ -158,6 +158,7 @@ static int imx_drm_atomic_commit(struct drm_device *dev,
 	struct drm_plane_state *plane_state;
 	struct drm_plane *plane;
 	struct dma_buf *dma_buf;
+	struct dma_fence *fence;
 	int i;
 
 	/*
@@ -170,8 +171,9 @@ static int imx_drm_atomic_commit(struct drm_device *dev,
 							 0)->base.dma_buf;
 			if (!dma_buf)
 				continue;
-			plane_state->fence =
-				reservation_object_get_excl_rcu(dma_buf->resv);
+			fence = reservation_object_get_excl_rcu(dma_buf->resv);
+
+			drm_atomic_set_fence_for_plane(plane_state, fence);
 		}
 	}
 
@@ -357,8 +359,8 @@ static int imx_drm_bind(struct device *dev)
 	int ret;
 
 	drm = drm_dev_alloc(&imx_drm_driver, dev);
-	if (!drm)
-		return -ENOMEM;
+	if (IS_ERR(drm))
+		return PTR_ERR(drm);
 
 	imxdrm = devm_kzalloc(dev, sizeof(*imxdrm), GFP_KERNEL);
 	if (!imxdrm) {
@@ -436,9 +438,11 @@ static int imx_drm_bind(struct device *dev)
 
 err_fbhelper:
 	drm_kms_helper_poll_fini(drm);
+#if IS_ENABLED(CONFIG_DRM_FBDEV_EMULATION)
 	if (imxdrm->fbhelper)
 		drm_fbdev_cma_fini(imxdrm->fbhelper);
 err_unbind:
+#endif
 	component_unbind_all(drm->dev, drm);
 err_vblank:
 	drm_vblank_cleanup(drm);

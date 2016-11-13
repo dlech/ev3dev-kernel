@@ -288,7 +288,8 @@ static const struct intel_device_info intel_haswell_info = {
 #define BDW_FEATURES \
 	HSW_FEATURES, \
 	BDW_COLORS, \
-	.has_logical_ring_contexts = 1
+	.has_logical_ring_contexts = 1, \
+	.has_64bit_reloc = 1
 
 static const struct intel_device_info intel_broadwell_info = {
 	BDW_FEATURES,
@@ -308,6 +309,7 @@ static const struct intel_device_info intel_cherryview_info = {
 	.has_hotplug = 1,
 	.ring_mask = RENDER_RING | BSD_RING | BLT_RING | VEBOX_RING,
 	.is_cherryview = 1,
+	.has_64bit_reloc = 1,
 	.has_psr = 1,
 	.has_runtime_pm = 1,
 	.has_resource_streamer = 1,
@@ -347,6 +349,7 @@ static const struct intel_device_info intel_broxton_info = {
 	.has_hotplug = 1,
 	.ring_mask = RENDER_RING | BSD_RING | BLT_RING | VEBOX_RING,
 	.num_pipes = 3,
+	.has_64bit_reloc = 1,
 	.has_ddi = 1,
 	.has_fpga_dbg = 1,
 	.has_fbc = 1,
@@ -431,9 +434,6 @@ static const struct pci_device_id pciidlist[] = {
 };
 MODULE_DEVICE_TABLE(pci, pciidlist);
 
-extern int i915_driver_load(struct pci_dev *pdev,
-			    const struct pci_device_id *ent);
-
 static int i915_pci_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 {
 	struct intel_device_info *intel_info =
@@ -463,8 +463,6 @@ static int i915_pci_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	return i915_driver_load(pdev, ent);
 }
 
-extern void i915_driver_unload(struct drm_device *dev);
-
 static void i915_pci_remove(struct pci_dev *pdev)
 {
 	struct drm_device *dev = pci_get_drvdata(pdev);
@@ -472,8 +470,6 @@ static void i915_pci_remove(struct pci_dev *pdev)
 	i915_driver_unload(dev);
 	drm_dev_unref(dev);
 }
-
-extern const struct dev_pm_ops i915_pm_ops;
 
 static struct pci_driver i915_pci_driver = {
 	.name = DRIVER_NAME,

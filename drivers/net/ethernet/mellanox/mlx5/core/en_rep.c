@@ -256,6 +256,8 @@ static const struct net_device_ops mlx5e_netdev_ops_rep = {
 	.ndo_get_phys_port_name  = mlx5e_rep_get_phys_port_name,
 	.ndo_setup_tc            = mlx5e_rep_ndo_setup_tc,
 	.ndo_get_stats64         = mlx5e_get_stats,
+	.ndo_udp_tunnel_add	 = mlx5e_add_vxlan_port,
+	.ndo_udp_tunnel_del	 = mlx5e_del_vxlan_port,
 };
 
 static void mlx5e_build_rep_netdev_priv(struct mlx5_core_dev *mdev,
@@ -308,7 +310,7 @@ static void mlx5e_build_rep_netdev(struct net_device *netdev)
 	netdev->switchdev_ops = &mlx5e_rep_switchdev_ops;
 #endif
 
-	netdev->features	 |= NETIF_F_VLAN_CHALLENGED | NETIF_F_HW_TC;
+	netdev->features	 |= NETIF_F_VLAN_CHALLENGED | NETIF_F_HW_TC | NETIF_F_NETNS_LOCAL;
 	netdev->hw_features      |= NETIF_F_HW_TC;
 
 	eth_hw_addr_random(netdev);
@@ -328,7 +330,7 @@ static int mlx5e_init_rep_rx(struct mlx5e_priv *priv)
 	struct mlx5_eswitch *esw = priv->mdev->priv.eswitch;
 	struct mlx5_eswitch_rep *rep = priv->ppriv;
 	struct mlx5_core_dev *mdev = priv->mdev;
-	struct mlx5_flow_rule *flow_rule;
+	struct mlx5_flow_handle *flow_rule;
 	int err;
 	int i;
 
@@ -360,7 +362,7 @@ static int mlx5e_init_rep_rx(struct mlx5e_priv *priv)
 	return 0;
 
 err_del_flow_rule:
-	mlx5_del_flow_rule(rep->vport_rx_rule);
+	mlx5_del_flow_rules(rep->vport_rx_rule);
 err_destroy_direct_tirs:
 	mlx5e_destroy_direct_tirs(priv);
 err_destroy_direct_rqts:
@@ -375,7 +377,7 @@ static void mlx5e_cleanup_rep_rx(struct mlx5e_priv *priv)
 	int i;
 
 	mlx5e_tc_cleanup(priv);
-	mlx5_del_flow_rule(rep->vport_rx_rule);
+	mlx5_del_flow_rules(rep->vport_rx_rule);
 	mlx5e_destroy_direct_tirs(priv);
 	for (i = 0; i < priv->params.num_channels; i++)
 		mlx5e_destroy_rqt(priv, &priv->direct_tir[i].rqt);
@@ -457,6 +459,7 @@ void mlx5e_vport_rep_unload(struct mlx5_eswitch *esw,
 	struct mlx5e_priv *priv = rep->priv_data;
 	struct net_device *netdev = priv->netdev;
 
+	unregister_netdev(netdev);
 	mlx5e_detach_netdev(esw->dev, netdev);
 	mlx5e_destroy_netdev(esw->dev, priv);
 }

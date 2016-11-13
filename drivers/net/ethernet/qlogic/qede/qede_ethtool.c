@@ -157,6 +157,7 @@ enum qede_ethtool_tests {
 	QEDE_ETHTOOL_MEMORY_TEST,
 	QEDE_ETHTOOL_REGISTER_TEST,
 	QEDE_ETHTOOL_CLOCK_TEST,
+	QEDE_ETHTOOL_NVRAM_TEST,
 	QEDE_ETHTOOL_TEST_MAX
 };
 
@@ -166,6 +167,7 @@ static const char qede_tests_str_arr[QEDE_ETHTOOL_TEST_MAX][ETH_GSTRING_LEN] = {
 	"Memory (online)\t\t",
 	"Register (online)\t",
 	"Clock (online)\t\t",
+	"Nvram (online)\t\t",
 };
 
 static void qede_get_strings_stats(struct qede_dev *edev, u8 *buf)
@@ -175,16 +177,23 @@ static void qede_get_strings_stats(struct qede_dev *edev, u8 *buf)
 	for (i = 0, k = 0; i < QEDE_QUEUE_CNT(edev); i++) {
 		int tc;
 
-		for (j = 0; j < QEDE_NUM_RQSTATS; j++)
-			sprintf(buf + (k + j) * ETH_GSTRING_LEN,
-				"%d:   %s", i, qede_rqstats_arr[j].string);
-		k += QEDE_NUM_RQSTATS;
-		for (tc = 0; tc < edev->num_tc; tc++) {
-			for (j = 0; j < QEDE_NUM_TQSTATS; j++)
+		if (edev->fp_array[i].type & QEDE_FASTPATH_RX) {
+			for (j = 0; j < QEDE_NUM_RQSTATS; j++)
 				sprintf(buf + (k + j) * ETH_GSTRING_LEN,
-					"%d.%d: %s", i, tc,
-					qede_tqstats_arr[j].string);
-			k += QEDE_NUM_TQSTATS;
+					"%d:   %s", i,
+					qede_rqstats_arr[j].string);
+			k += QEDE_NUM_RQSTATS;
+		}
+
+		if (edev->fp_array[i].type & QEDE_FASTPATH_TX) {
+			for (tc = 0; tc < edev->num_tc; tc++) {
+				for (j = 0; j < QEDE_NUM_TQSTATS; j++)
+					sprintf(buf + (k + j) *
+						ETH_GSTRING_LEN,
+						"%d.%d: %s", i, tc,
+						qede_tqstats_arr[j].string);
+				k += QEDE_NUM_TQSTATS;
+			}
 		}
 	}
 
@@ -318,7 +327,7 @@ static const struct qede_link_mode_mapping qed_lm_map[] = {
 {								\
 	int i;							\
 								\
-	for (i = 0; i < QED_LM_COUNT; i++) {			\
+	for (i = 0; i < ARRAY_SIZE(qed_lm_map); i++) {		\
 		if ((caps) & (qed_lm_map[i].qed_link_mode))	\
 			__set_bit(qed_lm_map[i].ethtool_link_mode,\
 				  lk_ksettings->link_modes.name); \
@@ -329,7 +338,7 @@ static const struct qede_link_mode_mapping qed_lm_map[] = {
 {								\
 	int i;							\
 								\
-	for (i = 0; i < QED_LM_COUNT; i++) {			\
+	for (i = 0; i < ARRAY_SIZE(qed_lm_map); i++) {		\
 		if (test_bit(qed_lm_map[i].ethtool_link_mode,	\
 			     lk_ksettings->link_modes.name))	\
 			caps |= qed_lm_map[i].qed_link_mode;	\
@@ -479,6 +488,45 @@ static void qede_get_drvinfo(struct net_device *ndev,
 	}
 
 	strlcpy(info->bus_info, pci_name(edev->pdev), sizeof(info->bus_info));
+}
+
+static void qede_get_wol(struct net_device *ndev, struct ethtool_wolinfo *wol)
+{
+	struct qede_dev *edev = netdev_priv(ndev);
+
+	if (edev->dev_info.common.wol_support) {
+		wol->supported = WAKE_MAGIC;
+		wol->wolopts = edev->wol_enabled ? WAKE_MAGIC : 0;
+	}
+}
+
+static int qede_set_wol(struct net_device *ndev, struct ethtool_wolinfo *wol)
+{
+	struct qede_dev *edev = netdev_priv(ndev);
+	bool wol_requested;
+	int rc;
+
+	if (wol->wolopts & ~WAKE_MAGIC) {
+		DP_INFO(edev,
+			"Can't support WoL options other than magic-packet\n");
+		return -EINVAL;
+	}
+
+	wol_requested = !!(wol->wolopts & WAKE_MAGIC);
+	if (wol_requested == edev->wol_enabled)
+		return 0;
+
+	/* Need to actually change configuration */
+	if (!edev->dev_info.common.wol_support) {
+		DP_INFO(edev, "Device doesn't support WoL\n");
+		return -EINVAL;
+	}
+
+	rc = edev->ops->common->update_wol(edev->cdev, wol_requested);
+	if (!rc)
+		edev->wol_enabled = wol_requested;
+
+	return rc;
 }
 
 static u32 qede_get_msglevel(struct net_device *ndev)
@@ -723,18 +771,10 @@ static void qede_update_mtu(struct qede_dev *edev, union qede_reload_args *args)
 }
 
 /* Netdevice NDOs */
-#define ETH_MAX_JUMBO_PACKET_SIZE	9600
-#define ETH_MIN_PACKET_SIZE		60
 int qede_change_mtu(struct net_device *ndev, int new_mtu)
 {
 	struct qede_dev *edev = netdev_priv(ndev);
 	union qede_reload_args args;
-
-	if ((new_mtu > ETH_MAX_JUMBO_PACKET_SIZE) ||
-	    ((new_mtu + ETH_HLEN) < ETH_MIN_PACKET_SIZE)) {
-		DP_ERR(edev, "Can't support requested MTU size\n");
-		return -EINVAL;
-	}
 
 	DP_VERBOSE(edev, (NETIF_MSG_IFUP | NETIF_MSG_IFDOWN),
 		   "Configuring MTU size of %d\n", new_mtu);
@@ -747,6 +787,8 @@ int qede_change_mtu(struct net_device *ndev, int new_mtu)
 
 	qede_update_mtu(edev, &args);
 
+	edev->ops->common->update_mtu(edev->cdev, args.mtu);
+
 	return 0;
 }
 
@@ -756,6 +798,8 @@ static void qede_get_channels(struct net_device *dev,
 	struct qede_dev *edev = netdev_priv(dev);
 
 	channels->max_combined = QEDE_MAX_RSS_CNT(edev);
+	channels->max_rx = QEDE_MAX_RSS_CNT(edev);
+	channels->max_tx = QEDE_MAX_RSS_CNT(edev);
 	channels->combined_count = QEDE_QUEUE_CNT(edev) - edev->fp_num_tx -
 					edev->fp_num_rx;
 	channels->tx_count = edev->fp_num_tx;
@@ -820,6 +864,13 @@ static int qede_set_channels(struct net_device *dev,
 	edev->req_queues = count;
 	edev->req_num_tx = channels->tx_count;
 	edev->req_num_rx = channels->rx_count;
+	/* Reset the indirection table if rx queue count is updated */
+	if ((edev->req_queues - edev->req_num_tx) != QEDE_RSS_COUNT(edev)) {
+		edev->rss_params_inited &= ~QEDE_RSS_INDIR_INITED;
+		memset(&edev->rss_params.rss_ind_table, 0,
+		       sizeof(edev->rss_params.rss_ind_table));
+	}
+
 	if (netif_running(dev))
 		qede_reload(edev, NULL, NULL);
 
@@ -1053,6 +1104,12 @@ static int qede_set_rxfh(struct net_device *dev, const u32 *indir,
 	struct qede_dev *edev = netdev_priv(dev);
 	int i;
 
+	if (edev->dev_info.common.num_hwfns > 1) {
+		DP_INFO(edev,
+			"RSS configuration is not supported for 100G devices\n");
+		return -EOPNOTSUPP;
+	}
+
 	if (hfunc != ETH_RSS_HASH_NO_CHANGE && hfunc != ETH_RSS_HASH_TOP)
 		return -EOPNOTSUPP;
 
@@ -1184,8 +1241,8 @@ static int qede_selftest_transmit_traffic(struct qede_dev *edev,
 	}
 
 	first_bd = (struct eth_tx_1st_bd *)qed_chain_consume(&txq->tx_pbl);
-	dma_unmap_page(&edev->pdev->dev, BD_UNMAP_ADDR(first_bd),
-		       BD_UNMAP_LEN(first_bd), DMA_TO_DEVICE);
+	dma_unmap_single(&edev->pdev->dev, BD_UNMAP_ADDR(first_bd),
+			 BD_UNMAP_LEN(first_bd), DMA_TO_DEVICE);
 	txq->sw_tx_cons++;
 	txq->sw_tx_ring[idx].skb = NULL;
 
@@ -1199,8 +1256,8 @@ static int qede_selftest_receive_traffic(struct qede_dev *edev)
 	struct qede_rx_queue *rxq = NULL;
 	struct sw_rx_data *sw_rx_data;
 	union eth_rx_cqe *cqe;
+	int i, rc = 0;
 	u8 *data_ptr;
-	int i;
 
 	for_each_queue(i) {
 		if (edev->fp_array[i].type & QEDE_FASTPATH_RX) {
@@ -1219,46 +1276,60 @@ static int qede_selftest_receive_traffic(struct qede_dev *edev)
 	 * queue and that the loopback traffic is not IP.
 	 */
 	for (i = 0; i < QEDE_SELFTEST_POLL_COUNT; i++) {
-		if (qede_has_rx_work(rxq))
+		if (!qede_has_rx_work(rxq)) {
+			usleep_range(100, 200);
+			continue;
+		}
+
+		hw_comp_cons = le16_to_cpu(*rxq->hw_cons_ptr);
+		sw_comp_cons = qed_chain_get_cons_idx(&rxq->rx_comp_ring);
+
+		/* Memory barrier to prevent the CPU from doing speculative
+		 * reads of CQE/BD before reading hw_comp_cons. If the CQE is
+		 * read before it is written by FW, then FW writes CQE and SB,
+		 * and then the CPU reads the hw_comp_cons, it will use an old
+		 * CQE.
+		 */
+		rmb();
+
+		/* Get the CQE from the completion ring */
+		cqe = (union eth_rx_cqe *)qed_chain_consume(&rxq->rx_comp_ring);
+
+		/* Get the data from the SW ring */
+		sw_rx_index = rxq->sw_rx_cons & NUM_RX_BDS_MAX;
+		sw_rx_data = &rxq->sw_rx_ring[sw_rx_index];
+		fp_cqe = &cqe->fast_path_regular;
+		len =  le16_to_cpu(fp_cqe->len_on_first_bd);
+		data_ptr = (u8 *)(page_address(sw_rx_data->data) +
+				  fp_cqe->placement_offset +
+				  sw_rx_data->page_offset);
+		if (ether_addr_equal(data_ptr,  edev->ndev->dev_addr) &&
+		    ether_addr_equal(data_ptr + ETH_ALEN,
+				     edev->ndev->dev_addr)) {
+			for (i = ETH_HLEN; i < len; i++)
+				if (data_ptr[i] != (unsigned char)(i & 0xff)) {
+					rc = -1;
+					break;
+				}
+
+			qede_recycle_rx_bd_ring(rxq, edev, 1);
+			qed_chain_recycle_consumed(&rxq->rx_comp_ring);
 			break;
-		usleep_range(100, 200);
+		}
+
+		DP_INFO(edev, "Not the transmitted packet\n");
+		qede_recycle_rx_bd_ring(rxq, edev, 1);
+		qed_chain_recycle_consumed(&rxq->rx_comp_ring);
 	}
 
-	if (!qede_has_rx_work(rxq)) {
+	if (i == QEDE_SELFTEST_POLL_COUNT) {
 		DP_NOTICE(edev, "Failed to receive the traffic\n");
 		return -1;
 	}
 
-	hw_comp_cons = le16_to_cpu(*rxq->hw_cons_ptr);
-	sw_comp_cons = qed_chain_get_cons_idx(&rxq->rx_comp_ring);
+	qede_update_rx_prod(edev, rxq);
 
-	/* Memory barrier to prevent the CPU from doing speculative reads of CQE
-	 * / BD before reading hw_comp_cons. If the CQE is read before it is
-	 * written by FW, then FW writes CQE and SB, and then the CPU reads the
-	 * hw_comp_cons, it will use an old CQE.
-	 */
-	rmb();
-
-	/* Get the CQE from the completion ring */
-	cqe = (union eth_rx_cqe *)qed_chain_consume(&rxq->rx_comp_ring);
-
-	/* Get the data from the SW ring */
-	sw_rx_index = rxq->sw_rx_cons & NUM_RX_BDS_MAX;
-	sw_rx_data = &rxq->sw_rx_ring[sw_rx_index];
-	fp_cqe = &cqe->fast_path_regular;
-	len =  le16_to_cpu(fp_cqe->len_on_first_bd);
-	data_ptr = (u8 *)(page_address(sw_rx_data->data) +
-		     fp_cqe->placement_offset + sw_rx_data->page_offset);
-	for (i = ETH_HLEN; i < len; i++)
-		if (data_ptr[i] != (unsigned char)(i & 0xff)) {
-			DP_NOTICE(edev, "Loopback test failed\n");
-			qede_recycle_rx_bd_ring(rxq, edev, 1);
-			return -1;
-		}
-
-	qede_recycle_rx_bd_ring(rxq, edev, 1);
-
-	return 0;
+	return rc;
 }
 
 static int qede_selftest_run_loopback(struct qede_dev *edev, u32 loopback_mode)
@@ -1369,6 +1440,11 @@ static void qede_self_test(struct net_device *dev,
 		buf[QEDE_ETHTOOL_CLOCK_TEST] = 1;
 		etest->flags |= ETH_TEST_FL_FAILED;
 	}
+
+	if (edev->ops->common->selftest->selftest_nvram(edev->cdev)) {
+		buf[QEDE_ETHTOOL_NVRAM_TEST] = 1;
+		etest->flags |= ETH_TEST_FL_FAILED;
+	}
 }
 
 static int qede_set_tunable(struct net_device *dev,
@@ -1419,6 +1495,8 @@ static const struct ethtool_ops qede_ethtool_ops = {
 	.get_drvinfo = qede_get_drvinfo,
 	.get_regs_len = qede_get_regs_len,
 	.get_regs = qede_get_regs,
+	.get_wol = qede_get_wol,
+	.set_wol = qede_set_wol,
 	.get_msglevel = qede_get_msglevel,
 	.set_msglevel = qede_set_msglevel,
 	.nway_reset = qede_nway_reset,

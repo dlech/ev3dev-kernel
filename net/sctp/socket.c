@@ -1214,9 +1214,12 @@ static int __sctp_connect(struct sock *sk,
 
 	timeo = sock_sndtimeo(sk, f_flags & O_NONBLOCK);
 
-	err = sctp_wait_for_connect(asoc, &timeo);
-	if ((err == 0 || err == -EINPROGRESS) && assoc_id)
+	if (assoc_id)
 		*assoc_id = asoc->assoc_id;
+	err = sctp_wait_for_connect(asoc, &timeo);
+	/* Note: the asoc may be freed after the return of
+	 * sctp_wait_for_connect.
+	 */
 
 	/* Don't free association on exit. */
 	asoc = NULL;
@@ -4480,12 +4483,9 @@ int sctp_transport_lookup_process(int (*cb)(struct sctp_transport *, void *),
 	if (!transport || !sctp_transport_hold(transport))
 		goto out;
 
-	sctp_association_hold(transport->asoc);
-	sctp_transport_put(transport);
-
 	rcu_read_unlock();
 	err = cb(transport, p);
-	sctp_association_put(transport->asoc);
+	sctp_transport_put(transport);
 
 out:
 	return err;
@@ -4687,7 +4687,7 @@ static int sctp_getsockopt_disable_fragments(struct sock *sk, int len,
 static int sctp_getsockopt_events(struct sock *sk, int len, char __user *optval,
 				  int __user *optlen)
 {
-	if (len <= 0)
+	if (len == 0)
 		return -EINVAL;
 	if (len > sizeof(struct sctp_event_subscribe))
 		len = sizeof(struct sctp_event_subscribe);
@@ -6429,6 +6429,9 @@ static int sctp_getsockopt(struct sock *sk, int level, int optname,
 
 	if (get_user(len, optlen))
 		return -EFAULT;
+
+	if (len < 0)
+		return -EINVAL;
 
 	lock_sock(sk);
 

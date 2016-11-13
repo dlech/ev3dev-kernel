@@ -25,6 +25,7 @@
 #include <linux/slab.h>
 #include <linux/timer.h>
 #include <linux/inetdevice.h>
+#include <linux/mroute.h>
 #include <net/ip.h>
 #if IS_ENABLED(CONFIG_IPV6)
 #include <net/ipv6.h>
@@ -972,13 +973,12 @@ static void br_multicast_enable(struct bridge_mcast_own_query *query)
 		mod_timer(&query->timer, jiffies);
 }
 
-void br_multicast_enable_port(struct net_bridge_port *port)
+static void __br_multicast_enable_port(struct net_bridge_port *port)
 {
 	struct net_bridge *br = port->br;
 
-	spin_lock(&br->multicast_lock);
 	if (br->multicast_disabled || !netif_running(br->dev))
-		goto out;
+		return;
 
 	br_multicast_enable(&port->ip4_own_query);
 #if IS_ENABLED(CONFIG_IPV6)
@@ -987,8 +987,14 @@ void br_multicast_enable_port(struct net_bridge_port *port)
 	if (port->multicast_router == MDB_RTR_TYPE_PERM &&
 	    hlist_unhashed(&port->rlist))
 		br_multicast_add_router(br, port);
+}
 
-out:
+void br_multicast_enable_port(struct net_bridge_port *port)
+{
+	struct net_bridge *br = port->br;
+
+	spin_lock(&br->multicast_lock);
+	__br_multicast_enable_port(port);
 	spin_unlock(&br->multicast_lock);
 }
 
@@ -1633,6 +1639,21 @@ static void br_multicast_err_count(const struct net_bridge *br,
 	u64_stats_update_end(&pstats->syncp);
 }
 
+static void br_multicast_pim(struct net_bridge *br,
+			     struct net_bridge_port *port,
+			     const struct sk_buff *skb)
+{
+	unsigned int offset = skb_transport_offset(skb);
+	struct pimhdr *pimhdr, _pimhdr;
+
+	pimhdr = skb_header_pointer(skb, offset, sizeof(_pimhdr), &_pimhdr);
+	if (!pimhdr || pim_hdr_version(pimhdr) != PIM_VERSION ||
+	    pim_hdr_type(pimhdr) != PIM_TYPE_HELLO)
+		return;
+
+	br_multicast_mark_router(br, port);
+}
+
 static int br_multicast_ipv4_rcv(struct net_bridge *br,
 				 struct net_bridge_port *port,
 				 struct sk_buff *skb,
@@ -1645,8 +1666,12 @@ static int br_multicast_ipv4_rcv(struct net_bridge *br,
 	err = ip_mc_check_igmp(skb, &skb_trimmed);
 
 	if (err == -ENOMSG) {
-		if (!ipv4_is_local_multicast(ip_hdr(skb)->daddr))
+		if (!ipv4_is_local_multicast(ip_hdr(skb)->daddr)) {
 			BR_INPUT_SKB_CB(skb)->mrouters_only = 1;
+		} else if (pim_ipv4_all_pim_routers(ip_hdr(skb)->daddr)) {
+			if (ip_hdr(skb)->protocol == IPPROTO_PIM)
+				br_multicast_pim(br, port, skb);
+		}
 		return 0;
 	} else if (err < 0) {
 		br_multicast_err_count(br, port, skb->protocol);
@@ -1994,8 +2019,9 @@ static void br_multicast_start_querier(struct net_bridge *br,
 
 int br_multicast_toggle(struct net_bridge *br, unsigned long val)
 {
-	int err = 0;
 	struct net_bridge_mdb_htable *mdb;
+	struct net_bridge_port *port;
+	int err = 0;
 
 	spin_lock_bh(&br->multicast_lock);
 	if (br->multicast_disabled == !val)
@@ -2023,10 +2049,9 @@ rollback:
 			goto rollback;
 	}
 
-	br_multicast_start_querier(br, &br->ip4_own_query);
-#if IS_ENABLED(CONFIG_IPV6)
-	br_multicast_start_querier(br, &br->ip6_own_query);
-#endif
+	br_multicast_open(br);
+	list_for_each_entry(port, &br->port_list, list)
+		__br_multicast_enable_port(port);
 
 unlock:
 	spin_unlock_bh(&br->multicast_lock);

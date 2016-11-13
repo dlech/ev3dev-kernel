@@ -263,7 +263,7 @@ KBUILD_CPPFLAGS += -DDATAOFFSET=$(if $(dataoffset-y),$(dataoffset-y),0)
 
 bootvars-y	= VMLINUX_LOAD_ADDRESS=$(load-y) \
 		  VMLINUX_ENTRY_ADDRESS=$(entry-y) \
-		  PLATFORM=$(platform-y)
+		  PLATFORM="$(platform-y)"
 ifdef CONFIG_32BIT
 bootvars-y	+= ADDR_BITS=32
 endif
@@ -320,6 +320,9 @@ bootz-y			:= vmlinuz
 bootz-y			+= vmlinuz.bin
 bootz-y			+= vmlinuz.ecoff
 bootz-y			+= vmlinuz.srec
+ifeq ($(shell expr $(zload-y) \< 0xffffffff80000000 2> /dev/null), 0)
+bootz-y			+= uzImage.bin
+endif
 
 ifdef CONFIG_LASAT
 rom.bin rom.sw: vmlinux
@@ -433,6 +436,7 @@ define archhelp
 	echo '  uImage.gz            - U-Boot image (gzip)'
 	echo '  uImage.lzma          - U-Boot image (lzma)'
 	echo '  uImage.lzo           - U-Boot image (lzo)'
+	echo '  uzImage.bin          - U-Boot image (self-extracting)'
 	echo '  dtbs                 - Device-tree blobs for enabled boards'
 	echo '  dtbs_install         - Install dtbs to $(INSTALL_DTBS_PATH)'
 	echo
