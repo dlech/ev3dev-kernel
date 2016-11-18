@@ -1,0 +1,45 @@
+* Pin configuration for TI DA850/OMAP-L138/AM18x
+
+These SoCs have a separate controller for setting bias (internal pullup/down).
+Bias can only be selected for groups rather than individual pins.
+
+Required Properties:
+
+  - compatible: Must be "ti,da850-pinconf"
+  - reg: Base address and length of each memory resource used by the pin
+    controller hardware module.
+
+The controller node also acts as a container for pin group configuration nodes.
+The names of these groups are ignored.
+
+Pin Group Node Properties:
+
+- groups: An array of strings, each string containing the name of a pin group.
+          Valid names are "cp0".."cp31".
+
+The pin configuration parameters use the generic pinconf bindings defined in
+pinctrl-bindings.txt in this directory. The supported parameters are
+bias-disable, bias-pull-up, bias-pull-down.
+
+
+Example
+-------
+
+In common dtsi file:
+
+	pinconf: pin-controller@22c00c {
+		compatible = "ti,da850-pinconf";
+		reg = <0x22c00c 0x8>;
+	};
+
+In board-specific file
+
+	&pinconf {
+		pinctrl-0 = <&bias_disable_groups>;
+		pinctrl-names = "default";
+
+		bias_disable_groups: bias_disable {
+			groups = "cp0", "cp2", "cp4", "cp5";
+			bias-disable;
+		};
+	};

@@ -210,6 +210,11 @@
 			};
 
 		};
+		pinconf: pin-controller@22c00c {
+			compatible = "ti,da850-pinconf";
+			reg = <0x22c00c 0x8>;
+			status = "disabled";
+		};
 		cfgchip: chip-controller@1417c {
 			compatible = "ti,da830-cfgchip", "syscon", "simple-mfd";
 			reg = <0x1417c 0x14>;
