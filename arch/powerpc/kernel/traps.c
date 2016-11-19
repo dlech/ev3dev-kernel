@@ -65,7 +65,7 @@
 #include <asm/hmi.h>
 #include <sysdev/fsl_pci.h>
 
-#if defined(CONFIG_DEBUGGER) || defined(CONFIG_KEXEC)
+#if defined(CONFIG_DEBUGGER) || defined(CONFIG_KEXEC_CORE)
 int (*__debugger)(struct pt_regs *regs) __read_mostly;
 int (*__debugger_ipi)(struct pt_regs *regs) __read_mostly;
 int (*__debugger_bpt)(struct pt_regs *regs) __read_mostly;
@@ -365,7 +365,7 @@ static inline int check_io_access(struct pt_regs *regs)
 			       (*nip & 0x100)? "OUT to": "IN from",
 			       regs->gpr[rb] - _IO_BASE, nip);
 			regs->msr |= MSR_RI;
-			regs->nip = entry->fixup;
+			regs->nip = extable_fixup(entry);
 			return 1;
 		}
 	}
@@ -1430,7 +1430,6 @@ void facility_unavailable_exception(struct pt_regs *regs)
 		[FSCR_TM_LG] = "TM",
 		[FSCR_EBB_LG] = "EBB",
 		[FSCR_TAR_LG] = "TAR",
-		[FSCR_LM_LG] = "LM",
 	};
 	char *facility = "unknown";
 	u64 value;
@@ -1487,14 +1486,6 @@ void facility_unavailable_exception(struct pt_regs *regs)
 			regs->nip += 4;
 			emulate_single_step(regs);
 		}
-		return;
-	} else if ((status == FSCR_LM_LG) && cpu_has_feature(CPU_FTR_ARCH_300)) {
-		/*
-		 * This process has touched LM, so turn it on forever
-		 * for this process
-		 */
-		current->thread.fscr |= FSCR_LM;
-		mtspr(SPRN_FSCR, current->thread.fscr);
 		return;
 	}
 
