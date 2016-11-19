@@ -132,7 +132,6 @@
 	 */
 	gpio-poweroff {
 		compatible = "gpio-poweroff";
-		/* low signal powers off the board */
 		gpios = <&gpio 107 GPIO_ACTIVE_LOW>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&system_power_pin>;
@@ -143,12 +142,39 @@
 	 * is used to generate this signal.
 	 */
 	bt-slow-clock {
-		status = "disabled";
 		compatible = "pwm-clock";
 		#clock-cells = <0>;
 		clock-frequency = <32768>;
 		clock-output-names = "slow_clk";
 		pwms = <&ecap2 0 30517>;
+	};
+
+	/*
+	 * This is a 5V current limiting regulator that is shared by USB,
+	 * the sensor (input) ports, the motor (output) ports and the ADC.
+	 */
+	vcc5v: regulator1 {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-supply";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&gpio 101 0>;
+		enable-active-high;
+		regulator-boot-on;
+		vin-supply = <&parent_reg>;
+	};
+
+	/*
+	 * This is a simple voltage divider on VCC5V to provide a 2.5V
+	 * reference signal to the ADC.
+	 */
+	adc_ref: regulator2 {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-supply";
+		regulator-min-microvolt = <2500000>;
+		regulator-max-microvolt = <2500000>;
+		regulator-boot-on;
+		vin-supply = <&vcc5v>;
 	};
 };
 
@@ -299,58 +325,55 @@
 	pinctrl-0 = <&spi0_pins>, <&spi0_cs0_pin>, <&spi0_cs3_pin>;
 
 	flash@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
 		compatible = "n25q128a13", "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <50000000>;
 		ti,spi-wdelay = <8>;
 
-		partitions {
-			compatibile = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
+		partition@0 {
+			label = "U-Boot";
+			reg = <0 0x40000>;
+		};
 
-			partition@0 {
-				label = "U-Boot";
-				reg = <0 0x40000>;
-			};
+		partition@40000 {
+			label = "U-Boot Env";
+			reg = <0x40000 0x10000>;
+		};
 
-			partition@40000 {
-				label = "U-Boot Env";
-				reg = <0x40000 0x10000>;
-			};
+		partition@50000 {
+			label = "Kernel";
+			reg = <0x50000 0x200000>;
+		};
 
-			partition@50000 {
-				label = "Kernel";
-				reg = <0x50000 0x200000>;
-			};
+		partition@250000 {
+			label = "Filesystem";
+			reg = <0x250000 0xa50000>;
+		};
 
-			partition@250000 {
-				label = "Filesystem";
-				reg = <0x250000 0xa50000>;
-			};
-
-			partition@cb0000 {
-				label = "Storage";
-				reg = <0xcb0000 0x2f0000>;
-			};
+		partition@cb0000 {
+			label = "Storage";
+			reg = <0xcb0000 0x2f0000>;
 		};
 	};
 
 	adc@3 {
-		compatible = "ti-ads7957", "spidev";
+		compatible = "ti-ads7957";
 		reg = <3>;
 		spi-max-frequency = <10000000>;
+		vin-supply = <&adc_ref>;
 	};
 };
 
 &spi1 {
 	status = "okay";
-	pinctrl-names =  "default";
+	pinctrl-names = "default";
 	pinctrl-0 = <&spi1_pins>, <&spi1_gpio_cs0_pin>;
 	cs-gpios = <&gpio 44 0>;
 
 	lcd@0 {
-		compatible = "lego,ev3-lcd", "spidev";
+		compatible = "lego,ev3-lcd";
 		reg = <0>;
 		spi-max-frequency = <10000000>;
 	};
