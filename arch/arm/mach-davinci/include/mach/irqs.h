@@ -403,8 +403,10 @@
 
 /* da850 currently has the most gpio pins (144) */
 #define DAVINCI_N_GPIO			144
+/* Extra IRQs for things like IIO triggers */
+#define DAVINCI_N_SPARE_IRQ		16
 /* da850 currently has the most irqs so use DA850_N_CP_INTC_IRQ */
-#define NR_IRQS				(DA850_N_CP_INTC_IRQ + DAVINCI_N_GPIO)
+#define NR_IRQS (DA850_N_CP_INTC_IRQ + DAVINCI_N_GPIO + DAVINCI_N_SPARE_IRQ)
 
 /*
  * This value is needed by arch/arm/kernel/fiq.c but is not meaningful
