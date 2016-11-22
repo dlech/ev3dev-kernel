@@ -23,6 +23,7 @@
 #include <linux/posix_acl_xattr.h>
 
 #include <asm/uaccess.h>
+#include "internal.h"
 
 static const char *
 strcmp_prefix(const char *a, const char *a_prefix)
@@ -170,7 +171,7 @@ int __vfs_setxattr_noperm(struct dentry *dentry, const char *name,
 		const void *value, size_t size, int flags)
 {
 	struct inode *inode = dentry->d_inode;
-	int error = -EOPNOTSUPP;
+	int error = -EAGAIN;
 	int issec = !strncmp(name, XATTR_SECURITY_PREFIX,
 				   XATTR_SECURITY_PREFIX_LEN);
 
@@ -183,15 +184,21 @@ int __vfs_setxattr_noperm(struct dentry *dentry, const char *name,
 			security_inode_post_setxattr(dentry, name, value,
 						     size, flags);
 		}
-	} else if (issec) {
-		const char *suffix = name + XATTR_SECURITY_PREFIX_LEN;
-
+	} else {
 		if (unlikely(is_bad_inode(inode)))
 			return -EIO;
-		error = security_inode_setsecurity(inode, suffix, value,
-						   size, flags);
-		if (!error)
-			fsnotify_xattr(dentry);
+	}
+	if (error == -EAGAIN) {
+		error = -EOPNOTSUPP;
+
+		if (issec) {
+			const char *suffix = name + XATTR_SECURITY_PREFIX_LEN;
+
+			error = security_inode_setsecurity(inode, suffix, value,
+							   size, flags);
+			if (!error)
+				fsnotify_xattr(dentry);
+		}
 	}
 
 	return error;
@@ -493,11 +500,13 @@ SYSCALL_DEFINE5(fsetxattr, int, fd, const char __user *, name,
 	if (!f.file)
 		return error;
 	audit_file(f.file);
-	error = mnt_want_write_file(f.file);
+	sb_start_write(f.file->f_path.mnt->mnt_sb);
+	error = __mnt_want_write_file(f.file);
 	if (!error) {
 		error = setxattr(f.file->f_path.dentry, name, value, size, flags);
-		mnt_drop_write_file(f.file);
+		__mnt_drop_write_file(f.file);
 	}
+	sb_end_write(f.file->f_path.mnt->mnt_sb);
 	fdput(f);
 	return error;
 }
@@ -731,11 +740,13 @@ SYSCALL_DEFINE2(fremovexattr, int, fd, const char __user *, name)
 	if (!f.file)
 		return error;
 	audit_file(f.file);
-	error = mnt_want_write_file(f.file);
+	sb_start_write(f.file->f_path.mnt->mnt_sb);
+	error = __mnt_want_write_file(f.file);
 	if (!error) {
 		error = removexattr(f.file->f_path.dentry, name);
-		mnt_drop_write_file(f.file);
+		__mnt_drop_write_file(f.file);
 	}
+	sb_end_write(f.file->f_path.mnt->mnt_sb);
 	fdput(f);
 	return error;
 }

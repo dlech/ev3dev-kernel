@@ -59,8 +59,6 @@ static int fsl_dcu_drm_irq_init(struct drm_device *dev)
 
 	regmap_write(fsl_dev->regmap, DCU_INT_STATUS, 0);
 	regmap_write(fsl_dev->regmap, DCU_INT_MASK, ~0);
-	regmap_write(fsl_dev->regmap, DCU_UPDATE_MODE,
-		     DCU_UPDATE_MODE_READREG);
 
 	return ret;
 }
@@ -139,8 +137,6 @@ static irqreturn_t fsl_dcu_drm_irq(int irq, void *arg)
 		drm_handle_vblank(dev, 0);
 
 	regmap_write(fsl_dev->regmap, DCU_INT_STATUS, int_status);
-	regmap_write(fsl_dev->regmap, DCU_UPDATE_MODE,
-		     DCU_UPDATE_MODE_READREG);
 
 	return IRQ_HANDLED;
 }
@@ -180,9 +176,7 @@ static const struct file_operations fsl_dcu_drm_fops = {
 	.open		= drm_open,
 	.release	= drm_release,
 	.unlocked_ioctl	= drm_ioctl,
-#ifdef CONFIG_COMPAT
 	.compat_ioctl	= drm_compat_ioctl,
-#endif
 	.poll		= drm_poll,
 	.read		= drm_read,
 	.llseek		= no_llseek,
