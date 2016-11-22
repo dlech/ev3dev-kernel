@@ -161,7 +161,6 @@
 		gpio = <&gpio 101 0>;
 		enable-active-high;
 		regulator-boot-on;
-		vin-supply = <&parent_reg>;
 	};
 
 	/*
@@ -362,7 +361,7 @@
 		compatible = "ti-ads7957";
 		reg = <3>;
 		spi-max-frequency = <10000000>;
-		vin-supply = <&adc_ref>;
+		refin-supply = <&adc_ref>;
 	};
 };
 
@@ -381,4 +380,13 @@
 
 &gpio {
 	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&ohci {
+	status = "okay";
+	vbus-supply = <&vcc5v>;
 };
