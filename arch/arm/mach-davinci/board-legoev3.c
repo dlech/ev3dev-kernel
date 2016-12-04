@@ -29,6 +29,7 @@
 #include <linux/platform_data/at24.h>
 #include <linux/platform_data/legoev3.h>
 #include <linux/platform_device.h>
+#include <linux/mfd/da8xx-cfgchip.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
 #include <linux/mtd/physmap.h>
@@ -246,25 +247,6 @@ static struct platform_device ev3_device_gpiokeys = {
 };
 
 /*
- * Power management configuration:
- * ===============================
- * Not sure about this, but the comments in arch/arm/mach-davinci/include/mach/pm.h
- * imply that a value of 128 indicates that we have an external oscillator.
- */
-
-static struct davinci_pm_config da850_pm_pdata = {
-	.sleepcount = 128,
-};
-
-static struct platform_device da850_pm_device = {
-	.name	= "pm-davinci",
-	.dev	= {
-		.platform_data	= &da850_pm_pdata,
-	},
-	.id	= -1,
-};
-
-/*
  * EV3 USB configuration:
  * ======================
  * usb1/USB1 is the USB 1.1 host port.
@@ -332,7 +314,7 @@ static __init void legoev3_usb_init(void)
 	cfgchip2 = __raw_readl(DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP2_REG));
 
 	/* USB2.0 PHY reference clock is 24 MHz */
-	cfgchip2 &= ~CFGCHIP2_REFFREQ;
+	cfgchip2 &= ~CFGCHIP2_REFFREQ_MASK;
 	cfgchip2 |=  CFGCHIP2_REFFREQ_24MHZ;
 
 	/*
@@ -348,7 +330,7 @@ static __init void legoev3_usb_init(void)
 	 * controller won't be able to drive VBUS thinking that it's a B-device.
 	 * Otherwise, we want to use the OTG mode and enable VBUS comparators.
 	 */
-	cfgchip2 &= ~CFGCHIP2_OTGMODE;
+	cfgchip2 &= ~CFGCHIP2_OTGMODE_MASK;
 	cfgchip2 |=  CFGCHIP2_SESENDEN | CFGCHIP2_VBDTCTEN;
 
 	__raw_writel(cfgchip2, DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP2_REG));
@@ -1132,11 +1114,6 @@ static __init void legoev3_init(void)
 	ret = da8xx_register_cpuidle();
 	if (ret)
 		pr_warn("legoev3_init: cpuidle registration failed: %d\n",
-				ret);
-
-	ret = da850_register_pm(&da850_pm_device);
-	if (ret)
-		pr_warn("legoev3_init: suspend registration failed: %d\n",
 				ret);
 
 	/* USB support */
