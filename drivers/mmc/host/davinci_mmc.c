@@ -1419,11 +1419,12 @@ static struct platform_driver davinci_mmcsd_driver = {
 		.pm	= davinci_mmcsd_pm_ops,
 		.of_match_table = davinci_mmc_dt_ids,
 	},
+	.probe		= davinci_mmcsd_probe,
 	.remove		= __exit_p(davinci_mmcsd_remove),
 	.id_table	= davinci_mmc_devtype,
 };
 
-module_platform_driver_probe(davinci_mmcsd_driver, davinci_mmcsd_probe);
+module_platform_driver(davinci_mmcsd_driver);
 
 MODULE_AUTHOR("Texas Instruments India");
 MODULE_LICENSE("GPL");
