@@ -17,7 +17,7 @@
 
 / {
 	compatible = "lego,ev3", "ti,da850";
-	model = "LEGO MINDSTORMS EV3";
+	model = "LEGO MINDSTORMS EV3 + lms2012-compat";
 
 	/*
 	 * The buttons on the EV3 are mapped to keyboard keys.
@@ -70,29 +70,29 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&led_pins>;
 
-		left_red {
-			label = "led1:red:brick-status";
+		left_green {
+			label = "ev3:left:green:ev3dev";
 			/* GP6[13] */
 			gpios = <&gpio 103 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "default-on";
-		};
-		left_green {
-			label = "led1:green:brick-status";
-			/* GP6[7] */
-			gpios = <&gpio 108 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "default-on";
+			linux,default-trigger = "mmc0";
 		};
 		right_red {
-			label = "led2:red:brick-status";
+			label = "ev3:right:red:ev3dev";
+			/* GP6[7] */
+			gpios = <&gpio 108 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "mmc0";
+		};
+		left_red {
+			label = "ev3:left:red:ev3dev";
 			/* GP6[12] */
 			gpios = <&gpio 109 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "default-on";
+			linux,default-trigger = "mmc0";
 		};
 		right_green {
-			label = "led2:green:brick-status";
+			label = "ev3:right:green:ev3dev";
 			/* GP6[14] */
 			gpios = <&gpio 110 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "default-on";
+			linux,default-trigger = "mmc0";
 		};
 	};
 
@@ -126,7 +126,7 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&vcc5v_pins>;
 		compatible = "regulator-fixed";
-		regulator-name = "fixed-supply";
+		regulator-name = "vcc5v";
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 		gpio = <&gpio 101 0>;
@@ -141,7 +141,7 @@
 	 */
 	adc_ref: regulator2 {
 		compatible = "regulator-fixed";
-		regulator-name = "fixed-supply";
+		regulator-name = "adc_ref";
 		regulator-min-microvolt = <2500000>;
 		regulator-max-microvolt = <2500000>;
 		regulator-boot-on;
@@ -158,10 +158,12 @@
 			0xc 0x01000000 0x0f000000
 		>;
 	};
-	spi1_gpio_cs0_pin: pinmux_spi1_gpio_cs0_pin {
+	spi1_lcd_pins: pinmux_spi1_lcd {
 		pinctrl-single,bits = <
-			/* GP2[12] */
-			0x14 0x00008000 0x0000f000
+			/* SIMO, GP2[11], GP2[12], CLK */
+			0x14 0x00188100 0x00ffff00
+			/* GP5[0] */
+			0x30 0x80000000 0xf0000000
 		>;
 	};
 	mmc0_cd_pin: pinmux_mmc0_cd {
@@ -241,6 +243,7 @@
 /* Bluetooth */
 &serial2 {
 	status = "okay";
+	auto-flow-control;
 	pinctrl-names = "default";
 	pinctrl-0 = <&serial2_rxtx_pins>, <&serial2_rtscts_pins>;
 };
@@ -364,13 +367,15 @@
 &spi1 {
 	status = "okay";
 	pinctrl-names = "default";
-	pinctrl-0 = <&spi1_pins>, <&spi1_gpio_cs0_pin>;
-	cs-gpios = <&gpio 44 0>;
+	pinctrl-0 = <&spi1_lcd_pins>;
+	cs-gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
 
 	lcd@0 {
 		compatible = "st7586fb-legoev3";
 		reg = <0>;
 		spi-max-frequency = <10000000>;
+		rst-gpios = <&gpio 80 GPIO_ACTIVE_HIGH>;
+		a0-gpios = <&gpio 43 GPIO_ACTIVE_HIGH>;
 	};
 };
 

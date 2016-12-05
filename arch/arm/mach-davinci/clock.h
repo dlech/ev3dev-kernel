@@ -136,6 +136,9 @@ int davinci_clk_reset(struct clk *clk, bool reset);
 extern struct platform_device davinci_wdt_device;
 extern void davinci_watchdog_reset(struct platform_device *);
 
+void __clk_enable(struct clk *clk);
+void __clk_disable(struct clk *clk);
+
 #endif
 
 #endif
