@@ -31,7 +31,7 @@ static LIST_HEAD(clocks);
 static DEFINE_MUTEX(clocks_mutex);
 static DEFINE_SPINLOCK(clockfw_lock);
 
-static void __clk_enable(struct clk *clk)
+void __clk_enable(struct clk *clk)
 {
 	if (clk->parent)
 		__clk_enable(clk->parent);
@@ -44,7 +44,7 @@ static void __clk_enable(struct clk *clk)
 	}
 }
 
-static void __clk_disable(struct clk *clk)
+void __clk_disable(struct clk *clk)
 {
 	if (WARN_ON(clk->usecount == 0))
 		return;

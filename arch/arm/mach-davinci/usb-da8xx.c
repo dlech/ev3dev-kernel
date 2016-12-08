@@ -160,19 +160,13 @@ int __init da8xx_register_usb_refclkin(int rate)
 
 static void usb20_phy_clk_enable(struct clk *clk)
 {
-	int err;
 	u32 val;
 	u32 timeout = 500000; /* 500 msec */
 
 	val = readl(DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP2_REG));
 
 	/* The USB 2.O PLL requires that the USB 2.O PSC is enabled as well. */
-	err = clk_enable(usb20_clk);
-	if (err) {
-		pr_err("failed to enable usb20 clk: %d\n", err);
-		clk_put(usb20_clk);
-		return;
-	}
+	__clk_enable(usb20_clk);
 
 	/*
 	 * Turn on the USB 2.0 PHY, but just the PLL, and not OTG. The USB 1.1
@@ -192,7 +186,7 @@ static void usb20_phy_clk_enable(struct clk *clk)
 
 	pr_err("Timeout waiting for USB 2.0 PHY clock good\n");
 done:
-	clk_disable(usb20_clk);
+	__clk_disable(usb20_clk);
 }
 
 static void usb20_phy_clk_disable(struct clk *clk)

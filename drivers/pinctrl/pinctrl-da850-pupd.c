@@ -182,6 +182,8 @@ static int da850_pupd_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, data);
 
+	dev_info(dev, "Registered\n");
+
 	return 0;
 }
 
