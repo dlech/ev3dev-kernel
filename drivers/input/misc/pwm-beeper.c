@@ -14,6 +14,7 @@
  */
 
 #include <linux/input.h>
+#include <linux/regulator/consumer.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/of.h>
@@ -25,8 +26,10 @@
 struct pwm_beeper {
 	struct input_dev *input;
 	struct pwm_device *pwm;
+	struct regulator *reg;
 	struct work_struct work;
 	unsigned long period;
+	bool reg_enabled;
 };
 
 #define HZ_TO_NANOSECONDS(x) (1000000000UL/(x))
@@ -38,8 +41,20 @@ static void __pwm_beeper_set(struct pwm_beeper *beeper)
 	if (period) {
 		pwm_config(beeper->pwm, period / 2, period);
 		pwm_enable(beeper->pwm);
-	} else
+		if (beeper->reg) {
+			int error;
+
+			error = regulator_enable(beeper->reg);
+			if (!error)
+				beeper->reg_enabled = true;
+		}
+	} else {
+		if (beeper->reg_enabled) {
+			regulator_disable(beeper->reg);
+			beeper->reg_enabled = false;
+		}
 		pwm_disable(beeper->pwm);
+	}
 }
 
 static void pwm_beeper_work(struct work_struct *work)
@@ -82,6 +97,10 @@ static void pwm_beeper_stop(struct pwm_beeper *beeper)
 {
 	cancel_work_sync(&beeper->work);
 
+	if (beeper->reg_enabled) {
+		regulator_disable(beeper->reg);
+		beeper->reg_enabled = false;
+	}
 	if (beeper->period)
 		pwm_disable(beeper->pwm);
 }
@@ -108,6 +127,14 @@ static int pwm_beeper_probe(struct platform_device *pdev)
 	if (error) {
 		if (error != -EPROBE_DEFER)
 			dev_err(dev, "Failed to request pwm device\n");
+		return error;
+	}
+
+	beeper->reg = devm_regulator_get_optional(&pdev->dev, "amp");
+	error = PTR_ERR_OR_ZERO(beeper->reg);
+	if (error) {
+		if (error != -EPROBE_DEFER)
+			dev_err(dev, "Failed to get amp regulator\n");
 		return error;
 	}
 
