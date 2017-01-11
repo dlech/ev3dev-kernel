@@ -109,6 +109,14 @@
 		};
 	};
 
+	beeper {
+		compatible = "pwm-beeper";
+		pinctrl-names = "default";
+		pinctrl-0 = <&ehrpwm0b_pins>;
+		pwms = <&ehrpwm0 1 0 0>;
+		amp-supply = <&amp>;
+	};
+
 	/*
 	 * The EV3 is powered down by turning off the main 5V supply.
 	 */
@@ -160,6 +168,26 @@
 		regulator-boot-on;
 		vin-supply = <&vcc5v>;
 	};
+
+	/*
+	 * This is the amplifier for the speaker.
+	 */
+	amp: regulator3 {
+		pinctrl-names = "default";
+		pinctrl-0 = <&amp_pins>;
+		compatible = "regulator-fixed";
+		regulator-name = "amp";
+		gpio = <&gpio 111 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+
+	battery {
+		compatible = "generic-adc-battery";
+		io-channels = <&adc 3>, <&adc 4>;
+		io-channel-names = "current", "voltage";
+		lion-gpios = <&gpio 136 GPIO_ACTIVE_HIGH>;
+		voltage-ena-gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
+	};
 };
 
 &pmx_core {
@@ -201,6 +229,12 @@
 		>;
 	};
 
+	amp_pins: pinmux_amp_pins {
+		pinctrl-single,bits = <
+			/* GP6[15] */
+			0x34 0x00000008 0x0000000f
+		>;
+	};
 
 	system_power_pin: pinmux_system_power {
 		pinctrl-single,bits = <
@@ -284,6 +318,10 @@
 	cd-gpios = <&gpio 94 GPIO_ACTIVE_LOW>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&mmc0_pins>, <&mmc0_cd_pin>;
+};
+
+&ehrpwm0 {
+	status = "okay";
 };
 
 &ehrpwm1 {
