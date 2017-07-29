@@ -135,6 +135,8 @@ enum mipi_dcs_pixel_format {
 	MIPI_DCS_PIXEL_FMT_12BIT	= 3,
 	MIPI_DCS_PIXEL_FMT_8BIT		= 2,
 	MIPI_DCS_PIXEL_FMT_3BIT		= 1,
+	/* non-standard format packing 1 or 2bpp in 3:3:2 bits */
+	MIPI_DCS_PIXEL_FMT_ST7586_332	= -1,
 };
 
 #endif

@@ -181,6 +181,154 @@ void tinydrm_xrgb8888_to_rgb565(u16 *dst, void *vaddr,
 EXPORT_SYMBOL(tinydrm_xrgb8888_to_rgb565);
 
 /**
+ * tinydrm_rgb565_to_st7586 - Convert RGB565 to ST7586 clip buffer
+ * @dst: ST7586 destination buffer
+ * @vaddr: RGB565 source buffer
+ * @fb: DRM framebuffer
+ * @clip: Clip rectangle area to copy
+ * @swap: Swap bytes
+ *
+ * The ST7586 controller has a non-standard pixel layout. It is 2-bit grayscale
+ * (or 1-bit monochrome) packed into 3 pixels per byte.
+ *
+ * Note: the @clip x values are modified! They are aligned to the 3 pixel
+ * boundtry and divied by 3 to get the starting and ending byte (+ 1) in the
+ * @dst buffer.
+ */
+void tinydrm_rgb565_to_st7586(u8 *dst, void *vaddr,
+				struct drm_framebuffer *fb,
+				struct drm_clip_rect *clip)
+{
+	size_t len;
+	unsigned int x, y;
+	u16 *src, *buf;
+	u8 val;
+
+	/* 3 pixels per byte, so align to dst byte */
+	clip->x1 -= clip->x1 % 3;
+	clip->x2 = (clip->x2 + 2) / 3 * 3;
+	len = (clip->x2 - clip->x1) * sizeof(u16);
+
+	buf = kmalloc(len, GFP_KERNEL);
+	if (!buf)
+		return;
+
+	for (y = clip->y1; y < clip->y2; y++) {
+		src = vaddr + (y * fb->pitches[0]);
+		src += clip->x1;
+		memcpy(buf, src, len);
+		src = buf;
+		for (x = clip->x1; x < clip->x2; x += 3) {
+			/*
+			 * TODO: There is probably a better algorithm to get
+			 * a better downsampling.
+			 * If red or green is > 50%, set the high bit, which is
+			 * bright gray. If blue is greater than 50%, set the
+			 * low bit, which is dark gray.
+			 */
+			val =   ((*src & 0x8000) >>  8) |
+				((*src & 0x0400) >>  3) |
+				((*src & 0x0010) <<  2);
+			if (val & 0xC0)
+				val |= 0x20;
+			src++;
+			val |=  ((*src & 0x8000) >> 11) |
+				((*src & 0x0400) >>  6) |
+				((*src & 0x0010) >>  1);
+			if (val & 0x18)
+				val |= 0x04;
+			src++;
+			val |=  ((*src & 0x8000) >> 14) |
+				((*src & 0x0400) >>  9) |
+				((*src & 0x0010) >>  4);
+			src++;
+			*dst++ = ~val;
+		}
+	}
+
+	/* now adjust the clip so it applies to dst */
+	clip->x1 /= 3;
+	clip->x2 /= 3;
+
+	kfree(buf);
+}
+EXPORT_SYMBOL(tinydrm_rgb565_to_st7586);
+
+/**
+ * tinydrm_xrgb8888_to_st7586 - Convert XRGB8888 to ST7586 clip buffer
+ * @dst: ST7586 destination buffer
+ * @vaddr: XRGB8888 source buffer
+ * @fb: DRM framebuffer
+ * @clip: Clip rectangle area to copy
+ * @swap: Swap bytes
+ *
+ * The ST7586 controller has a non-standard pixel layout. It is 2-bit grayscale
+ * (or 1-bit monochrome) packed into 3 pixels per byte.
+ *
+ * Note: the @clip x values are modified! They are aligned to the 3 pixel
+ * boundtry and divied by 3 to get the starting and ending byte (+ 1) in the
+ * @dst buffer.
+ */
+void tinydrm_xrgb8888_to_st7586(u8 *dst, void *vaddr,
+				struct drm_framebuffer *fb,
+				struct drm_clip_rect *clip)
+{
+	size_t len;
+	unsigned int x, y;
+	u32 *src, *buf;
+	u8 val;
+
+	/* 3 pixels per byte, so align to dst byte */
+	clip->x1 -= clip->x1 % 3;
+	clip->x2 = (clip->x2 + 2) / 3 * 3;
+	len = (clip->x2 - clip->x1) * sizeof(u32);
+
+	buf = kmalloc(len, GFP_KERNEL);
+	if (!buf)
+		return;
+
+	for (y = clip->y1; y < clip->y2; y++) {
+		src = vaddr + (y * fb->pitches[0]);
+		src += clip->x1;
+		memcpy(buf, src, len);
+		src = buf;
+		for (x = clip->x1; x < clip->x2; x += 3) {
+			/*
+			 * TODO: There is probably a better algorithm to get
+			 * a better downsampling.
+			 * If red or green is > 50%, set the high bit, which is
+			 * bright gray. If blue is greater than 50%, set the
+			 * low bit, which is dark gray.
+			 */
+			val =   ((*src & 0x00800000) >> 16) |
+				((*src & 0x00008000) >>  8) |
+				((*src & 0x00000080) >>  1);
+			if (val & 0xC0)
+				val |= 0x20;
+			src++;
+			val |=  ((*src & 0x00800000) >> 19) |
+				((*src & 0x00008000) >> 11) |
+				((*src & 0x00000080) >>  4);
+			if (val & 0x18)
+				val |= 0x04;
+			src++;
+			val |=  ((*src & 0x00800000) >> 22) |
+				((*src & 0x00008000) >> 14) |
+				((*src & 0x00000080) >>  7);
+			src++;
+			*dst++ = ~val;
+		}
+	}
+
+	/* now adjust the clip so it applies to dst */
+	clip->x1 /= 3;
+	clip->x2 /= 3;
+
+	kfree(buf);
+}
+EXPORT_SYMBOL(tinydrm_xrgb8888_to_st7586);
+
+/**
  * tinydrm_of_find_backlight - Find backlight device in device-tree
  * @dev: Device
  *
