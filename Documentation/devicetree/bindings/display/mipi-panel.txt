@@ -1,4 +1,4 @@
-Multi-Inno MI0283QT display panel
+MIPI DBI compatible display panel
 
 Required properties:
 - compatible:	"multi-inno,mi0283qt".
@@ -17,7 +17,7 @@ Optional properties:
 - rotation:	panel rotation in degrees counter clockwise (0,90,180,270)
 
 Example:
-	mi0283qt@0{
+	display@0{
 		compatible = "multi-inno,mi0283qt";
 		reg = <0>;
 		spi-max-frequency = <32000000>;

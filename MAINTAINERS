@@ -4315,11 +4315,11 @@ M:	Dave Airlie <airlied@redhat.com>
 S:	Odd Fixes
 F:	drivers/gpu/drm/mgag200/
 
-DRM DRIVER FOR MI0283QT
+DRM DRIVER FOR MIPI DBI compatible panels
 M:	Noralf Trønnes <noralf@tronnes.org>
 S:	Maintained
-F:	drivers/gpu/drm/tinydrm/mi0283qt.c
-F:	Documentation/devicetree/bindings/display/multi-inno,mi0283qt.txt
+F:	drivers/gpu/drm/tinydrm/mipi-panel.c
+F:	Documentation/devicetree/bindings/display/mipi-panel.txt
 
 DRM DRIVER FOR MSM ADRENO GPU
 M:	Rob Clark <robdclark@gmail.com>
