@@ -1768,8 +1768,14 @@ void drm_fb_helper_fill_var(struct fb_info *info, struct drm_fb_helper *fb_helpe
 	info->var.xoffset = 0;
 	info->var.yoffset = 0;
 	info->var.activate = FB_ACTIVATE_NOW;
-	info->var.height = -1;
-	info->var.width = -1;
+
+	if (fb_helper->connector_count) {
+		info->var.height = fb_helper->connector_info[0]->connector->display_info.width_mm;
+		info->var.width = fb_helper->connector_info[0]->connector->display_info.height_mm;
+	} else {
+		info->var.height = -1;
+		info->var.width = -1;
+	}
 
 	switch (fb->format->depth) {
 	case 8:
