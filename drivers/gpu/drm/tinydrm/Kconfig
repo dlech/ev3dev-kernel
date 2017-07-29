@@ -20,6 +20,7 @@ config TINYDRM_MIPI_PANEL
 	  DRM driver for the MIPI DBI compatible display panels.
 
 	  Supported panels include:
+	  * LEGO MINDSTORMS EV3
 	  * Multi-Inno MI0283QT
 
 	  If M is selected the module will be called mipi-panel.

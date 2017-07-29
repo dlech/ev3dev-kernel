@@ -12,6 +12,7 @@
 
 #include <drm/tinydrm/ili9341.h>
 #include <drm/tinydrm/mipi-dbi.h>
+#include <drm/tinydrm/st7586.h>
 #include <drm/tinydrm/tinydrm-helpers.h>
 #include <linux/delay.h>
 #include <linux/gpio/consumer.h>
@@ -23,6 +24,7 @@
 
 enum mipi_panel_type {
 	MIPI_PANEL_TYPE_UNKNOWN,
+	MIPI_PANEL_TYPE_LEGO_EV3_LCD,
 	MIPI_PANEL_TYPE_MULTI_INNO_MI0283QT,
 };
 
@@ -125,6 +127,84 @@ static int mipi_panel_init_ili9341(struct mipi_dbi *mipi)
 	return 0;
 }
 
+static int mipi_panel_init_st7586(struct mipi_dbi *mipi)
+{
+	struct tinydrm_device *tdev = &mipi->tinydrm;
+	struct device *dev = tdev->drm->dev;
+	u8 addr_mode;
+	int ret;
+
+	DRM_DEBUG_KMS("\n");
+
+	ret = regulator_enable(mipi->regulator);
+	if (ret) {
+		dev_err(dev, "Failed to enable regulator %d\n", ret);
+		return ret;
+	}
+
+	/* Avoid flicker by skipping setup if the bootloader has done it */
+	if (mipi_dbi_display_is_on(mipi))
+		return 0;
+
+	mipi_dbi_hw_reset(mipi);
+	ret = mipi_dbi_command(mipi, ST7586_AUTO_READ_CTRL, 0x9f);
+	if (ret) {
+		dev_err(dev, "Error sending command %d\n", ret);
+		regulator_disable(mipi->regulator);
+		return ret;
+	}
+
+	mipi_dbi_command(mipi, ST7586_OTP_RW_CTRL, 0x00);
+
+	msleep(10);
+
+	mipi_dbi_command(mipi, ST7586_OTP_READ);
+
+	msleep(20);
+
+	mipi_dbi_command(mipi, ST7586_OTP_CTRL_OUT);
+	mipi_dbi_command(mipi, MIPI_DCS_EXIT_SLEEP_MODE);
+	mipi_dbi_command(mipi, MIPI_DCS_SET_DISPLAY_OFF);
+
+	msleep(50);
+
+	mipi_dbi_command(mipi, ST7586_SET_VOP_OFFSET, 0x00);
+	mipi_dbi_command(mipi, ST7586_SET_VOP, 0xe3, 0x00);
+	mipi_dbi_command(mipi, ST7586_SET_BIAS_SYSTEM, 0x02);
+	mipi_dbi_command(mipi, ST7586_SET_BOOST_LEVEL, 0x04);
+	mipi_dbi_command(mipi, ST7586_ENABLE_ANALOG, 0x1d);
+	mipi_dbi_command(mipi, ST7586_SET_NLINE_INV, 0x00);
+	mipi_dbi_command(mipi, ST7586_DISP_MODE_GRAY);
+	mipi_dbi_command(mipi, ST7586_ENABLE_DDRAM, 0x02);
+
+	switch (mipi->rotation) {
+	default:
+		addr_mode = 0x00;
+		break;
+	case 90:
+		addr_mode = ST7586_DISP_CTRL_MY;
+		break;
+	case 180:
+		addr_mode = ST7586_DISP_CTRL_MX | ST7586_DISP_CTRL_MY;
+		break;
+	case 270:
+		addr_mode = ST7586_DISP_CTRL_MX;
+		break;
+	}
+	mipi_dbi_command(mipi, MIPI_DCS_SET_ADDRESS_MODE, addr_mode);
+
+	mipi_dbi_command(mipi, ST7586_SET_DISP_DUTY, 0x7f);
+	mipi_dbi_command(mipi, ST7586_SET_PART_DISP, 0xa0);
+	mipi_dbi_command(mipi, MIPI_DCS_SET_PARTIAL_AREA, 0x00, 0x00, 0x00, 0x77);
+	mipi_dbi_command(mipi, MIPI_DCS_EXIT_INVERT_MODE);
+
+	msleep(100);
+
+	mipi_dbi_command(mipi, MIPI_DCS_SET_DISPLAY_ON);
+
+	return 0;
+}
+
 static void mipi_panel_fini(void *data)
 {
 	struct mipi_dbi *mipi = data;
@@ -141,6 +221,11 @@ static const struct drm_simple_display_pipe_funcs mipi_panel_pipe_funcs = {
 };
 
 static const struct mipi_panel_info mipi_panel_infos[] = {
+	[MIPI_PANEL_TYPE_LEGO_EV3_LCD] = {
+		.init		= mipi_panel_init_st7586,
+		.mode		= { TINYDRM_MODE(178, 128, 37, 27) },
+		.pixel_fmt	= MIPI_DCS_PIXEL_FMT_ST7586_332,
+	},
 	[MIPI_PANEL_TYPE_MULTI_INNO_MI0283QT] = {
 		.init		= mipi_panel_init_ili9341,
 		.mode		= { TINYDRM_MODE(320, 240, 58, 43) },
@@ -165,12 +250,14 @@ static struct drm_driver mipi_panel_driver = {
 };
 
 static const struct of_device_id mipi_panel_of_match[] = {
+	{ .compatible = "lego,ev3-lcd" },
 	{ .compatible = "multi-inno,mi0283qt" },
 	{},
 };
 MODULE_DEVICE_TABLE(of, mipi_panel_of_match);
 
 static const struct spi_device_id mipi_panel_id[] = {
+	{ "ev3-lcd", MIPI_PANEL_TYPE_LEGO_EV3_LCD },
 	{ "mi0283qt", MIPI_PANEL_TYPE_MULTI_INNO_MI0283QT },
 	{ },
 };
