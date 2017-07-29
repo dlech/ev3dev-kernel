@@ -21,7 +21,18 @@
 #include <linux/spi/spi.h>
 #include <video/mipi_display.h>
 
-static int mipi_panel_init(struct mipi_dbi *mipi)
+enum mipi_panel_type {
+	MIPI_PANEL_TYPE_UNKNOWN,
+	MIPI_PANEL_TYPE_MULTI_INNO_MI0283QT,
+};
+
+struct mipi_panel_info {
+	int (*init)(struct mipi_dbi *mipi);
+	const struct drm_display_mode mode;
+	enum mipi_dcs_pixel_format pixel_fmt;
+};
+
+static int mipi_panel_init_ili9341(struct mipi_dbi *mipi)
 {
 	struct tinydrm_device *tdev = &mipi->tinydrm;
 	struct device *dev = tdev->drm->dev;
@@ -129,8 +140,12 @@ static const struct drm_simple_display_pipe_funcs mipi_panel_pipe_funcs = {
 	.prepare_fb = tinydrm_display_pipe_prepare_fb,
 };
 
-static const struct drm_display_mode mipi_panel_mode = {
-	TINYDRM_MODE(320, 240, 58, 43),
+static const struct mipi_panel_info mipi_panel_infos[] = {
+	[MIPI_PANEL_TYPE_MULTI_INNO_MI0283QT] = {
+		.init		= mipi_panel_init_ili9341,
+		.mode		= { TINYDRM_MODE(320, 240, 58, 43) },
+		.pixel_fmt	= MIPI_DCS_PIXEL_FMT_16BIT,
+	},
 };
 
 DEFINE_DRM_GEM_CMA_FOPS(mipi_panel_fops);
@@ -156,13 +171,15 @@ static const struct of_device_id mipi_panel_of_match[] = {
 MODULE_DEVICE_TABLE(of, mipi_panel_of_match);
 
 static const struct spi_device_id mipi_panel_id[] = {
-	{ "mi0283qt", 0 },
+	{ "mi0283qt", MIPI_PANEL_TYPE_MULTI_INNO_MI0283QT },
 	{ },
 };
 MODULE_DEVICE_TABLE(spi, mipi_panel_id);
 
 static int mipi_panel_probe(struct spi_device *spi)
 {
+	const struct spi_device_id *id = spi_get_device_id(spi);
+	enum mipi_panel_type type = id->driver_data;
 	struct device *dev = &spi->dev;
 	struct tinydrm_device *tdev;
 	struct mipi_dbi *mipi;
@@ -170,9 +187,16 @@ static int mipi_panel_probe(struct spi_device *spi)
 	u32 rotation = 0;
 	int ret;
 
+	if (type == MIPI_PANEL_TYPE_UNKNOWN) {
+		dev_err(dev, "Unknown panel type\n");
+		return -EINVAL;
+	}
+
 	mipi = devm_kzalloc(dev, sizeof(*mipi), GFP_KERNEL);
 	if (!mipi)
 		return -ENOMEM;
+
+	mipi->init = mipi_panel_infos[type].init;
 
 	mipi->reset = devm_gpiod_get_optional(dev, "reset", GPIOD_OUT_HIGH);
 	if (IS_ERR(mipi->reset)) {
@@ -197,12 +221,12 @@ static int mipi_panel_probe(struct spi_device *spi)
 	device_property_read_u32(dev, "rotation", &rotation);
 
 	ret = mipi_dbi_spi_init(spi, mipi, dc, &mipi_panel_pipe_funcs,
-				&mipi_panel_driver, &mipi_panel_mode,
-				MIPI_DCS_PIXEL_FMT_16BIT, rotation);
+				&mipi_panel_driver, &mipi_panel_infos[type].mode,
+				mipi_panel_infos[type].pixel_fmt, rotation);
 	if (ret)
 		return ret;
 
-	ret = mipi_panel_init(mipi);
+	ret = mipi->init(mipi);
 	if (ret)
 		return ret;
 
@@ -255,7 +279,7 @@ static int __maybe_unused mipi_panel_pm_resume(struct device *dev)
 	struct mipi_dbi *mipi = dev_get_drvdata(dev);
 	int ret;
 
-	ret = mipi_panel_init(mipi);
+	ret = mipi->init(mipi);
 	if (ret)
 		return ret;
 

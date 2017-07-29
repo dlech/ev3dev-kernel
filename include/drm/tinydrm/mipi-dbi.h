@@ -25,6 +25,7 @@ struct regulator;
  * @spi: SPI device
  * @enabled: Pipeline is enabled
  * @cmdlock: Command lock
+ * @init: Panel specific callback executing initialization command sequence.
  * @command: Bus specific callback executing commands.
  * @read_commands: Array of read commands terminated by a zero entry.
  *                 Reading is disabled if this is NULL.
@@ -44,6 +45,7 @@ struct mipi_dbi {
 	struct spi_device *spi;
 	bool enabled;
 	struct mutex cmdlock;
+	int (*init)(struct mipi_dbi *mipi);
 	int (*command)(struct mipi_dbi *mipi, u8 cmd, u8 *param, size_t num);
 	const u8 *read_commands;
 	struct gpio_desc *dc;
