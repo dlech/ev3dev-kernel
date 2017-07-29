@@ -336,6 +336,7 @@ static const uint32_t mipi_dbi_formats[] = {
  * @pipe_funcs: Display pipe functions
  * @driver: DRM driver
  * @mode: Display mode
+ * @pixel_fmt: The display memory's pixel format
  * @rotation: Initial rotation in degrees Counter Clock Wise
  *
  * This function initializes a &mipi_dbi structure and it's underlying
@@ -352,14 +353,25 @@ static const uint32_t mipi_dbi_formats[] = {
 int mipi_dbi_init(struct device *dev, struct mipi_dbi *mipi,
 		  const struct drm_simple_display_pipe_funcs *pipe_funcs,
 		  struct drm_driver *driver,
-		  const struct drm_display_mode *mode, unsigned int rotation)
+		  const struct drm_display_mode *mode,
+		  enum mipi_dcs_pixel_format pixel_fmt, unsigned int rotation)
 {
-	size_t bufsize = mode->vdisplay * mode->hdisplay * sizeof(u16);
 	struct tinydrm_device *tdev = &mipi->tinydrm;
+	size_t bufsize;
 	int ret;
 
 	if (!mipi->command)
 		return -EINVAL;
+
+	switch (pixel_fmt) {
+	case MIPI_DCS_PIXEL_FMT_16BIT:
+		bufsize = mode->vdisplay * mode->hdisplay * sizeof(u16);
+		break;
+	default:
+		DRM_ERROR("Pixel format is not supported\n");
+		return -EINVAL;
+	}
+	mipi->pixel_fmt = pixel_fmt;
 
 	mutex_init(&mipi->cmdlock);
 
@@ -781,6 +793,7 @@ static int mipi_dbi_typec3_command(struct mipi_dbi *mipi, u8 cmd,
  * @pipe_funcs: Display pipe functions
  * @driver: DRM driver
  * @mode: Display mode
+ * @pixel_fmt: The display memory's pixel format
  * @rotation: Initial rotation in degrees Counter Clock Wise
  *
  * This function sets &mipi_dbi->command, enables &mipi->read_commands for the
@@ -803,6 +816,7 @@ int mipi_dbi_spi_init(struct spi_device *spi, struct mipi_dbi *mipi,
 		      const struct drm_simple_display_pipe_funcs *pipe_funcs,
 		      struct drm_driver *driver,
 		      const struct drm_display_mode *mode,
+		      enum mipi_dcs_pixel_format pixel_fmt,
 		      unsigned int rotation)
 {
 	size_t tx_size = tinydrm_spi_max_transfer_size(spi, 0);
@@ -849,7 +863,8 @@ int mipi_dbi_spi_init(struct spi_device *spi, struct mipi_dbi *mipi,
 			return -ENOMEM;
 	}
 
-	return mipi_dbi_init(dev, mipi, pipe_funcs, driver, mode, rotation);
+	return mipi_dbi_init(dev, mipi, pipe_funcs, driver, mode, pixel_fmt,
+			     rotation);
 }
 EXPORT_SYMBOL(mipi_dbi_spi_init);
 

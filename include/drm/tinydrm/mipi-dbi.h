@@ -13,6 +13,7 @@
 #define __LINUX_MIPI_DBI_H
 
 #include <drm/tinydrm/tinydrm.h>
+#include <video/mipi_display.h>
 
 struct spi_device;
 struct gpio_desc;
@@ -33,6 +34,7 @@ struct regulator;
  * @tx_buf9_len: Size of tx_buf9.
  * @swap_bytes: Swap bytes in buffer before transfer
  * @reset: Optional reset gpio
+ * @pixel_fmt: The display memory's pixel format
  * @rotation: initial rotation in degrees Counter Clock Wise
  * @backlight: backlight device (optional)
  * @regulator: power regulator (optional)
@@ -50,6 +52,7 @@ struct mipi_dbi {
 	size_t tx_buf9_len;
 	bool swap_bytes;
 	struct gpio_desc *reset;
+	enum mipi_dcs_pixel_format pixel_fmt;
 	unsigned int rotation;
 	struct backlight_device *backlight;
 	struct regulator *regulator;
@@ -66,11 +69,13 @@ int mipi_dbi_spi_init(struct spi_device *spi, struct mipi_dbi *mipi,
 		      const struct drm_simple_display_pipe_funcs *pipe_funcs,
 		      struct drm_driver *driver,
 		      const struct drm_display_mode *mode,
+		      enum mipi_dcs_pixel_format pixel_fmt,
 		      unsigned int rotation);
 int mipi_dbi_init(struct device *dev, struct mipi_dbi *mipi,
 		  const struct drm_simple_display_pipe_funcs *pipe_funcs,
 		  struct drm_driver *driver,
-		  const struct drm_display_mode *mode, unsigned int rotation);
+		  const struct drm_display_mode *mode,
+		  enum mipi_dcs_pixel_format pixel_fmt, unsigned int rotation);
 void mipi_dbi_pipe_enable(struct drm_simple_display_pipe *pipe,
 			  struct drm_crtc_state *crtc_state);
 void mipi_dbi_pipe_disable(struct drm_simple_display_pipe *pipe);
