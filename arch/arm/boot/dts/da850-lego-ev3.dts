@@ -184,6 +184,11 @@
 		io-channel-names = "voltage", "current";
 		rechargeable-gpios = <&gpio 136 GPIO_ACTIVE_LOW>;
 	};
+
+	backlight: backlight {
+		compatible = "gpio-backlight";
+		gpios = <&gpio 44 GPIO_ACTIVE_HIGH>;
+	};
 };
 
 &pmx_core {
@@ -370,14 +375,16 @@
 	status = "okay";
 	pinctrl-0 = <&ev3_lcd_pins>;
 	pinctrl-names = "default";
-	cs-gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
+	// cs-gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
 
 	display@0{
-		compatible = "lego,ev3-lcd";
+		compatible = "sitronix,st7735r-jd-t18003-t01";
 		reg = <0>;
 		spi-max-frequency = <10000000>;
-		a0-gpios = <&gpio 43 GPIO_ACTIVE_HIGH>;
+		dc-gpios = <&gpio 43 GPIO_ACTIVE_HIGH>;
 		reset-gpios = <&gpio 80 GPIO_ACTIVE_HIGH>;
+		backlight = &backlight;
+		rotation = <270>;
 	};
 };
 
