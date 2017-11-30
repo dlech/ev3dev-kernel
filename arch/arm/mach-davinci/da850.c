@@ -1392,6 +1392,10 @@ void __init da850_init(void)
 	v = __raw_readl(DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP3_REG));
 	v &= ~CFGCHIP3_PLL1_MASTER_LOCK;
 	__raw_writel(v, DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP3_REG));
+}
 
+void __init da850_init_time(void)
+{
 	davinci_clk_init(davinci_soc_info_da850.cpu_clks);
+	davinci_timer_init();
 }
