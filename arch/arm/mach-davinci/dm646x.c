@@ -956,7 +956,12 @@ void __init dm646x_init(void)
 {
 	davinci_common_init(&davinci_soc_info_dm646x);
 	davinci_map_sysmod();
+}
+
+void __init dm646x_init_time(void)
+{
 	davinci_clk_init(davinci_soc_info_dm646x.cpu_clks);
+	davinci_timer_init();
 }
 
 static int __init dm646x_init_devices(void)
