@@ -23,6 +23,7 @@
 #include <mach/serial.h>
 #include <mach/pm.h>
 #include <linux/platform_data/edma.h>
+#include <linux/platform_data/davinci_clk.h>
 #include <linux/platform_data/i2c-davinci.h>
 #include <linux/platform_data/mmc-davinci.h>
 #include <linux/platform_data/usb-davinci.h>
@@ -100,10 +101,9 @@ int da8xx_register_watchdog(void);
 int da8xx_register_usb_phy(void);
 int da8xx_register_usb20(unsigned mA, unsigned potpgt);
 int da8xx_register_usb11(struct da8xx_ohci_root_hub *pdata);
-int da8xx_register_usb_refclkin(int rate);
-int da8xx_register_usb20_phy_clk(bool use_usb_refclkin);
-int da8xx_register_usb11_phy_clk(bool use_usb_refclkin);
-int da850_register_sata_refclk(int rate);
+int da8xx_register_usb_refclkin(unsigned long rate);
+int da8xx_register_usb_phy_clocks(struct da8xx_cfgchip_clk_data *pdata);
+int da850_register_sata_refclk(unsigned long rate);
 int da8xx_register_emac(void);
 int da8xx_register_uio_pruss(void);
 int da8xx_register_lcdc(struct da8xx_lcdc_platform_data *pdata);
