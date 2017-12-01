@@ -337,51 +337,51 @@ static struct clk usb_clk = {
 	.lpsc = DAVINCI_LPSC_USB,
 };
 
-static struct clk_lookup dm355_clks[] = {
-	CLK(NULL, "ref", &ref_clk),
-	CLK(NULL, "pll1", &pll1_clk),
-	CLK(NULL, "pll1_sysclk1", &pll1_sysclk1),
-	CLK(NULL, "pll1_sysclk2", &pll1_sysclk2),
-	CLK(NULL, "pll1_sysclk3", &pll1_sysclk3),
-	CLK(NULL, "pll1_sysclk4", &pll1_sysclk4),
-	CLK(NULL, "pll1_aux", &pll1_aux_clk),
-	CLK(NULL, "pll1_sysclkbp", &pll1_sysclkbp),
-	CLK(NULL, "vpss_dac", &vpss_dac_clk),
-	CLK("vpss", "master", &vpss_master_clk),
-	CLK("vpss", "slave", &vpss_slave_clk),
-	CLK(NULL, "clkout1", &clkout1_clk),
-	CLK(NULL, "clkout2", &clkout2_clk),
-	CLK(NULL, "pll2", &pll2_clk),
-	CLK(NULL, "pll2_sysclk1", &pll2_sysclk1),
-	CLK(NULL, "pll2_sysclkbp", &pll2_sysclkbp),
-	CLK(NULL, "clkout3", &clkout3_clk),
-	CLK(NULL, "arm", &arm_clk),
-	CLK(NULL, "mjcp", &mjcp_clk),
-	CLK("serial8250.0", NULL, &uart0_clk),
-	CLK("serial8250.1", NULL, &uart1_clk),
-	CLK("serial8250.2", NULL, &uart2_clk),
-	CLK("i2c_davinci.1", NULL, &i2c_clk),
-	CLK("davinci-mcbsp.0", NULL, &asp0_clk),
-	CLK("davinci-mcbsp.1", NULL, &asp1_clk),
-	CLK("dm6441-mmc.0", NULL, &mmcsd0_clk),
-	CLK("dm6441-mmc.1", NULL, &mmcsd1_clk),
-	CLK("spi_davinci.0", NULL, &spi0_clk),
-	CLK("spi_davinci.1", NULL, &spi1_clk),
-	CLK("spi_davinci.2", NULL, &spi2_clk),
-	CLK(NULL, "gpio", &gpio_clk),
-	CLK(NULL, "aemif", &aemif_clk),
-	CLK(NULL, "pwm0", &pwm0_clk),
-	CLK(NULL, "pwm1", &pwm1_clk),
-	CLK(NULL, "pwm2", &pwm2_clk),
-	CLK(NULL, "pwm3", &pwm3_clk),
-	CLK(NULL, "timer0", &timer0_clk),
-	CLK(NULL, "timer1", &timer1_clk),
-	CLK("davinci-wdt", NULL, &timer2_clk),
-	CLK(NULL, "timer3", &timer3_clk),
-	CLK(NULL, "rto", &rto_clk),
-	CLK(NULL, "usb", &usb_clk),
-	CLK(NULL, NULL, NULL),
-};
+static __init void dm355_clk_init(void)
+{
+	davinci_clk_init(&ref_clk, "ref", NULL);
+	davinci_clk_init(&pll1_clk, "pll1", NULL);
+	davinci_clk_init(&pll1_sysclk1, "pll1_sysclk1", NULL);
+	davinci_clk_init(&pll1_sysclk2, "pll1_sysclk2", NULL);
+	davinci_clk_init(&pll1_sysclk3, "pll1_sysclk3", NULL);
+	davinci_clk_init(&pll1_sysclk4, "pll1_sysclk4", NULL);
+	davinci_clk_init(&pll1_aux_clk, "pll1_aux", NULL);
+	davinci_clk_init(&pll1_sysclkbp, "pll1_sysclkbp", NULL);
+	davinci_clk_init(&vpss_dac_clk, "vpss_dac", NULL);
+	davinci_clk_init(&vpss_master_clk, "master", "vpss");
+	davinci_clk_init(&vpss_slave_clk, "slave", "vpss");
+	davinci_clk_init(&clkout1_clk, "clkout1", NULL);
+	davinci_clk_init(&clkout2_clk, "clkout2", NULL);
+	davinci_clk_init(&pll2_clk, "pll2", NULL);
+	davinci_clk_init(&pll2_sysclk1, "pll2_sysclk1", NULL);
+	davinci_clk_init(&pll2_sysclkbp, "pll2_sysclkbp", NULL);
+	davinci_clk_init(&clkout3_clk, "clkout3", NULL);
+	davinci_clk_init(&arm_clk, "arm", NULL);
+	davinci_clk_init(&mjcp_clk, "mjcp", NULL);
+	davinci_clk_init(&uart0_clk, NULL, "serial8250.0");
+	davinci_clk_init(&uart1_clk, NULL, "serial8250.1");
+	davinci_clk_init(&uart2_clk, NULL, "serial8250.2");
+	davinci_clk_init(&i2c_clk, NULL, "i2c_davinci.1");
+	davinci_clk_init(&asp0_clk, NULL, "davinci-mcbsp.0");
+	davinci_clk_init(&asp1_clk, NULL, "davinci-mcbsp.1");
+	davinci_clk_init(&mmcsd0_clk, NULL, "dm6441-mmc.0");
+	davinci_clk_init(&mmcsd1_clk, NULL, "dm6441-mmc.1");
+	davinci_clk_init(&spi0_clk, NULL, "spi_davinci.0");
+	davinci_clk_init(&spi1_clk, NULL, "spi_davinci.1");
+	davinci_clk_init(&spi2_clk, NULL, "spi_davinci.2");
+	davinci_clk_init(&gpio_clk, "gpio", NULL);
+	davinci_clk_init(&aemif_clk, "aemif", NULL);
+	davinci_clk_init(&pwm0_clk, "pwm0", NULL);
+	davinci_clk_init(&pwm1_clk, "pwm1", NULL);
+	davinci_clk_init(&pwm2_clk, "pwm2", NULL);
+	davinci_clk_init(&pwm3_clk, "pwm3", NULL);
+	davinci_clk_init(&timer0_clk, "timer0", NULL);
+	davinci_clk_init(&timer1_clk, "timer1", NULL);
+	davinci_clk_init(&timer2_clk, NULL, "davinci-wdt");
+	davinci_clk_init(&timer3_clk, "timer3", NULL);
+	davinci_clk_init(&rto_clk, "rto", NULL);
+	davinci_clk_init(&usb_clk, "usb", NULL);
+}
 
 /*----------------------------------------------------------------------*/
 
@@ -1012,7 +1012,6 @@ static const struct davinci_soc_info davinci_soc_info_dm355 = {
 	.jtag_id_reg		= 0x01c40028,
 	.ids			= dm355_ids,
 	.ids_num		= ARRAY_SIZE(dm355_ids),
-	.cpu_clks		= dm355_clks,
 	.psc_bases		= dm355_psc_bases,
 	.psc_bases_num		= ARRAY_SIZE(dm355_psc_bases),
 	.pinmux_base		= DAVINCI_SYSTEM_MODULE_BASE,
@@ -1047,7 +1046,7 @@ void __init dm355_init(void)
 
 void __init dm355_init_time(void)
 {
-	davinci_clk_init(davinci_soc_info_dm355.cpu_clks);
+	dm355_clk_init();
 	davinci_timer_init();
 }
 
