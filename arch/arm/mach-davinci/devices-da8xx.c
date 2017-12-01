@@ -1046,9 +1046,6 @@ static struct clk sata_refclk = {
 	.set_rate	= davinci_simple_set_rate,
 };
 
-static struct clk_lookup sata_refclk_lookup =
-		CLK("ahci_da850", "refclk", &sata_refclk);
-
 int __init da850_register_sata_refclk(int rate)
 {
 	int ret;
@@ -1058,7 +1055,7 @@ int __init da850_register_sata_refclk(int rate)
 	if (ret)
 		return ret;
 
-	clkdev_add(&sata_refclk_lookup);
+	clk_register_clkdev(&sata_refclk, "refclk", "ahci_da850");
 
 	return 0;
 }

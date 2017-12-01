@@ -118,14 +118,7 @@ struct clk {
 #define PSC_FORCE		BIT(6) /* Force module state transtition */
 #define PSC_LRST		BIT(8) /* Use local reset on enable/disable */
 
-#define CLK(dev, con, ck) 	\
-	{			\
-		.dev_id = dev,	\
-		.con_id = con,	\
-		.clk = ck,	\
-	}			\
-
-int davinci_clk_init(struct clk_lookup *clocks);
+struct clk *davinci_clk_init(struct clk *clk);
 int davinci_set_pllrate(struct pll_data *pll, unsigned int prediv,
 				unsigned int mult, unsigned int postdiv);
 int davinci_set_sysclk_rate(struct clk *clk, unsigned long rate);

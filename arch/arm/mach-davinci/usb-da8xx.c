@@ -133,9 +133,6 @@ static struct clk usb_refclkin = {
 	.set_rate	= davinci_simple_set_rate,
 };
 
-static struct clk_lookup usb_refclkin_lookup =
-	CLK(NULL, "usb_refclkin", &usb_refclkin);
-
 /**
  * da8xx_register_usb_refclkin - register USB_REFCLKIN clock
  *
@@ -154,7 +151,7 @@ int __init da8xx_register_usb_refclkin(int rate)
 	if (ret)
 		return ret;
 
-	clkdev_add(&usb_refclkin_lookup);
+	clk_register_clkdev(&usb_refclkin, "usb_refclkin", NULL);
 
 	return 0;
 }
@@ -262,9 +259,6 @@ static struct clk usb20_phy_clk = {
 	.set_parent	= usb20_phy_clk_set_parent,
 };
 
-static struct clk_lookup usb20_phy_clk_lookup =
-	CLK("da8xx-usb-phy", "usb20_phy", &usb20_phy_clk);
-
 /**
  * da8xx_register_usb20_phy_clk - register USB0PHYCLKMUX clock
  *
@@ -291,7 +285,7 @@ int __init da8xx_register_usb20_phy_clk(bool use_usb_refclkin)
 	usb20_phy_clk.parent = parent;
 	ret = clk_register(&usb20_phy_clk);
 	if (!ret)
-		clkdev_add(&usb20_phy_clk_lookup);
+		clk_register_clkdev(&usb20_phy_clk, "usb20_phy", "da8xx-usb-phy");
 
 	clk_put(parent);
 
@@ -324,9 +318,6 @@ static struct clk usb11_phy_clk = {
 	.set_parent	= usb11_phy_clk_set_parent,
 };
 
-static struct clk_lookup usb11_phy_clk_lookup =
-	CLK("da8xx-usb-phy", "usb11_phy", &usb11_phy_clk);
-
 /**
  * da8xx_register_usb11_phy_clk - register USB1PHYCLKMUX clock
  *
@@ -348,7 +339,7 @@ int __init da8xx_register_usb11_phy_clk(bool use_usb_refclkin)
 	usb11_phy_clk.parent = parent;
 	ret = clk_register(&usb11_phy_clk);
 	if (!ret)
-		clkdev_add(&usb11_phy_clk_lookup);
+		clk_register_clkdev(&usb11_phy_clk, "usb11_phy", "da8xx-usb-phy");
 
 	clk_put(parent);
 

@@ -378,60 +378,113 @@ static struct clk rmii_clk = {
 	.parent		= &pll0_sysclk7,
 };
 
-static struct clk_lookup da830_clks[] = {
-	CLK(NULL,		"ref",		&ref_clk),
-	CLK(NULL,		"pll0",		&pll0_clk),
-	CLK(NULL,		"pll0_aux",	&pll0_aux_clk),
-	CLK(NULL,		"pll0_sysclk2",	&pll0_sysclk2),
-	CLK(NULL,		"pll0_sysclk3",	&pll0_sysclk3),
-	CLK(NULL,		"pll0_sysclk4",	&pll0_sysclk4),
-	CLK(NULL,		"pll0_sysclk5",	&pll0_sysclk5),
-	CLK(NULL,		"pll0_sysclk6",	&pll0_sysclk6),
-	CLK(NULL,		"pll0_sysclk7",	&pll0_sysclk7),
-	CLK("i2c_davinci.1",	NULL,		&i2c0_clk),
-	CLK(NULL,		"timer0",	&timerp64_0_clk),
-	CLK("davinci-wdt",	NULL,		&timerp64_1_clk),
-	CLK(NULL,		"arm_rom",	&arm_rom_clk),
-	CLK(NULL,		"scr0_ss",	&scr0_ss_clk),
-	CLK(NULL,		"scr1_ss",	&scr1_ss_clk),
-	CLK(NULL,		"scr2_ss",	&scr2_ss_clk),
-	CLK(NULL,		"dmax",		&dmax_clk),
-	CLK(NULL,		"tpcc",		&tpcc_clk),
-	CLK(NULL,		"tptc0",	&tptc0_clk),
-	CLK(NULL,		"tptc1",	&tptc1_clk),
-	CLK("da830-mmc.0",	NULL,		&mmcsd_clk),
-	CLK("serial8250.0",	NULL,		&uart0_clk),
-	CLK("serial8250.1",	NULL,		&uart1_clk),
-	CLK("serial8250.2",	NULL,		&uart2_clk),
-	CLK("spi_davinci.0",	NULL,		&spi0_clk),
-	CLK("spi_davinci.1",	NULL,		&spi1_clk),
-	CLK(NULL,		"ecap0",	&ecap0_clk),
-	CLK(NULL,		"ecap1",	&ecap1_clk),
-	CLK(NULL,		"ecap2",	&ecap2_clk),
-	CLK(NULL,		"pwm0",		&pwm0_clk),
-	CLK(NULL,		"pwm1",		&pwm1_clk),
-	CLK(NULL,		"pwm2",		&pwm2_clk),
-	CLK("eqep.0",		NULL,		&eqep0_clk),
-	CLK("eqep.1",		NULL,		&eqep1_clk),
-	CLK("da8xx_lcdc.0",	"fck",		&lcdc_clk),
-	CLK("davinci-mcasp.0",	NULL,		&mcasp0_clk),
-	CLK("davinci-mcasp.1",	NULL,		&mcasp1_clk),
-	CLK("davinci-mcasp.2",	NULL,		&mcasp2_clk),
-	CLK("musb-da8xx",	NULL,		&usb20_clk),
-	CLK("cppi41-dmaengine",	NULL,		&cppi41_clk),
-	CLK(NULL,		"aemif",	&aemif_clk),
-	CLK(NULL,		"aintc",	&aintc_clk),
-	CLK(NULL,		"secu_mgr",	&secu_mgr_clk),
-	CLK("davinci_emac.1",	NULL,		&emac_clk),
-	CLK("davinci_mdio.0",   "fck",          &emac_clk),
-	CLK(NULL,		"gpio",		&gpio_clk),
-	CLK("i2c_davinci.2",	NULL,		&i2c1_clk),
-	CLK("ohci-da8xx",	NULL,	&usb11_clk),
-	CLK(NULL,		"emif3",	&emif3_clk),
-	CLK(NULL,		"arm",		&arm_clk),
-	CLK(NULL,		"rmii",		&rmii_clk),
-	CLK(NULL,		NULL,		NULL),
-};
+static __init void da830_clk_init(void)
+{
+	struct clk *clk;
+
+	clk = davinci_clk_init(&ref_clk);
+	clk_register_clkdev(clk, "ref", NULL);
+	clk = davinci_clk_init(&pll0_clk);
+	clk_register_clkdev(clk, "pll0", NULL);
+	clk = davinci_clk_init(&pll0_aux_clk);
+	clk_register_clkdev(clk, "pll0_aux", NULL);
+	clk = davinci_clk_init(&pll0_sysclk2);
+	clk_register_clkdev(clk, "pll0_sysclk2", NULL);
+	clk = davinci_clk_init(&pll0_sysclk3);
+	clk_register_clkdev(clk, "pll0_sysclk3", NULL);
+	clk = davinci_clk_init(&pll0_sysclk4);
+	clk_register_clkdev(clk, "pll0_sysclk4", NULL);
+	clk = davinci_clk_init(&pll0_sysclk5);
+	clk_register_clkdev(clk, "pll0_sysclk5", NULL);
+	clk = davinci_clk_init(&pll0_sysclk6);
+	clk_register_clkdev(clk, "pll0_sysclk6", NULL);
+	clk = davinci_clk_init(&pll0_sysclk7);
+	clk_register_clkdev(clk, "pll0_sysclk7", NULL);
+	clk = davinci_clk_init(&i2c0_clk);
+	clk_register_clkdev(clk, NULL, "i2c_davinci.1");
+	clk = davinci_clk_init(&timerp64_0_clk);
+	clk_register_clkdev(clk, "timer0", NULL);
+	clk = davinci_clk_init(&timerp64_1_clk);
+	clk_register_clkdev(clk, NULL, "davinci-wdt");
+	clk = davinci_clk_init(&arm_rom_clk);
+	clk_register_clkdev(clk, "arm_rom", NULL);
+	clk = davinci_clk_init(&scr0_ss_clk);
+	clk_register_clkdev(clk, "scr0_ss", NULL);
+	clk = davinci_clk_init(&scr1_ss_clk);
+	clk_register_clkdev(clk, "scr1_ss", NULL);
+	clk = davinci_clk_init(&scr2_ss_clk);
+	clk_register_clkdev(clk, "scr2_ss", NULL);
+	clk = davinci_clk_init(&dmax_clk);
+	clk_register_clkdev(clk, "dmax", NULL);
+	clk = davinci_clk_init(&tpcc_clk);
+	clk_register_clkdev(clk, "tpcc", NULL);
+	clk = davinci_clk_init(&tptc0_clk);
+	clk_register_clkdev(clk, "tptc0", NULL);
+	clk = davinci_clk_init(&tptc1_clk);
+	clk_register_clkdev(clk, "tptc1", NULL);
+	clk = davinci_clk_init(&mmcsd_clk);
+	clk_register_clkdev(clk, NULL, "da830-mmc.0");
+	clk = davinci_clk_init(&uart0_clk);
+	clk_register_clkdev(clk, NULL, "serial8250.0");
+	clk = davinci_clk_init(&uart1_clk);
+	clk_register_clkdev(clk, NULL, "serial8250.1");
+	clk = davinci_clk_init(&uart2_clk);
+	clk_register_clkdev(clk, NULL, "serial8250.2");
+	clk = davinci_clk_init(&spi0_clk);
+	clk_register_clkdev(clk, NULL, "spi_davinci.0");
+	clk = davinci_clk_init(&spi1_clk);
+	clk_register_clkdev(clk, NULL, "spi_davinci.1");
+	clk = davinci_clk_init(&ecap0_clk);
+	clk_register_clkdev(clk, "ecap0", NULL);
+	clk = davinci_clk_init(&ecap1_clk);
+	clk_register_clkdev(clk, "ecap1", NULL);
+	clk = davinci_clk_init(&ecap2_clk);
+	clk_register_clkdev(clk, "ecap2", NULL);
+	clk = davinci_clk_init(&pwm0_clk);
+	clk_register_clkdev(clk, "pwm0", NULL);
+	clk = davinci_clk_init(&pwm1_clk);
+	clk_register_clkdev(clk, "pwm1", NULL);
+	clk = davinci_clk_init(&pwm2_clk);
+	clk_register_clkdev(clk, "pwm2", NULL);
+	clk = davinci_clk_init(&eqep0_clk);
+	clk_register_clkdev(clk, NULL, "eqep.0");
+	clk = davinci_clk_init(&eqep1_clk);
+	clk_register_clkdev(clk, NULL, "eqep.1");
+	clk = davinci_clk_init(&lcdc_clk);
+	clk_register_clkdev(clk, "fck", "da8xx_lcdc.0");
+	clk = davinci_clk_init(&mcasp0_clk);
+	clk_register_clkdev(clk, NULL, "davinci-mcasp.0");
+	clk = davinci_clk_init(&mcasp1_clk);
+	clk_register_clkdev(clk, NULL, "davinci-mcasp.1");
+	clk = davinci_clk_init(&mcasp2_clk);
+	clk_register_clkdev(clk, NULL, "davinci-mcasp.2");
+	clk = davinci_clk_init(&usb20_clk);
+	clk_register_clkdev(clk, "usb20", "musb-da8xx");
+	clk = davinci_clk_init(&cppi41_clk);
+	clk_register_clkdev(clk, NULL, "cppi41-dmaengine");
+	clk = davinci_clk_init(&aemif_clk);
+	clk_register_clkdev(clk, "aemif", NULL);
+	clk = davinci_clk_init(&aintc_clk);
+	clk_register_clkdev(clk, "aintc", NULL);
+	clk = davinci_clk_init(&secu_mgr_clk);
+	clk_register_clkdev(clk, "secu_mgr", NULL);
+	clk = davinci_clk_init(&emac_clk);
+	clk_register_clkdev(clk, NULL, "davinci_emac.1");
+	clk = davinci_clk_init(&emac_clk);
+	clk_register_clkdev(clk, "fck", "davinci_mdio.0");
+	clk = davinci_clk_init(&gpio_clk);
+	clk_register_clkdev(clk, "gpio", NULL);
+	clk = davinci_clk_init(&i2c1_clk);
+	clk_register_clkdev(clk, NULL, "i2c_davinci.2");
+	clk = davinci_clk_init(&usb11_clk);
+	clk_register_clkdev(clk, "usb11", "ohci-da8xx");
+	clk = davinci_clk_init(&emif3_clk);
+	clk_register_clkdev(clk, "emif3", NULL);
+	clk = davinci_clk_init(&arm_clk);
+	clk_register_clkdev(clk, "arm", NULL);
+	clk = davinci_clk_init(&rmii_clk);
+	clk_register_clkdev(clk, "rmii", NULL);
+}
 
 /*
  * Device specific mux setup
@@ -1200,7 +1253,6 @@ static const struct davinci_soc_info davinci_soc_info_da830 = {
 	.jtag_id_reg		= DA8XX_SYSCFG0_BASE + DA8XX_JTAG_ID_REG,
 	.ids			= da830_ids,
 	.ids_num		= ARRAY_SIZE(da830_ids),
-	.cpu_clks		= da830_clks,
 	.psc_bases		= da830_psc_bases,
 	.psc_bases_num		= ARRAY_SIZE(da830_psc_bases),
 	.pinmux_base		= DA8XX_SYSCFG0_BASE + 0x120,
@@ -1224,6 +1276,6 @@ void __init da830_init(void)
 
 void __init da830_init_time(void)
 {
-	davinci_clk_init(davinci_soc_info_da830.cpu_clks);
+	da830_clk_init();
 	davinci_timer_init();
 }
