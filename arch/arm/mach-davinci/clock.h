@@ -68,6 +68,7 @@
 #ifndef __ASSEMBLER__
 
 #include <linux/list.h>
+#include <linux/clk-provider.h>
 #include <linux/clkdev.h>
 
 #define PLLSTAT_GOSTAT	BIT(0)
@@ -84,7 +85,8 @@ struct pll_data {
 #define PLL_HAS_PREDIV          0x01
 #define PLL_HAS_POSTDIV         0x02
 
-struct clk {
+struct davinci_clk {
+	struct clk_hw		hw;
 	struct list_head	node;
 	struct module		*owner;
 	const char		*name;
@@ -95,18 +97,18 @@ struct clk {
 	u8			gpsc;
 	u8			domain;
 	u32			flags;
-	struct clk              *parent;
+	struct davinci_clk	*parent;
 	struct list_head	children; 	/* list of children */
 	struct list_head	childnode;	/* parent's child list node */
 	struct pll_data         *pll_data;
 	u32                     div_reg;
-	unsigned long (*recalc) (struct clk *);
-	int (*set_rate) (struct clk *clk, unsigned long rate);
-	int (*round_rate) (struct clk *clk, unsigned long rate);
-	int (*reset) (struct clk *clk, bool reset);
-	void (*clk_enable) (struct clk *clk);
-	void (*clk_disable) (struct clk *clk);
-	int (*set_parent) (struct clk *clk, struct clk *parent);
+	unsigned long (*recalc)(struct davinci_clk *clk);
+	int (*set_rate)(struct davinci_clk *clk, unsigned long rate);
+	int (*round_rate)(struct davinci_clk *clk, unsigned long rate);
+	int (*reset)(struct davinci_clk *clk, bool reset);
+	void (*clk_enable)(struct davinci_clk *clk);
+	void (*clk_disable)(struct davinci_clk *clk);
+	int (*set_parent)(struct davinci_clk *clk, struct davinci_clk *parent);
 };
 
 /* Clock flags: SoC-specific flags start at BIT(16) */
@@ -118,14 +120,24 @@ struct clk {
 #define PSC_FORCE		BIT(6) /* Force module state transtition */
 #define PSC_LRST		BIT(8) /* Use local reset on enable/disable */
 
-struct clk *davinci_clk_init(struct clk *clk);
+struct clk *davinci_clk_init(struct davinci_clk *clk);
 int davinci_set_pllrate(struct pll_data *pll, unsigned int prediv,
 				unsigned int mult, unsigned int postdiv);
-int davinci_set_sysclk_rate(struct clk *clk, unsigned long rate);
-int davinci_simple_set_rate(struct clk *clk, unsigned long rate);
-int davinci_clk_reset(struct clk *clk, bool reset);
-void davinci_clk_enable(struct clk *clk);
-void davinci_clk_disable(struct clk *clk);
+
+int davinci_set_sysclk_rate(struct davinci_clk *clk, unsigned long rate);
+int davinci_simple_set_rate(struct davinci_clk *clk, unsigned long rate);
+void davinci_clk_enable(struct davinci_clk *clk);
+void davinci_clk_disable(struct davinci_clk *clk);
+int davinci_clk_register(struct davinci_clk *clk);
+
+static inline struct davinci_clk *to_davinci_clk(struct clk_hw *hw)
+{
+	if (IS_ERR_OR_NULL(hw))
+		return (struct davinci_clk *)hw;
+
+	return container_of(hw, struct davinci_clk, hw);
+}
+
 #endif
 
 #endif
