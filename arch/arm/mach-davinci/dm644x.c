@@ -8,28 +8,31 @@
  * is licensed "as is" without any warranty of any kind, whether express
  * or implied.
  */
-#include <linux/init.h>
+#include <linux/clk-provider.h>
 #include <linux/clk.h>
-#include <linux/serial_8250.h>
+#include <linux/clk/davinci.h>
+#include <linux/clkdev.h>
 #include <linux/dmaengine.h>
-#include <linux/platform_device.h>
+#include <linux/init.h>
 #include <linux/platform_data/edma.h>
 #include <linux/platform_data/gpio-davinci.h>
+#include <linux/platform_device.h>
+#include <linux/serial_8250.h>
 
 #include <asm/mach/map.h>
 
+#include <mach/common.h>
 #include <mach/cputype.h>
 #include <mach/irqs.h>
-#include "psc.h"
 #include <mach/mux.h>
-#include <mach/time.h>
 #include <mach/serial.h>
-#include <mach/common.h>
+#include <mach/time.h>
 
-#include "davinci.h"
-#include "clock.h"
-#include "mux.h"
 #include "asp.h"
+#include "clock.h"
+#include "davinci.h"
+#include "mux.h"
+#include "psc.h"
 
 /*
  * Device specific clocks
@@ -43,324 +46,91 @@
 #define DM644X_EMAC_CNTRL_RAM_OFFSET	0x2000
 #define DM644X_EMAC_CNTRL_RAM_SIZE	0x2000
 
-static struct pll_data pll1_data = {
-	.num       = 1,
-	.phys_base = DAVINCI_PLL1_BASE,
-};
-
-static struct pll_data pll2_data = {
-	.num       = 2,
-	.phys_base = DAVINCI_PLL2_BASE,
-};
-
-static struct clk ref_clk = {
-	.name = "ref_clk",
-	.rate = DM644X_REF_FREQ,
-};
-
-static struct clk pll1_clk = {
-	.name = "pll1",
-	.parent = &ref_clk,
-	.pll_data = &pll1_data,
-	.flags = CLK_PLL,
-};
-
-static struct clk pll1_sysclk1 = {
-	.name = "pll1_sysclk1",
-	.parent = &pll1_clk,
-	.flags = CLK_PLL,
-	.div_reg = PLLDIV1,
-};
-
-static struct clk pll1_sysclk2 = {
-	.name = "pll1_sysclk2",
-	.parent = &pll1_clk,
-	.flags = CLK_PLL,
-	.div_reg = PLLDIV2,
-};
-
-static struct clk pll1_sysclk3 = {
-	.name = "pll1_sysclk3",
-	.parent = &pll1_clk,
-	.flags = CLK_PLL,
-	.div_reg = PLLDIV3,
-};
-
-static struct clk pll1_sysclk5 = {
-	.name = "pll1_sysclk5",
-	.parent = &pll1_clk,
-	.flags = CLK_PLL,
-	.div_reg = PLLDIV5,
-};
-
-static struct clk pll1_aux_clk = {
-	.name = "pll1_aux_clk",
-	.parent = &pll1_clk,
-	.flags = CLK_PLL | PRE_PLL,
-};
-
-static struct clk pll1_sysclkbp = {
-	.name = "pll1_sysclkbp",
-	.parent = &pll1_clk,
-	.flags = CLK_PLL | PRE_PLL,
-	.div_reg = BPDIV
-};
-
-static struct clk pll2_clk = {
-	.name = "pll2",
-	.parent = &ref_clk,
-	.pll_data = &pll2_data,
-	.flags = CLK_PLL,
-};
-
-static struct clk pll2_sysclk1 = {
-	.name = "pll2_sysclk1",
-	.parent = &pll2_clk,
-	.flags = CLK_PLL,
-	.div_reg = PLLDIV1,
-};
-
-static struct clk pll2_sysclk2 = {
-	.name = "pll2_sysclk2",
-	.parent = &pll2_clk,
-	.flags = CLK_PLL,
-	.div_reg = PLLDIV2,
-};
-
-static struct clk pll2_sysclkbp = {
-	.name = "pll2_sysclkbp",
-	.parent = &pll2_clk,
-	.flags = CLK_PLL | PRE_PLL,
-	.div_reg = BPDIV
-};
-
-static struct clk dsp_clk = {
-	.name = "dsp",
-	.parent = &pll1_sysclk1,
-	.lpsc = DAVINCI_LPSC_GEM,
-	.domain = DAVINCI_GPSC_DSPDOMAIN,
-	.usecount = 1,			/* REVISIT how to disable? */
-};
-
-static struct clk arm_clk = {
-	.name = "arm",
-	.parent = &pll1_sysclk2,
-	.lpsc = DAVINCI_LPSC_ARM,
-	.flags = ALWAYS_ENABLED,
-};
-
-static struct clk vicp_clk = {
-	.name = "vicp",
-	.parent = &pll1_sysclk2,
-	.lpsc = DAVINCI_LPSC_IMCOP,
-	.domain = DAVINCI_GPSC_DSPDOMAIN,
-	.usecount = 1,			/* REVISIT how to disable? */
-};
-
-static struct clk vpss_master_clk = {
-	.name = "vpss_master",
-	.parent = &pll1_sysclk3,
-	.lpsc = DAVINCI_LPSC_VPSSMSTR,
-	.flags = CLK_PSC,
-};
-
-static struct clk vpss_slave_clk = {
-	.name = "vpss_slave",
-	.parent = &pll1_sysclk3,
-	.lpsc = DAVINCI_LPSC_VPSSSLV,
-};
-
-static struct clk uart0_clk = {
-	.name = "uart0",
-	.parent = &pll1_aux_clk,
-	.lpsc = DAVINCI_LPSC_UART0,
-};
-
-static struct clk uart1_clk = {
-	.name = "uart1",
-	.parent = &pll1_aux_clk,
-	.lpsc = DAVINCI_LPSC_UART1,
-};
-
-static struct clk uart2_clk = {
-	.name = "uart2",
-	.parent = &pll1_aux_clk,
-	.lpsc = DAVINCI_LPSC_UART2,
-};
-
-static struct clk emac_clk = {
-	.name = "emac",
-	.parent = &pll1_sysclk5,
-	.lpsc = DAVINCI_LPSC_EMAC_WRAPPER,
-};
-
-static struct clk i2c_clk = {
-	.name = "i2c",
-	.parent = &pll1_aux_clk,
-	.lpsc = DAVINCI_LPSC_I2C,
-};
-
-static struct clk ide_clk = {
-	.name = "ide",
-	.parent = &pll1_sysclk5,
-	.lpsc = DAVINCI_LPSC_ATA,
-};
-
-static struct clk asp_clk = {
-	.name = "asp0",
-	.parent = &pll1_sysclk5,
-	.lpsc = DAVINCI_LPSC_McBSP,
-};
-
-static struct clk mmcsd_clk = {
-	.name = "mmcsd",
-	.parent = &pll1_sysclk5,
-	.lpsc = DAVINCI_LPSC_MMC_SD,
-};
-
-static struct clk spi_clk = {
-	.name = "spi",
-	.parent = &pll1_sysclk5,
-	.lpsc = DAVINCI_LPSC_SPI,
-};
-
-static struct clk gpio_clk = {
-	.name = "gpio",
-	.parent = &pll1_sysclk5,
-	.lpsc = DAVINCI_LPSC_GPIO,
-};
-
-static struct clk usb_clk = {
-	.name = "usb",
-	.parent = &pll1_sysclk5,
-	.lpsc = DAVINCI_LPSC_USB,
-};
-
-static struct clk vlynq_clk = {
-	.name = "vlynq",
-	.parent = &pll1_sysclk5,
-	.lpsc = DAVINCI_LPSC_VLYNQ,
-};
-
-static struct clk aemif_clk = {
-	.name = "aemif",
-	.parent = &pll1_sysclk5,
-	.lpsc = DAVINCI_LPSC_AEMIF,
-};
-
-static struct clk pwm0_clk = {
-	.name = "pwm0",
-	.parent = &pll1_aux_clk,
-	.lpsc = DAVINCI_LPSC_PWM0,
-};
-
-static struct clk pwm1_clk = {
-	.name = "pwm1",
-	.parent = &pll1_aux_clk,
-	.lpsc = DAVINCI_LPSC_PWM1,
-};
-
-static struct clk pwm2_clk = {
-	.name = "pwm2",
-	.parent = &pll1_aux_clk,
-	.lpsc = DAVINCI_LPSC_PWM2,
-};
-
-static struct clk timer0_clk = {
-	.name = "timer0",
-	.parent = &pll1_aux_clk,
-	.lpsc = DAVINCI_LPSC_TIMER0,
-};
-
-static struct clk timer1_clk = {
-	.name = "timer1",
-	.parent = &pll1_aux_clk,
-	.lpsc = DAVINCI_LPSC_TIMER1,
-};
-
-static struct clk timer2_clk = {
-	.name = "timer2",
-	.parent = &pll1_aux_clk,
-	.lpsc = DAVINCI_LPSC_TIMER2,
-	.usecount = 1,              /* REVISIT: why can't this be disabled? */
-};
-
 static __init void dm644x_clk_init(void)
 {
+	void __iomem *pll1, *pll2, *psc;
 	struct clk *clk;
 
-	clk = davinci_clk_init(&ref_clk);
+	pll1 = ioremap(DAVINCI_PLL1_BASE, SZ_4K);
+	pll2 = ioremap(DAVINCI_PLL2_BASE, SZ_4K);
+	psc = ioremap(DAVINCI_PWR_SLEEP_CNTRL_BASE, SZ_4K);
+
+	clk = EXT_CLK("ref_clk", DM644X_REF_FREQ);
 	clk_register_clkdev(clk, "ref", NULL);
-	clk = davinci_clk_init(&pll1_clk);
+	clk = PLL_CLK("pll1", "ref_clk", pll1);
 	clk_register_clkdev(clk, "pll1", NULL);
-	clk = davinci_clk_init(&pll1_sysclk1);
+	clk = PLL_DIV_CLK("pll1_sysclk1", "pll1", pll1, 1);
 	clk_register_clkdev(clk, "pll1_sysclk1", NULL);
-	clk = davinci_clk_init(&pll1_sysclk2);
+	clk = PLL_DIV_CLK("pll1_sysclk2", "pll1", pll1, 2);
 	clk_register_clkdev(clk, "pll1_sysclk2", NULL);
-	clk = davinci_clk_init(&pll1_sysclk3);
+	clk = PLL_DIV_CLK("pll1_sysclk3", "pll1", pll1, 3);
 	clk_register_clkdev(clk, "pll1_sysclk3", NULL);
-	clk = davinci_clk_init(&pll1_sysclk5);
+	clk = PLL_DIV_CLK("pll1_sysclk5", "pll1", pll1, 5);
 	clk_register_clkdev(clk, "pll1_sysclk5", NULL);
-	clk = davinci_clk_init(&pll1_aux_clk);
+	clk = PLL_AUX_CLK("pll1_aux_clk", "ref_clk", pll1);
 	clk_register_clkdev(clk, "pll1_aux", NULL);
-	clk = davinci_clk_init(&pll1_sysclkbp);
+	clk = PLL_BP_CLK("pll1_sysclkbp", "ref_clk", pll1);
 	clk_register_clkdev(clk, "pll1_sysclkbp", NULL);
-	clk = davinci_clk_init(&pll2_clk);
+	clk = PLL_CLK("pll2", "ref_clk", pll2);
 	clk_register_clkdev(clk, "pll2", NULL);
-	clk = davinci_clk_init(&pll2_sysclk1);
+	clk = PLL_DIV_CLK("pll2_sysclk1", "pll2", pll2, 1);
 	clk_register_clkdev(clk, "pll2_sysclk1", NULL);
-	clk = davinci_clk_init(&pll2_sysclk2);
+	clk = PLL_DIV_CLK("pll2_sysclk2", "pll2", pll2, 2);
 	clk_register_clkdev(clk, "pll2_sysclk2", NULL);
-	clk = davinci_clk_init(&pll2_sysclkbp);
+	clk = PLL_BP_CLK("pll2_sysclkbp", "ref_clk", pll2);
 	clk_register_clkdev(clk, "pll2_sysclkbp", NULL);
-	clk = davinci_clk_init(&dsp_clk);
+	clk = PSC_CLK("dsp", "pll1_sysclk1", psc, DAVINCI_LPSC_GEM, 1);
+	clk_prepare_enable(clk); /* REVISIT how to disable? */
 	clk_register_clkdev(clk, "dsp", NULL);
-	clk = davinci_clk_init(&arm_clk);
+	clk = PSC_CLK("arm", "pll1_sysclk2", psc, DAVINCI_LPSC_ARM, 0);
+	clk_prepare_enable(clk); /* always enabled */
 	clk_register_clkdev(clk, "arm", NULL);
-	clk = davinci_clk_init(&vicp_clk);
+	clk = PSC_CLK("vicp", "pll1_sysclk2", psc, DAVINCI_LPSC_IMCOP, 1);
+	clk_prepare_enable(clk); /* REVISIT how to disable? */
 	clk_register_clkdev(clk, "vicp", NULL);
-	clk = davinci_clk_init(&vpss_master_clk);
+	clk = PSC_CLK("vpss_master", "pll1_sysclk3", psc, DAVINCI_LPSC_VPSSMSTR, 0);
 	clk_register_clkdev(clk, "master", "vpss");
-	clk = davinci_clk_init(&vpss_slave_clk);
+	clk = PSC_CLK("vpss_slave", "pll1_sysclk3", psc, DAVINCI_LPSC_VPSSSLV, 0);
 	clk_register_clkdev(clk, "slave", "vpss");
-	clk = davinci_clk_init(&uart0_clk);
+	clk = PSC_CLK("uart0", "pll1_aux_clk", psc, DAVINCI_LPSC_UART0, 0);
 	clk_register_clkdev(clk, NULL, "serial8250.0");
-	clk = davinci_clk_init(&uart1_clk);
+	clk = PSC_CLK("uart1", "pll1_aux_clk", psc, DAVINCI_LPSC_UART1, 0);
 	clk_register_clkdev(clk, NULL, "serial8250.1");
-	clk = davinci_clk_init(&uart2_clk);
+	clk = PSC_CLK("uart2", "pll1_aux_clk", psc, DAVINCI_LPSC_UART2, 0);
 	clk_register_clkdev(clk, NULL, "serial8250.2");
-	clk = davinci_clk_init(&emac_clk);
+	clk = PSC_CLK("emac", "pll1_sysclk5", psc, DAVINCI_LPSC_EMAC_WRAPPER, 0);
 	clk_register_clkdev(clk, NULL, "davinci_emac.1");
 	clk_register_clkdev(clk, "fck", "davinci_mdio.0");
-	clk = davinci_clk_init(&i2c_clk);
+	clk = PSC_CLK("i2c", "pll1_aux_clk", psc, DAVINCI_LPSC_I2C, 0);
 	clk_register_clkdev(clk, NULL, "i2c_davinci.1");
-	clk = davinci_clk_init(&ide_clk);
+	clk = PSC_CLK("ide", "pll1_sysclk5", psc, DAVINCI_LPSC_ATA, 0);
 	clk_register_clkdev(clk, NULL, "palm_bk3710");
-	clk = davinci_clk_init(&asp_clk);
+	clk = PSC_CLK("asp0", "pll1_sysclk5", psc, DAVINCI_LPSC_McBSP, 0);
 	clk_register_clkdev(clk, NULL, "davinci-mcbsp");
-	clk = davinci_clk_init(&mmcsd_clk);
+	clk = PSC_CLK("mmcsd", "pll1_sysclk5", psc, DAVINCI_LPSC_MMC_SD, 0);
 	clk_register_clkdev(clk, NULL, "dm6441-mmc.0");
-	clk = davinci_clk_init(&spi_clk);
+	clk = PSC_CLK("spi", "pll1_sysclk5", psc, DAVINCI_LPSC_SPI, 0);
 	clk_register_clkdev(clk, "spi", NULL);
-	clk = davinci_clk_init(&gpio_clk);
+	clk = PSC_CLK("gpio", "pll1_sysclk5", psc, DAVINCI_LPSC_GPIO, 0);
 	clk_register_clkdev(clk, "gpio", NULL);
-	clk = davinci_clk_init(&usb_clk);
+	clk = PSC_CLK("usb", "pll1_sysclk5", psc, DAVINCI_LPSC_USB, 0);
 	clk_register_clkdev(clk, "usb", NULL);
-	clk = davinci_clk_init(&vlynq_clk);
+	clk = PSC_CLK("vlynq", "pll1_sysclk5", psc, DAVINCI_LPSC_VLYNQ, 0);
 	clk_register_clkdev(clk, "vlynq", NULL);
-	clk = davinci_clk_init(&aemif_clk);
+	clk = PSC_CLK("aemif", "pll1_sysclk5", psc, DAVINCI_LPSC_AEMIF, 0);
 	clk_register_clkdev(clk, "aemif", NULL);
-	clk = davinci_clk_init(&pwm0_clk);
+	clk = PSC_CLK("pwm0", "pll1_aux_clk", psc, DAVINCI_LPSC_PWM0, 0);
 	clk_register_clkdev(clk, "pwm0", NULL);
-	clk = davinci_clk_init(&pwm1_clk);
+	clk = PSC_CLK("pwm1", "pll1_aux_clk", psc, DAVINCI_LPSC_PWM1, 0);
 	clk_register_clkdev(clk, "pwm1", NULL);
-	clk = davinci_clk_init(&pwm2_clk);
+	clk = PSC_CLK("pwm2", "pll1_aux_clk", psc, DAVINCI_LPSC_PWM2, 0);
 	clk_register_clkdev(clk, "pwm2", NULL);
-	clk = davinci_clk_init(&timer0_clk);
+	clk = PSC_CLK("timer0", "pll1_aux_clk", psc, DAVINCI_LPSC_TIMER0, 0);
 	clk_register_clkdev(clk, "timer0", NULL);
-	clk = davinci_clk_init(&timer1_clk);
+	clk = PSC_CLK("timer1", "pll1_aux_clk", psc, DAVINCI_LPSC_TIMER1, 0);
 	clk_register_clkdev(clk, "timer1", NULL);
-	clk = davinci_clk_init(&timer2_clk);
+	clk = PSC_CLK("timer2", "pll1_aux_clk", psc, DAVINCI_LPSC_TIMER2, 0);
+	clk_prepare_enable(clk); /* REVISIT: why can't this be disabled? */
 	clk_register_clkdev(clk, NULL, "davinci-wdt");
 }
 
@@ -856,8 +626,6 @@ static struct davinci_id dm644x_ids[] = {
 	},
 };
 
-static u32 dm644x_psc_bases[] = { DAVINCI_PWR_SLEEP_CNTRL_BASE };
-
 /*
  * T0_BOT: Timer 0, bottom:  clockevent source for hrtimers
  * T0_TOP: Timer 0, top   :  clocksource for generic timekeeping
@@ -942,8 +710,6 @@ static const struct davinci_soc_info davinci_soc_info_dm644x = {
 	.jtag_id_reg		= 0x01c40028,
 	.ids			= dm644x_ids,
 	.ids_num		= ARRAY_SIZE(dm644x_ids),
-	.psc_bases		= dm644x_psc_bases,
-	.psc_bases_num		= ARRAY_SIZE(dm644x_psc_bases),
 	.pinmux_base		= DAVINCI_SYSTEM_MODULE_BASE,
 	.pinmux_pins		= dm644x_pins,
 	.pinmux_pins_num	= ARRAY_SIZE(dm644x_pins),

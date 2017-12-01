@@ -10,26 +10,28 @@
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  */
+#include <linux/ahci_platform.h>
+#include <linux/clk-provider.h>
+#include <linux/clk.h>
+#include <linux/clkdev.h>
+#include <linux/dma-contiguous.h>
+#include <linux/dmaengine.h>
 #include <linux/init.h>
 #include <linux/platform_data/syscon.h>
 #include <linux/platform_device.h>
-#include <linux/dma-contiguous.h>
-#include <linux/serial_8250.h>
-#include <linux/ahci_platform.h>
-#include <linux/clk.h>
 #include <linux/reboot.h>
-#include <linux/dmaengine.h>
+#include <linux/serial_8250.h>
 
-#include <mach/cputype.h>
-#include <mach/common.h>
-#include <mach/time.h>
-#include <mach/da8xx.h>
 #include <mach/clock.h>
+#include <mach/common.h>
+#include <mach/cputype.h>
+#include <mach/da8xx.h>
+#include <mach/time.h>
+
+#include "asp.h"
+#include "clock.h"
 #include "cpuidle.h"
 #include "sram.h"
-
-#include "clock.h"
-#include "asp.h"
 
 #define DA8XX_TPCC_BASE			0x01c00000
 #define DA8XX_TPTC0_BASE		0x01c08000
@@ -1041,23 +1043,16 @@ int __init da8xx_register_spi_bus(int instance, unsigned num_chipselect)
 }
 
 #ifdef CONFIG_ARCH_DAVINCI_DA850
-static struct clk sata_refclk = {
-	.name		= "sata_refclk",
-	.set_rate	= davinci_simple_set_rate,
-};
 
-int __init da850_register_sata_refclk(int rate)
+int __init da850_register_sata_refclk(unsigned long rate)
 {
-	int ret;
+	struct clk *clk;
 
-	sata_refclk.rate = rate;
-	ret = clk_register(&sata_refclk);
-	if (ret)
-		return ret;
+	clk = clk_register_fixed_rate(NULL, "sata_refclk", NULL, 0, rate);
+	if (IS_ERR(clk))
+		return PTR_ERR(clk);
 
-	clk_register_clkdev(&sata_refclk, "refclk", "ahci_da850");
-
-	return 0;
+	return clk_register_clkdev(clk, "refclk", "ahci_da850");
 }
 
 static struct resource da850_sata_resources[] = {
