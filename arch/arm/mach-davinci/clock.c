@@ -607,62 +607,51 @@ int davinci_set_refclk_rate(unsigned long rate)
 	return 0;
 }
 
-int __init davinci_clk_init(struct clk_lookup *clocks)
+struct clk * __init davinci_clk_init(struct clk *clk)
 {
-	struct clk_lookup *c;
-	struct clk *clk;
-	size_t num_clocks = 0;
+	if (!clk->recalc) {
 
-	for (c = clocks; c->clk; c++) {
-		clk = c->clk;
+		/* Check if clock is a PLL */
+		if (clk->pll_data)
+			clk->recalc = clk_pllclk_recalc;
 
-		if (!clk->recalc) {
+		/* Else, if it is a PLL-derived clock */
+		else if (clk->flags & CLK_PLL)
+			clk->recalc = clk_sysclk_recalc;
 
-			/* Check if clock is a PLL */
-			if (clk->pll_data)
-				clk->recalc = clk_pllclk_recalc;
-
-			/* Else, if it is a PLL-derived clock */
-			else if (clk->flags & CLK_PLL)
-				clk->recalc = clk_sysclk_recalc;
-
-			/* Otherwise, it is a leaf clock (PSC clock) */
-			else if (clk->parent)
-				clk->recalc = clk_leafclk_recalc;
-		}
-
-		if (clk->pll_data) {
-			struct pll_data *pll = clk->pll_data;
-
-			if (!pll->div_ratio_mask)
-				pll->div_ratio_mask = PLLDIV_RATIO_MASK;
-
-			if (pll->phys_base && !pll->base) {
-				pll->base = ioremap(pll->phys_base, SZ_4K);
-				WARN_ON(!pll->base);
-			}
-		}
-
-		if (clk->recalc)
-			clk->rate = clk->recalc(clk);
-
-		if (clk->lpsc)
-			clk->flags |= CLK_PSC;
-
-		if (clk->flags & PSC_LRST)
-			clk->reset = davinci_clk_reset;
-
-		clk_register(clk);
-		num_clocks++;
-
-		/* Turn on clocks that Linux doesn't otherwise manage */
-		if (clk->flags & ALWAYS_ENABLED)
-			clk_enable(clk);
+		/* Otherwise, it is a leaf clock (PSC clock) */
+		else if (clk->parent)
+			clk->recalc = clk_leafclk_recalc;
 	}
 
-	clkdev_add_table(clocks, num_clocks);
+	if (clk->pll_data) {
+		struct pll_data *pll = clk->pll_data;
 
-	return 0;
+		if (!pll->div_ratio_mask)
+			pll->div_ratio_mask = PLLDIV_RATIO_MASK;
+
+		if (pll->phys_base && !pll->base) {
+			pll->base = ioremap(pll->phys_base, SZ_4K);
+			WARN_ON(!pll->base);
+		}
+	}
+
+	if (clk->recalc)
+		clk->rate = clk->recalc(clk);
+
+	if (clk->lpsc)
+		clk->flags |= CLK_PSC;
+
+	if (clk->flags & PSC_LRST)
+		clk->reset = davinci_clk_reset;
+
+	clk_register(clk);
+
+	/* Turn on clocks that Linux doesn't otherwise manage */
+	if (clk->flags & ALWAYS_ENABLED)
+		clk_enable(clk);
+
+	return clk;
 }
 
 #ifdef CONFIG_DEBUG_FS
