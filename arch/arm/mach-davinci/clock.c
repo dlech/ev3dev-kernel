@@ -59,7 +59,7 @@ void davinci_clk_disable(struct clk *clk)
 		davinci_clk_disable(clk->parent);
 }
 
-int davinci_clk_reset(struct clk *clk, bool reset)
+static int davinci_clk_reset(struct clk *clk, bool reset)
 {
 	unsigned long flags;
 
@@ -73,7 +73,6 @@ int davinci_clk_reset(struct clk *clk, bool reset)
 
 	return 0;
 }
-EXPORT_SYMBOL(davinci_clk_reset);
 
 int davinci_clk_reset_assert(struct clk *clk)
 {

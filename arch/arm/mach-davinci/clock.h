@@ -124,7 +124,6 @@ int davinci_set_pllrate(struct pll_data *pll, unsigned int prediv,
 int davinci_set_sysclk_rate(struct clk *clk, unsigned long rate);
 int davinci_set_refclk_rate(unsigned long rate);
 int davinci_simple_set_rate(struct clk *clk, unsigned long rate);
-int davinci_clk_reset(struct clk *clk, bool reset);
 void davinci_clk_enable(struct clk *clk);
 void davinci_clk_disable(struct clk *clk);
 #endif
