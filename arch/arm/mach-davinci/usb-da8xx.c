@@ -23,7 +23,7 @@
 #define DA8XX_USB0_BASE		0x01e00000
 #define DA8XX_USB1_BASE		0x01e25000
 
-static struct clk *usb20_clk;
+static struct davinci_clk *usb20_clk;
 
 static struct platform_device da8xx_usb_phy = {
 	.name		= "da8xx-usb-phy",
@@ -128,7 +128,7 @@ int __init da8xx_register_usb11(struct da8xx_ohci_root_hub *pdata)
 	return platform_device_register(&da8xx_usb11_device);
 }
 
-static struct clk usb_refclkin = {
+static struct davinci_clk usb_refclkin = {
 	.name		= "usb_refclkin",
 	.set_rate	= davinci_simple_set_rate,
 };
@@ -147,16 +147,16 @@ int __init da8xx_register_usb_refclkin(int rate)
 	int ret;
 
 	usb_refclkin.rate = rate;
-	ret = clk_register(&usb_refclkin);
+	ret = davinci_clk_register(&usb_refclkin);
 	if (ret)
 		return ret;
 
-	clk_register_clkdev(&usb_refclkin, "usb_refclkin", NULL);
+	clk_register_clkdev(usb_refclkin.hw.clk, "usb_refclkin", NULL);
 
 	return 0;
 }
 
-static void usb20_phy_clk_enable(struct clk *clk)
+static void usb20_phy_clk_enable(struct davinci_clk *clk)
 {
 	u32 val;
 	u32 timeout = 500000; /* 500 msec */
@@ -187,7 +187,7 @@ done:
 	davinci_clk_disable(usb20_clk);
 }
 
-static void usb20_phy_clk_disable(struct clk *clk)
+static void usb20_phy_clk_disable(struct davinci_clk *clk)
 {
 	u32 val;
 
@@ -196,7 +196,8 @@ static void usb20_phy_clk_disable(struct clk *clk)
 	writel(val, DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP2_REG));
 }
 
-static int usb20_phy_clk_set_parent(struct clk *clk, struct clk *parent)
+static int usb20_phy_clk_set_parent(struct davinci_clk *clk,
+				    struct davinci_clk *parent)
 {
 	u32 val;
 
@@ -214,7 +215,7 @@ static int usb20_phy_clk_set_parent(struct clk *clk, struct clk *parent)
 
 	/* reference frequency also comes from parent clock */
 	val &= ~CFGCHIP2_REFFREQ_MASK;
-	switch (clk_get_rate(parent)) {
+	switch (parent->rate) {
 	case 12000000:
 		val |= CFGCHIP2_REFFREQ_12MHZ;
 		break;
@@ -252,7 +253,7 @@ static int usb20_phy_clk_set_parent(struct clk *clk, struct clk *parent)
 	return 0;
 }
 
-static struct clk usb20_phy_clk = {
+static struct davinci_clk usb20_phy_clk = {
 	.name		= "usb20_phy",
 	.clk_enable	= usb20_phy_clk_enable,
 	.clk_disable	= usb20_phy_clk_disable,
@@ -267,32 +268,36 @@ static struct clk usb20_phy_clk = {
  */
 int __init da8xx_register_usb20_phy_clk(bool use_usb_refclkin)
 {
-	struct clk *parent;
+	struct clk *clk, *parent;
 	int ret;
 
-	usb20_clk = clk_get(&da8xx_usb20_dev.dev, "usb20");
-	ret = PTR_ERR_OR_ZERO(usb20_clk);
+	clk = clk_get(&da8xx_usb20_dev.dev, "usb20");
+	ret = PTR_ERR_OR_ZERO(clk);
 	if (ret)
 		return ret;
 
 	parent = clk_get(NULL, use_usb_refclkin ? "usb_refclkin" : "pll0_aux");
 	ret = PTR_ERR_OR_ZERO(parent);
 	if (ret) {
-		clk_put(usb20_clk);
+		clk_put(clk);
 		return ret;
 	}
 
-	usb20_phy_clk.parent = parent;
-	ret = clk_register(&usb20_phy_clk);
+	usb20_clk = to_davinci_clk(__clk_get_hw(clk));
+
+	usb20_phy_clk.parent = to_davinci_clk(__clk_get_hw(parent));
+	ret = davinci_clk_register(&usb20_phy_clk);
 	if (!ret)
-		clk_register_clkdev(&usb20_phy_clk, "usb20_phy", "da8xx-usb-phy");
+		clk_register_clkdev(usb20_phy_clk.hw.clk, "usb20_phy",
+				    "da8xx-usb-phy");
 
 	clk_put(parent);
 
 	return ret;
 }
 
-static int usb11_phy_clk_set_parent(struct clk *clk, struct clk *parent)
+static int usb11_phy_clk_set_parent(struct davinci_clk *clk,
+				    struct davinci_clk *parent)
 {
 	u32 val;
 
@@ -313,7 +318,7 @@ static int usb11_phy_clk_set_parent(struct clk *clk, struct clk *parent)
 	return 0;
 }
 
-static struct clk usb11_phy_clk = {
+static struct davinci_clk usb11_phy_clk = {
 	.name		= "usb11_phy",
 	.set_parent	= usb11_phy_clk_set_parent,
 };
@@ -336,10 +341,11 @@ int __init da8xx_register_usb11_phy_clk(bool use_usb_refclkin)
 	if (IS_ERR(parent))
 		return PTR_ERR(parent);
 
-	usb11_phy_clk.parent = parent;
-	ret = clk_register(&usb11_phy_clk);
+	usb11_phy_clk.parent = to_davinci_clk(__clk_get_hw(parent));
+	ret = davinci_clk_register(&usb11_phy_clk);
 	if (!ret)
-		clk_register_clkdev(&usb11_phy_clk, "usb11_phy", "da8xx-usb-phy");
+		clk_register_clkdev(usb11_phy_clk.hw.clk, "usb11_phy",
+				    "da8xx-usb-phy");
 
 	clk_put(parent);
 

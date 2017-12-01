@@ -43,322 +43,322 @@ static struct pll_data pll0_data = {
 	.flags		= PLL_HAS_PREDIV | PLL_HAS_POSTDIV,
 };
 
-static struct clk ref_clk = {
+static struct davinci_clk ref_clk = {
 	.name		= "ref_clk",
 	.rate		= DA830_REF_FREQ,
 };
 
-static struct clk pll0_clk = {
+static struct davinci_clk pll0_clk = {
 	.name		= "pll0",
 	.parent		= &ref_clk,
 	.pll_data	= &pll0_data,
 	.flags		= CLK_PLL,
 };
 
-static struct clk pll0_aux_clk = {
+static struct davinci_clk pll0_aux_clk = {
 	.name		= "pll0_aux_clk",
 	.parent		= &pll0_clk,
 	.flags		= CLK_PLL | PRE_PLL,
 };
 
-static struct clk pll0_sysclk2 = {
+static struct davinci_clk pll0_sysclk2 = {
 	.name		= "pll0_sysclk2",
 	.parent		= &pll0_clk,
 	.flags		= CLK_PLL,
 	.div_reg	= PLLDIV2,
 };
 
-static struct clk pll0_sysclk3 = {
+static struct davinci_clk pll0_sysclk3 = {
 	.name		= "pll0_sysclk3",
 	.parent		= &pll0_clk,
 	.flags		= CLK_PLL,
 	.div_reg	= PLLDIV3,
 };
 
-static struct clk pll0_sysclk4 = {
+static struct davinci_clk pll0_sysclk4 = {
 	.name		= "pll0_sysclk4",
 	.parent		= &pll0_clk,
 	.flags		= CLK_PLL,
 	.div_reg	= PLLDIV4,
 };
 
-static struct clk pll0_sysclk5 = {
+static struct davinci_clk pll0_sysclk5 = {
 	.name		= "pll0_sysclk5",
 	.parent		= &pll0_clk,
 	.flags		= CLK_PLL,
 	.div_reg	= PLLDIV5,
 };
 
-static struct clk pll0_sysclk6 = {
+static struct davinci_clk pll0_sysclk6 = {
 	.name		= "pll0_sysclk6",
 	.parent		= &pll0_clk,
 	.flags		= CLK_PLL,
 	.div_reg	= PLLDIV6,
 };
 
-static struct clk pll0_sysclk7 = {
+static struct davinci_clk pll0_sysclk7 = {
 	.name		= "pll0_sysclk7",
 	.parent		= &pll0_clk,
 	.flags		= CLK_PLL,
 	.div_reg	= PLLDIV7,
 };
 
-static struct clk i2c0_clk = {
+static struct davinci_clk i2c0_clk = {
 	.name		= "i2c0",
 	.parent		= &pll0_aux_clk,
 };
 
-static struct clk timerp64_0_clk = {
+static struct davinci_clk timerp64_0_clk = {
 	.name		= "timer0",
 	.parent		= &pll0_aux_clk,
 };
 
-static struct clk timerp64_1_clk = {
+static struct davinci_clk timerp64_1_clk = {
 	.name		= "timer1",
 	.parent		= &pll0_aux_clk,
 };
 
-static struct clk arm_rom_clk = {
+static struct davinci_clk arm_rom_clk = {
 	.name		= "arm_rom",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA8XX_LPSC0_ARM_RAM_ROM,
 	.flags		= ALWAYS_ENABLED,
 };
 
-static struct clk scr0_ss_clk = {
+static struct davinci_clk scr0_ss_clk = {
 	.name		= "scr0_ss",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA8XX_LPSC0_SCR0_SS,
 	.flags		= ALWAYS_ENABLED,
 };
 
-static struct clk scr1_ss_clk = {
+static struct davinci_clk scr1_ss_clk = {
 	.name		= "scr1_ss",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA8XX_LPSC0_SCR1_SS,
 	.flags		= ALWAYS_ENABLED,
 };
 
-static struct clk scr2_ss_clk = {
+static struct davinci_clk scr2_ss_clk = {
 	.name		= "scr2_ss",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA8XX_LPSC0_SCR2_SS,
 	.flags		= ALWAYS_ENABLED,
 };
 
-static struct clk dmax_clk = {
+static struct davinci_clk dmax_clk = {
 	.name		= "dmax",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA8XX_LPSC0_PRUSS,
 	.flags		= ALWAYS_ENABLED,
 };
 
-static struct clk tpcc_clk = {
+static struct davinci_clk tpcc_clk = {
 	.name		= "tpcc",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA8XX_LPSC0_TPCC,
 	.flags		= ALWAYS_ENABLED | CLK_PSC,
 };
 
-static struct clk tptc0_clk = {
+static struct davinci_clk tptc0_clk = {
 	.name		= "tptc0",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA8XX_LPSC0_TPTC0,
 	.flags		= ALWAYS_ENABLED,
 };
 
-static struct clk tptc1_clk = {
+static struct davinci_clk tptc1_clk = {
 	.name		= "tptc1",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA8XX_LPSC0_TPTC1,
 	.flags		= ALWAYS_ENABLED,
 };
 
-static struct clk mmcsd_clk = {
+static struct davinci_clk mmcsd_clk = {
 	.name		= "mmcsd",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA8XX_LPSC0_MMC_SD,
 };
 
-static struct clk uart0_clk = {
+static struct davinci_clk uart0_clk = {
 	.name		= "uart0",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA8XX_LPSC0_UART0,
 };
 
-static struct clk uart1_clk = {
+static struct davinci_clk uart1_clk = {
 	.name		= "uart1",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA8XX_LPSC1_UART1,
 	.gpsc		= 1,
 };
 
-static struct clk uart2_clk = {
+static struct davinci_clk uart2_clk = {
 	.name		= "uart2",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA8XX_LPSC1_UART2,
 	.gpsc		= 1,
 };
 
-static struct clk spi0_clk = {
+static struct davinci_clk spi0_clk = {
 	.name		= "spi0",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA8XX_LPSC0_SPI0,
 };
 
-static struct clk spi1_clk = {
+static struct davinci_clk spi1_clk = {
 	.name		= "spi1",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA8XX_LPSC1_SPI1,
 	.gpsc		= 1,
 };
 
-static struct clk ecap0_clk = {
+static struct davinci_clk ecap0_clk = {
 	.name		= "ecap0",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA8XX_LPSC1_ECAP,
 	.gpsc		= 1,
 };
 
-static struct clk ecap1_clk = {
+static struct davinci_clk ecap1_clk = {
 	.name		= "ecap1",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA8XX_LPSC1_ECAP,
 	.gpsc		= 1,
 };
 
-static struct clk ecap2_clk = {
+static struct davinci_clk ecap2_clk = {
 	.name		= "ecap2",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA8XX_LPSC1_ECAP,
 	.gpsc		= 1,
 };
 
-static struct clk pwm0_clk = {
+static struct davinci_clk pwm0_clk = {
 	.name		= "pwm0",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA8XX_LPSC1_PWM,
 	.gpsc		= 1,
 };
 
-static struct clk pwm1_clk = {
+static struct davinci_clk pwm1_clk = {
 	.name		= "pwm1",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA8XX_LPSC1_PWM,
 	.gpsc		= 1,
 };
 
-static struct clk pwm2_clk = {
+static struct davinci_clk pwm2_clk = {
 	.name		= "pwm2",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA8XX_LPSC1_PWM,
 	.gpsc		= 1,
 };
 
-static struct clk eqep0_clk = {
+static struct davinci_clk eqep0_clk = {
 	.name		= "eqep0",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA830_LPSC1_EQEP,
 	.gpsc		= 1,
 };
 
-static struct clk eqep1_clk = {
+static struct davinci_clk eqep1_clk = {
 	.name		= "eqep1",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA830_LPSC1_EQEP,
 	.gpsc		= 1,
 };
 
-static struct clk lcdc_clk = {
+static struct davinci_clk lcdc_clk = {
 	.name		= "lcdc",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA8XX_LPSC1_LCDC,
 	.gpsc		= 1,
 };
 
-static struct clk mcasp0_clk = {
+static struct davinci_clk mcasp0_clk = {
 	.name		= "mcasp0",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA8XX_LPSC1_McASP0,
 	.gpsc		= 1,
 };
 
-static struct clk mcasp1_clk = {
+static struct davinci_clk mcasp1_clk = {
 	.name		= "mcasp1",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA830_LPSC1_McASP1,
 	.gpsc		= 1,
 };
 
-static struct clk mcasp2_clk = {
+static struct davinci_clk mcasp2_clk = {
 	.name		= "mcasp2",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA830_LPSC1_McASP2,
 	.gpsc		= 1,
 };
 
-static struct clk usb20_clk = {
+static struct davinci_clk usb20_clk = {
 	.name		= "usb20",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA8XX_LPSC1_USB20,
 	.gpsc		= 1,
 };
 
-static struct clk cppi41_clk = {
+static struct davinci_clk cppi41_clk = {
 	.name		= "cppi41",
 	.parent		= &usb20_clk,
 };
 
-static struct clk aemif_clk = {
+static struct davinci_clk aemif_clk = {
 	.name		= "aemif",
 	.parent		= &pll0_sysclk3,
 	.lpsc		= DA8XX_LPSC0_EMIF25,
 	.flags		= ALWAYS_ENABLED,
 };
 
-static struct clk aintc_clk = {
+static struct davinci_clk aintc_clk = {
 	.name		= "aintc",
 	.parent		= &pll0_sysclk4,
 	.lpsc		= DA8XX_LPSC0_AINTC,
 	.flags		= ALWAYS_ENABLED,
 };
 
-static struct clk secu_mgr_clk = {
+static struct davinci_clk secu_mgr_clk = {
 	.name		= "secu_mgr",
 	.parent		= &pll0_sysclk4,
 	.lpsc		= DA8XX_LPSC0_SECU_MGR,
 	.flags		= ALWAYS_ENABLED,
 };
 
-static struct clk emac_clk = {
+static struct davinci_clk emac_clk = {
 	.name		= "emac",
 	.parent		= &pll0_sysclk4,
 	.lpsc		= DA8XX_LPSC1_CPGMAC,
 	.gpsc		= 1,
 };
 
-static struct clk gpio_clk = {
+static struct davinci_clk gpio_clk = {
 	.name		= "gpio",
 	.parent		= &pll0_sysclk4,
 	.lpsc		= DA8XX_LPSC1_GPIO,
 	.gpsc		= 1,
 };
 
-static struct clk i2c1_clk = {
+static struct davinci_clk i2c1_clk = {
 	.name		= "i2c1",
 	.parent		= &pll0_sysclk4,
 	.lpsc		= DA8XX_LPSC1_I2C,
 	.gpsc		= 1,
 };
 
-static struct clk usb11_clk = {
+static struct davinci_clk usb11_clk = {
 	.name		= "usb11",
 	.parent		= &pll0_sysclk4,
 	.lpsc		= DA8XX_LPSC1_USB11,
 	.gpsc		= 1,
 };
 
-static struct clk emif3_clk = {
+static struct davinci_clk emif3_clk = {
 	.name		= "emif3",
 	.parent		= &pll0_sysclk5,
 	.lpsc		= DA8XX_LPSC1_EMIF3C,
@@ -366,14 +366,14 @@ static struct clk emif3_clk = {
 	.flags		= ALWAYS_ENABLED,
 };
 
-static struct clk arm_clk = {
+static struct davinci_clk arm_clk = {
 	.name		= "arm",
 	.parent		= &pll0_sysclk6,
 	.lpsc		= DA8XX_LPSC0_ARM,
 	.flags		= ALWAYS_ENABLED,
 };
 
-static struct clk rmii_clk = {
+static struct davinci_clk rmii_clk = {
 	.name		= "rmii",
 	.parent		= &pll0_sysclk7,
 };

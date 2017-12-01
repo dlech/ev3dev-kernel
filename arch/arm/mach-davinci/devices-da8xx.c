@@ -1041,7 +1041,7 @@ int __init da8xx_register_spi_bus(int instance, unsigned num_chipselect)
 }
 
 #ifdef CONFIG_ARCH_DAVINCI_DA850
-static struct clk sata_refclk = {
+static struct davinci_clk sata_refclk = {
 	.name		= "sata_refclk",
 	.set_rate	= davinci_simple_set_rate,
 };
@@ -1051,11 +1051,11 @@ int __init da850_register_sata_refclk(int rate)
 	int ret;
 
 	sata_refclk.rate = rate;
-	ret = clk_register(&sata_refclk);
+	ret = davinci_clk_register(&sata_refclk);
 	if (ret)
 		return ret;
 
-	clk_register_clkdev(&sata_refclk, "refclk", "ahci_da850");
+	clk_register_clkdev(sata_refclk.hw.clk, "refclk", "ahci_da850");
 
 	return 0;
 }
