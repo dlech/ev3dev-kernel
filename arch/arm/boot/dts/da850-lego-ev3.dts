@@ -189,6 +189,15 @@
 		compatible = "gpio-backlight";
 		gpios = <&gpio 44 GPIO_ACTIVE_HIGH>;
 	};
+
+	bt_slow_clk: bt-clock {
+		pinctrl-names = "default";
+		pintctrl-0 = <&bt_clock_pins>;
+		compatible = "pwm-clock";
+		#clock-cells = <0>;
+		clock-frequency = <32768>;
+		pwms = <&ecap2 0 30518 PWM_POLARITY_INVERTED>;
+	};
 };
 
 &pmx_core {
@@ -263,6 +272,34 @@
 			0x30 0x80000000 0xf0000000
 		>;
 	};
+
+	// TODO: Move to common da850 dts
+	bt_clock_pins: pinmux_bt_clock {
+		pinctrl-single,bits = <
+			/* GP0[5] */
+			0x04 0x00000800 0x00000f00
+			/* ECAP2_APWM2 */
+			0x04 0x00000004 0x0000000f
+		>;
+	};
+
+	bt_en_pins: pinmux_bt_en {
+		pinctrl-single,bits = <
+			/* GP4[9] */
+			0x24 0x08000000 0x0f000000
+		>;
+	};
+
+	bt_pic_pins: pinmux_bt_pic {
+		pinctrl-single,bits = <
+			/* GP3[3] */
+			0x20 0x00080000 0x000f0000
+			/* GP4[14] */
+			0x24 0x00000080 0x000000f0
+			/* GP5[7] */
+			0x30 0x00000008 0x0000000f
+		>;
+	};
 };
 
 &pinconf {
@@ -282,6 +319,20 @@
 	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&serial1_rxtx_pins>;
+};
+
+&serial2 {
+	pinctrl-0 = <&serial2_rxtx_pins>, <&serial2_rtscts_pins>, <&bt_en_pins>,
+		    <&bt_pic_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	bluetooth {
+		compatible = "ti,cc2560";
+		clocks = &bt_slow_clk;
+		clock-names = "ext_clock";
+		enable-gpios = <&gpio 73 GPIO_ACTIVE_HIGH>;
+	};
 };
 
 &rtc0 {
@@ -411,6 +462,39 @@
 		gpios = <6 GPIO_ACTIVE_HIGH>;
 		output-high;
 	};
+
+	/* Don't impede Bluetooth clock signal */
+	bt_clock_en {
+		gpio-hog;
+		gpios = <5 GPIO_ACTIVE_HIGH>;
+		input;
+	};
+
+	/*
+	 * There is a PIC microcontroller for interfacing with an Apple MFi
+	 * chip. This interferes with normal Bluetooth operation, so we need
+	 * to make sure it is turned off. Note: The publicly available
+	 * schematics from LEGO don't show these pins, but they are present
+	 * in the source code from LEGO.
+	 */
+
+	bt_pic_en {
+		gpio-hog;
+		gpios = <51 GPIO_ACTIVE_HIGH>;
+		output-low;
+	};
+
+	bt_pic_rst {
+		gpio-hog;
+		gpios = <78 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+
+	bt_pic_cts {
+		gpio-hog;
+		gpios = <87 GPIO_ACTIVE_HIGH>;
+		input;
+	};
 };
 
 &usb_phy {
@@ -424,4 +508,8 @@
 &usb1 {
 	status = "okay";
 	vbus-supply = <&vcc5v>;
+};
+
+&ecap2 {
+	status = "okay";
 };
