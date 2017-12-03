@@ -1341,3 +1341,10 @@ void __init da850_init_time(void)
 	da850_clk_init();
 	davinci_timer_init();
 }
+
+void __init da850_dt_init_time(void)
+{
+	of_clk_init(NULL);
+	da850_clk_init();
+	davinci_timer_init();
+}
