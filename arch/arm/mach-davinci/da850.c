@@ -320,16 +320,6 @@ static struct davinci_clk emac_clk = {
 	.gpsc		= 1,
 };
 
-/*
- * In order to avoid adding the emac_clk to the clock lookup table twice (and
- * screwing up the linked list in the process) create a separate clock for
- * mdio inheriting the rate from emac_clk.
- */
-static struct davinci_clk mdio_clk = {
-	.name		= "mdio",
-	.parent		= &emac_clk,
-};
-
 static struct davinci_clk mcasp_clk = {
 	.name		= "mcasp",
 	.parent		= &async3_clk,
@@ -376,16 +366,6 @@ static struct davinci_clk aemif_clk = {
 	.parent		= &pll0_sysclk3,
 	.lpsc		= DA8XX_LPSC0_EMIF25,
 	.flags		= ALWAYS_ENABLED,
-};
-
-/*
- * In order to avoid adding the aemif_clk to the clock lookup table twice (and
- * screwing up the linked list in the process) create a separate clock for
- * nand inheriting the rate from aemif_clk.
- */
-static struct davinci_clk aemif_nand_clk = {
-	.name		= "nand",
-	.parent		= &aemif_clk,
 };
 
 static struct davinci_clk usb11_clk = {
@@ -450,16 +430,6 @@ static struct davinci_clk ehrpwm_clk = {
 	.gpsc		= 1,
 };
 
-static struct davinci_clk ehrpwm0_clk = {
-	.name		= "ehrpwm0",
-	.parent		= &ehrpwm_clk,
-};
-
-static struct davinci_clk ehrpwm1_clk = {
-	.name		= "ehrpwm1",
-	.parent		= &ehrpwm_clk,
-};
-
 #define DA8XX_EHRPWM_TBCLKSYNC	BIT(12)
 
 static void ehrpwm_tblck_enable(struct davinci_clk *clk)
@@ -487,36 +457,11 @@ static struct davinci_clk ehrpwm_tbclk = {
 	.clk_disable	= ehrpwm_tblck_disable,
 };
 
-static struct davinci_clk ehrpwm0_tbclk = {
-	.name		= "ehrpwm0_tbclk",
-	.parent		= &ehrpwm_tbclk,
-};
-
-static struct davinci_clk ehrpwm1_tbclk = {
-	.name		= "ehrpwm1_tbclk",
-	.parent		= &ehrpwm_tbclk,
-};
-
 static struct davinci_clk ecap_clk = {
 	.name		= "ecap",
 	.parent		= &async3_clk,
 	.lpsc		= DA8XX_LPSC1_ECAP,
 	.gpsc		= 1,
-};
-
-static struct davinci_clk ecap0_clk = {
-	.name		= "ecap0_clk",
-	.parent		= &ecap_clk,
-};
-
-static struct davinci_clk ecap1_clk = {
-	.name		= "ecap1_clk",
-	.parent		= &ecap_clk,
-};
-
-static struct davinci_clk ecap2_clk = {
-	.name		= "ecap2_clk",
-	.parent		= &ecap_clk,
 };
 
 static __init void da850_clk_init(void)
@@ -556,7 +501,7 @@ static __init void da850_clk_init(void)
 	davinci_clk_init(&arm_clk, "arm", NULL);
 	davinci_clk_init(&rmii_clk, "rmii", NULL);
 	davinci_clk_init(&emac_clk, NULL, "davinci_emac.1");
-	davinci_clk_init(&mdio_clk, "fck", "davinci_mdio.0");
+	clk_register_clkdev(emac_clk.hw.clk, "fck", "davinci_mdio.0");
 	davinci_clk_init(&mcasp_clk, NULL, "davinci-mcasp.0");
 	davinci_clk_init(&mcbsp0_clk, NULL, "davinci-mcbsp.0");
 	davinci_clk_init(&mcbsp1_clk, NULL, "davinci-mcbsp.1");
@@ -564,7 +509,7 @@ static __init void da850_clk_init(void)
 	davinci_clk_init(&mmcsd0_clk, NULL, "da830-mmc.0");
 	davinci_clk_init(&mmcsd1_clk, NULL, "da830-mmc.1");
 	davinci_clk_init(&aemif_clk, NULL, "ti-aemif");
-	davinci_clk_init(&aemif_nand_clk, "aemif", "davinci-nand.0");
+	clk_register_clkdev(aemif_clk.hw.clk, "aemif", "davinci-nand.0");
 	davinci_clk_init(&usb11_clk, "usb11", "ohci-da8xx");
 	davinci_clk_init(&usb20_clk, "usb20", "musb-da8xx");
 	davinci_clk_init(&cppi41_clk, NULL, "cppi41-dmaengine");
@@ -573,16 +518,13 @@ static __init void da850_clk_init(void)
 	davinci_clk_init(&vpif_clk, NULL, "vpif");
 	davinci_clk_init(&sata_clk, "fck", "ahci_da850");
 	davinci_clk_init(&dsp_clk, NULL, "davinci-rproc.0");
-	davinci_clk_init(&ehrpwm_clk, NULL, NULL);
-	davinci_clk_init(&ehrpwm0_clk, "fck", "ehrpwm.0");
-	davinci_clk_init(&ehrpwm1_clk, "fck", "ehrpwm.1");
-	davinci_clk_init(&ehrpwm_tbclk, NULL, NULL);
-	davinci_clk_init(&ehrpwm0_tbclk, "tbclk", "ehrpwm.0");
-	davinci_clk_init(&ehrpwm1_tbclk, "tbclk", "ehrpwm.1");
-	davinci_clk_init(&ecap_clk, NULL, NULL);
-	davinci_clk_init(&ecap0_clk, "fck", "ecap.0");
-	davinci_clk_init(&ecap1_clk, "fck", "ecap.1");
-	davinci_clk_init(&ecap2_clk, "fck", "ecap.2");
+	davinci_clk_init(&ehrpwm_clk, "fck", "ehrpwm.0");
+	clk_register_clkdev(ehrpwm_clk.hw.clk, "fck", "ehrpwm.1");
+	davinci_clk_init(&ehrpwm_tbclk, "tbclk", "ehrpwm.0");
+	clk_register_clkdev(ehrpwm_tbclk.hw.clk, "tbclk", "ehrpwm.1");
+	davinci_clk_init(&ecap_clk,"fck", "ecap.0");
+	clk_register_clkdev(ecap_clk.hw.clk, "fck", "ecap.1");
+	clk_register_clkdev(ecap_clk.hw.clk, "fck", "ecap.2");
 }
 
 /*
