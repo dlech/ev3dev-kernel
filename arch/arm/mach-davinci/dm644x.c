@@ -323,8 +323,6 @@ static __init void dm644x_clk_init(void)
 	clk_register_clkdev(clk, "master", "vpss");
 	clk = davinci_clk_init(&vpss_slave_clk);
 	clk_register_clkdev(clk, "slave", "vpss");
-	clk = davinci_clk_init(&arm_clk);
-	clk_register_clkdev(clk, "arm", NULL);
 	clk = davinci_clk_init(&uart0_clk);
 	clk_register_clkdev(clk, NULL, "serial8250.0");
 	clk = davinci_clk_init(&uart1_clk);
@@ -333,7 +331,6 @@ static __init void dm644x_clk_init(void)
 	clk_register_clkdev(clk, NULL, "serial8250.2");
 	clk = davinci_clk_init(&emac_clk);
 	clk_register_clkdev(clk, NULL, "davinci_emac.1");
-	clk = davinci_clk_init(&emac_clk);
 	clk_register_clkdev(clk, "fck", "davinci_mdio.0");
 	clk = davinci_clk_init(&i2c_clk);
 	clk_register_clkdev(clk, NULL, "i2c_davinci.1");
