@@ -11,7 +11,6 @@
 /dts-v1/;
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/linux-event-codes.h>
-#include <dt-bindings/pwm/pwm.h>
 
 #include "da850.dtsi"
 
@@ -21,6 +20,7 @@
 
 	aliases {
 		serial1 = &serial1;
+		serial2 = &serial2;
 	};
 
 	memory@c0000000 {
@@ -191,12 +191,12 @@
 	};
 
 	bt_slow_clk: bt-clock {
-		pinctrl-names = "default";
-		pintctrl-0 = <&bt_clock_pins>;
+		// pinctrl-names = "default";
+		// pintctrl-0 = <&bt_clock_pins>, <&bt_clock_bias>;
 		compatible = "pwm-clock";
 		#clock-cells = <0>;
 		clock-frequency = <32768>;
-		pwms = <&ecap2 0 30518 PWM_POLARITY_INVERTED>;
+		pwms = <&ecap2 0 30518 0>;
 	};
 };
 
@@ -276,10 +276,8 @@
 	// TODO: Move to common da850 dts
 	bt_clock_pins: pinmux_bt_clock {
 		pinctrl-single,bits = <
-			/* GP0[5] */
-			0x04 0x00000800 0x00000f00
-			/* ECAP2_APWM2 */
-			0x04 0x00000004 0x0000000f
+			/* GP0[5], ECAP2_APWM2 */
+			0x04 0x00000804 0x00000f0f
 		>;
 	};
 
@@ -312,6 +310,20 @@
 			bias-disable;
 		};
 	};
+
+	bt_clock_bias: bt-clock-bias-groups {
+		disable {
+			groups = "cp2";
+			bias-disable;
+		};
+	};
+
+	bt_pic_bias: bt-pic-bias-groups {
+		disable {
+			groups = "cp0", "cp12", "cp20";
+			bias-disable;
+		};
+	};
 };
 
 /* Input port 1 */
@@ -322,16 +334,17 @@
 };
 
 &serial2 {
-	pinctrl-0 = <&serial2_rxtx_pins>, <&serial2_rtscts_pins>, <&bt_en_pins>,
-		    <&bt_pic_pins>;
 	pinctrl-names = "default";
+	pinctrl-0 = <&serial2_rxtx_pins>, <&serial2_rtscts_pins>, <&bt_en_pins>,
+		    <&bt_pic_pins>, <&bt_pic_bias>, <&bt_clock_pins>, <&bt_clock_bias>;
 	status = "okay";
 
 	bluetooth {
 		compatible = "ti,cc2560";
-		clocks = &bt_slow_clk;
+		clocks = <&bt_slow_clk>;
 		clock-names = "ext_clock";
 		enable-gpios = <&gpio 73 GPIO_ACTIVE_HIGH>;
+		max-speed = <2000000>;
 	};
 };
 
