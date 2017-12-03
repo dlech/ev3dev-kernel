@@ -533,7 +533,6 @@ static __init void dm365_clk_init(void)
 	clk_register_clkdev(clk, "usb", NULL);
 	clk = davinci_clk_init(&emac_clk);
 	clk_register_clkdev(clk, NULL, "davinci_emac.1");
-	clk = davinci_clk_init(&emac_clk);
 	clk_register_clkdev(clk, "fck", "davinci_mdio.0");
 	clk = davinci_clk_init(&voicecodec_clk);
 	clk_register_clkdev(clk, NULL, "davinci_voicecodec");
