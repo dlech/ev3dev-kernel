@@ -213,57 +213,22 @@ static struct clk spi1_clk = {
 	.gpsc		= 1,
 };
 
-static struct clk ecap0_clk = {
-	.name		= "ecap0",
+static struct clk ecap_clk = {
+	.name		= "ecap",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA8XX_LPSC1_ECAP,
 	.gpsc		= 1,
 };
 
-static struct clk ecap1_clk = {
-	.name		= "ecap1",
-	.parent		= &pll0_sysclk2,
-	.lpsc		= DA8XX_LPSC1_ECAP,
-	.gpsc		= 1,
-};
-
-static struct clk ecap2_clk = {
-	.name		= "ecap2",
-	.parent		= &pll0_sysclk2,
-	.lpsc		= DA8XX_LPSC1_ECAP,
-	.gpsc		= 1,
-};
-
-static struct clk pwm0_clk = {
-	.name		= "pwm0",
+static struct clk pwm_clk = {
+	.name		= "pwm",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA8XX_LPSC1_PWM,
 	.gpsc		= 1,
 };
 
-static struct clk pwm1_clk = {
-	.name		= "pwm1",
-	.parent		= &pll0_sysclk2,
-	.lpsc		= DA8XX_LPSC1_PWM,
-	.gpsc		= 1,
-};
-
-static struct clk pwm2_clk = {
-	.name		= "pwm2",
-	.parent		= &pll0_sysclk2,
-	.lpsc		= DA8XX_LPSC1_PWM,
-	.gpsc		= 1,
-};
-
-static struct clk eqep0_clk = {
-	.name		= "eqep0",
-	.parent		= &pll0_sysclk2,
-	.lpsc		= DA830_LPSC1_EQEP,
-	.gpsc		= 1,
-};
-
-static struct clk eqep1_clk = {
-	.name		= "eqep1",
+static struct clk eqep_clk = {
+	.name		= "eqep",
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA830_LPSC1_EQEP,
 	.gpsc		= 1,
@@ -302,11 +267,6 @@ static struct clk usb20_clk = {
 	.parent		= &pll0_sysclk2,
 	.lpsc		= DA8XX_LPSC1_USB20,
 	.gpsc		= 1,
-};
-
-static struct clk cppi41_clk = {
-	.name		= "cppi41",
-	.parent		= &usb20_clk,
 };
 
 static struct clk aemif_clk = {
@@ -434,21 +394,16 @@ static __init void da830_clk_init(void)
 	clk_register_clkdev(clk, NULL, "spi_davinci.0");
 	clk = davinci_clk_init(&spi1_clk);
 	clk_register_clkdev(clk, NULL, "spi_davinci.1");
-	clk = davinci_clk_init(&ecap0_clk);
+	clk = davinci_clk_init(&ecap_clk);
 	clk_register_clkdev(clk, "ecap0", NULL);
-	clk = davinci_clk_init(&ecap1_clk);
 	clk_register_clkdev(clk, "ecap1", NULL);
-	clk = davinci_clk_init(&ecap2_clk);
 	clk_register_clkdev(clk, "ecap2", NULL);
-	clk = davinci_clk_init(&pwm0_clk);
+	clk = davinci_clk_init(&pwm_clk);
 	clk_register_clkdev(clk, "pwm0", NULL);
-	clk = davinci_clk_init(&pwm1_clk);
 	clk_register_clkdev(clk, "pwm1", NULL);
-	clk = davinci_clk_init(&pwm2_clk);
 	clk_register_clkdev(clk, "pwm2", NULL);
-	clk = davinci_clk_init(&eqep0_clk);
+	clk = davinci_clk_init(&eqep_clk);
 	clk_register_clkdev(clk, NULL, "eqep.0");
-	clk = davinci_clk_init(&eqep1_clk);
 	clk_register_clkdev(clk, NULL, "eqep.1");
 	clk = davinci_clk_init(&lcdc_clk);
 	clk_register_clkdev(clk, "fck", "da8xx_lcdc.0");
@@ -460,7 +415,6 @@ static __init void da830_clk_init(void)
 	clk_register_clkdev(clk, NULL, "davinci-mcasp.2");
 	clk = davinci_clk_init(&usb20_clk);
 	clk_register_clkdev(clk, "usb20", "musb-da8xx");
-	clk = davinci_clk_init(&cppi41_clk);
 	clk_register_clkdev(clk, NULL, "cppi41-dmaengine");
 	clk = davinci_clk_init(&aemif_clk);
 	clk_register_clkdev(clk, "aemif", NULL);
@@ -470,7 +424,6 @@ static __init void da830_clk_init(void)
 	clk_register_clkdev(clk, "secu_mgr", NULL);
 	clk = davinci_clk_init(&emac_clk);
 	clk_register_clkdev(clk, NULL, "davinci_emac.1");
-	clk = davinci_clk_init(&emac_clk);
 	clk_register_clkdev(clk, "fck", "davinci_mdio.0");
 	clk = davinci_clk_init(&gpio_clk);
 	clk_register_clkdev(clk, "gpio", NULL);
