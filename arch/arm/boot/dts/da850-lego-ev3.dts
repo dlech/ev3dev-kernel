@@ -20,7 +20,6 @@
 
 	aliases {
 		serial1 = &serial1;
-		serial2 = &serial2;
 	};
 
 	memory@c0000000 {
@@ -191,8 +190,8 @@
 	};
 
 	bt_slow_clk: bt-clock {
-		// pinctrl-names = "default";
-		// pintctrl-0 = <&bt_clock_pins>, <&bt_clock_bias>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&bt_clock_pins>, <&bt_clock_bias>;
 		compatible = "pwm-clock";
 		#clock-cells = <0>;
 		clock-frequency = <32768>;
@@ -273,7 +272,6 @@
 		>;
 	};
 
-	// TODO: Move to common da850 dts
 	bt_clock_pins: pinmux_bt_clock {
 		pinctrl-single,bits = <
 			/* GP0[5], ECAP2_APWM2 */
@@ -320,7 +318,7 @@
 
 	bt_pic_bias: bt-pic-bias-groups {
 		disable {
-			groups = "cp0", "cp12", "cp20";
+			groups = "cp20";
 			bias-disable;
 		};
 	};
@@ -336,7 +334,7 @@
 &serial2 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&serial2_rxtx_pins>, <&serial2_rtscts_pins>, <&bt_en_pins>,
-		    <&bt_pic_pins>, <&bt_pic_bias>, <&bt_clock_pins>, <&bt_clock_bias>;
+		    <&bt_pic_pins>, <&bt_pic_bias>;
 	status = "okay";
 
 	bluetooth {
@@ -345,6 +343,8 @@
 		clock-names = "ext_clock";
 		enable-gpios = <&gpio 73 GPIO_ACTIVE_HIGH>;
 		max-speed = <2000000>;
+		nvmem-cells = <&bdaddr>;
+		nvmem-cell-names = "bd-address";
 	};
 };
 
@@ -366,6 +366,16 @@
 		pagesize = <64>;
 		read-only;
 		reg = <0x50>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		version@3f00 {
+			reg = <0x3f00 0x01>;
+		};
+
+		bdaddr: bdaddr@3f06 {
+			reg = <0x3f06 0x06>;
+		};
 	};
 };
 
@@ -454,12 +464,16 @@
 		status = "okay";
 		compatible = "jianda,jd-t18003-t01", "sitronix,st7735r";
 		reg = <0>;
-		spi-max-frequency = <10000000>;
+		spi-max-frequency = <32000000>;
 		dc-gpios = <&gpio 43 GPIO_ACTIVE_HIGH>;
 		reset-gpios = <&gpio 80 GPIO_ACTIVE_HIGH>;
 		backlight = &backlight;
 		rotation = <270>;
 	};
+};
+
+&ecap2 {
+	status = "okay";
 };
 
 &ehrpwm0 {
@@ -521,8 +535,4 @@
 &usb1 {
 	status = "okay";
 	vbus-supply = <&vcc5v>;
-};
-
-&ecap2 {
-	status = "okay";
 };

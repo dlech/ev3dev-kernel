@@ -91,7 +91,6 @@ void da830_init_time(void);
 
 void da850_init(void);
 void da850_init_time(void);
-void da850_dt_init_time(void);
 
 int da830_register_edma(struct edma_rsv_info *rsv);
 int da850_register_edma(struct edma_rsv_info *rsv[2]);
