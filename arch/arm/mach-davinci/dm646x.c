@@ -386,7 +386,6 @@ static __init void dm646x_clk_init(void)
 	clk_register_clkdev(clk, "aemif", NULL);
 	clk = davinci_clk_init(&emac_clk);
 	clk_register_clkdev(clk, NULL, "davinci_emac.1");
-	clk = davinci_clk_init(&emac_clk);
 	clk_register_clkdev(clk, "fck", "davinci_mdio.0");
 	clk = davinci_clk_init(&pwm0_clk);
 	clk_register_clkdev(clk, "pwm0", NULL);
