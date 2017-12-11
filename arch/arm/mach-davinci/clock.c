@@ -33,8 +33,6 @@ static DEFINE_SPINLOCK(clockfw_lock);
 
 void davinci_clk_enable(struct davinci_clk *clk)
 {
-	if (clk->parent)
-		davinci_clk_enable(clk->parent);
 	if (clk->usecount++ == 0) {
 		if (clk->flags & CLK_PSC)
 			davinci_psc_config(clk->domain, clk->gpsc, clk->lpsc,
@@ -55,8 +53,6 @@ void davinci_clk_disable(struct davinci_clk *clk)
 		else if (clk->clk_disable)
 			clk->clk_disable(clk);
 	}
-	if (clk->parent)
-		davinci_clk_disable(clk->parent);
 }
 
 static int davinci_clk_reset(struct davinci_clk *clk, bool reset)
