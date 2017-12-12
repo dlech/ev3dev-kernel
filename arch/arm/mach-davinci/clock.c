@@ -253,36 +253,6 @@ int davinci_clk_register(struct davinci_clk *clk)
 	return 0;
 }
 
-#ifdef CONFIG_DAVINCI_RESET_CLOCKS
-/*
- * Disable any unused clocks left on by the bootloader
- */
-int __init davinci_clk_disable_unused(void)
-{
-	struct davinci_clk *ck;
-
-	spin_lock_irq(&clockfw_lock);
-	list_for_each_entry(ck, &clocks, node) {
-		if (ck->usecount > 0)
-			continue;
-		if (!(ck->flags & CLK_PSC))
-			continue;
-
-		/* ignore if in Disabled or SwRstDisable states */
-		if (!davinci_psc_is_clk_active(ck->gpsc, ck->lpsc))
-			continue;
-
-		pr_debug("Clocks: disable unused %s\n", ck->name);
-
-		davinci_psc_config(ck->domain, ck->gpsc, ck->lpsc,
-				false, ck->flags);
-	}
-	spin_unlock_irq(&clockfw_lock);
-
-	return 0;
-}
-#endif
-
 static unsigned long clk_sysclk_recalc(struct davinci_clk *clk)
 {
 	u32 v, plldiv;
