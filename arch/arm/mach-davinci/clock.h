@@ -125,7 +125,6 @@ void davinci_clk_init(struct davinci_clk *clk, const char *con_id,
 int davinci_set_pllrate(struct pll_data *pll, unsigned int prediv,
 				unsigned int mult, unsigned int postdiv);
 int davinci_set_sysclk_rate(struct davinci_clk *clk, unsigned long rate);
-int davinci_set_refclk_rate(unsigned long rate);
 int davinci_simple_set_rate(struct davinci_clk *clk, unsigned long rate);
 void davinci_clk_enable(struct davinci_clk *clk);
 void davinci_clk_disable(struct davinci_clk *clk);
