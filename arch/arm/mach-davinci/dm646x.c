@@ -39,12 +39,6 @@
 #define VSCLKDIS_MASK		(BIT_MASK(11) | BIT_MASK(10) | BIT_MASK(9) |\
 					BIT_MASK(8))
 
-/*
- * Device specific clocks
- */
-#define DM646X_REF_FREQ		27000000
-#define DM646X_AUX_FREQ		24000000
-
 #define DM646X_EMAC_BASE		0x01c80000
 #define DM646X_EMAC_MDIO_BASE		(DM646X_EMAC_BASE + 0x4000)
 #define DM646X_EMAC_CNTRL_OFFSET	0x0000
@@ -64,13 +58,11 @@ static struct pll_data pll2_data = {
 
 static struct clk ref_clk = {
 	.name = "ref_clk",
-	.rate = DM646X_REF_FREQ,
 	.set_rate = davinci_simple_set_rate,
 };
 
 static struct clk aux_clkin = {
 	.name = "aux_clkin",
-	.rate = DM646X_AUX_FREQ,
 };
 
 static struct clk pll1_clk = {
@@ -320,10 +312,13 @@ static struct clk vpif1_clk = {
 	.flags = ALWAYS_ENABLED,
 };
 
-static __init void dm646x_clk_init(void)
+static __init void dm646x_clk_init(unsigned long ref_clk_rate,
+				   unsigned long aux_clkin_rate)
 {
 	struct clk *clk;
 
+	ref_clk.rate = ref_clk_rate;
+	aux_clkin.rate = aux_clkin_rate;
 	clk = davinci_clk_init(&ref_clk);
 	clk_register_clkdev(clk, "ref", NULL);
 	clk = davinci_clk_init(&aux_clkin);
@@ -998,9 +993,10 @@ void __init dm646x_init(void)
 	davinci_map_sysmod();
 }
 
-void __init dm646x_init_time(void)
+void __init dm646x_init_time(unsigned long ref_clk_rate,
+			     unsigned long aux_clkin_rate)
 {
-	dm646x_clk_init();
+	dm646x_clk_init(ref_clk_rate, aux_clkin_rate);
 	davinci_timer_init();
 }
 
