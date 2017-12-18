@@ -189,9 +189,11 @@ static int shadow_context_status_change(struct notifier_block *nb,
 		atomic_set(&workload->shadow_ctx_active, 1);
 		break;
 	case INTEL_CONTEXT_SCHEDULE_OUT:
-	case INTEL_CONTEXT_SCHEDULE_PREEMPTED:
 		save_ring_hw_state(workload->vgpu, ring_id);
 		atomic_set(&workload->shadow_ctx_active, 0);
+		break;
+	case INTEL_CONTEXT_SCHEDULE_PREEMPTED:
+		save_ring_hw_state(workload->vgpu, ring_id);
 		break;
 	default:
 		WARN_ON(1);
@@ -1137,9 +1139,10 @@ alloc_workload(struct intel_vgpu *vgpu)
 	struct intel_vgpu_submission *s = &vgpu->submission;
 	struct intel_vgpu_workload *workload;
 
-	workload = kmem_cache_zalloc(s->workloads, GFP_KERNEL);
-	if (!workload)
-		return ERR_PTR(-ENOMEM);
+	if (INTEL_INFO(vgpu->gvt->dev_priv)->has_logical_ring_preemption)
+		vgpu->shadow_ctx->priority = INT_MAX;
+
+	vgpu->shadow_ctx->engine[RCS].initialised = true;
 
 	INIT_LIST_HEAD(&workload->list);
 	INIT_LIST_HEAD(&workload->shadow_bb);

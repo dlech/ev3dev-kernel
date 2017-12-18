@@ -8475,7 +8475,6 @@ static void cnp_init_clock_gating(struct drm_i915_private *dev_priv)
 
 static void cnl_init_clock_gating(struct drm_i915_private *dev_priv)
 {
-	u32 val;
 	cnp_init_clock_gating(dev_priv);
 
 	/* This is not an Wa. Enable for better image quality */
@@ -8495,8 +8494,9 @@ static void cnl_init_clock_gating(struct drm_i915_private *dev_priv)
 	val |= RCCUNIT_CLKGATE_DIS;
 	/* WaSarbUnitClockGatingDisable:cnl (pre-prod) */
 	if (IS_CNL_REVID(dev_priv, CNL_REVID_A0, CNL_REVID_B0))
-		val |= SARBUNIT_CLKGATE_DIS;
-	I915_WRITE(SLICE_UNIT_LEVEL_CLKGATE, val);
+		I915_WRITE(SLICE_UNIT_LEVEL_CLKGATE,
+			   I915_READ(SLICE_UNIT_LEVEL_CLKGATE) |
+			   SARBUNIT_CLKGATE_DIS);
 }
 
 static void cfl_init_clock_gating(struct drm_i915_private *dev_priv)
