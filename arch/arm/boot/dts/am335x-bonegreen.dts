@@ -15,3 +15,32 @@
 	model = "TI AM335x BeagleBone Green";
 	compatible = "ti,am335x-bone-green", "ti,am335x-bone-black", "ti,am335x-bone", "ti,am33xx";
 };
+
+&am33xx_pinmux {
+	spi1_pins: pinmux_spi1_pins {
+		pinctrl-single,pins = <
+			AM33XX_IOPAD(0x990, PIN_OUTPUT_PULLUP | MUX_MODE3) /* spi1_sclk - FBCLK  */
+			AM33XX_IOPAD(0x998, PIN_OUTPUT_PULLUP | MUX_MODE3) /* spi1_d1   - FBMOSI */
+			AM33XX_IOPAD(0x99c, PIN_OUTPUT_PULLUP | MUX_MODE3) /* spi1_cs0  - FBCS   */
+			AM33XX_IOPAD(0x8d4, PIN_OUTPUT_PULLUP | MUX_MODE7) /* gpio0[9]  - FBDC   */
+			AM33XX_IOPAD(0x8d0, PIN_OUTPUT_PULLUP | MUX_MODE7) /* gpio0[8]  - FBRST  */
+		>;
+	};
+};
+
+&spi1 {
+	status = "okay";
+
+	display: display@0 {
+		pinctrl-names = "default";
+		pinctrl-0 = <&spi1_pins>;
+
+		compatible = "vot,v220hf01a-t", "ilitek,ili9225";
+		reg = <0>;
+		spi-max-frequency = <12000000>;
+
+		reset-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+		rs-gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+		rotation = <270>;
+	};
+};
