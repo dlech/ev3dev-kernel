@@ -23,7 +23,6 @@
 #include <linux/skbuff.h>
 #include <linux/init.h>
 #include <linux/kmod.h>
-#include <linux/err.h>
 #include <linux/slab.h>
 #include <net/net_namespace.h>
 #include <net/sock.h>
@@ -342,7 +341,9 @@ void tcf_block_put_ext(struct tcf_block *block, struct Qdisc *q,
 {
 	struct tcf_chain *chain, *tmp;
 
-	/* Hold a refcnt for all chains, so that they don't disappear
+	if (!block)
+		return;
+	/* Hold a refcnt for all chains, except 0, so that they don't disappear
 	 * while we are iterating.
 	 */
 	list_for_each_entry(chain, &block->chain_list, list)
@@ -367,8 +368,6 @@ void tcf_block_put(struct tcf_block *block)
 {
 	struct tcf_block_ext_info ei = {0, };
 
-	if (!block)
-		return;
 	tcf_block_put_ext(block, block->q, &ei);
 }
 
