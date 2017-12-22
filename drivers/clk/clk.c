@@ -139,16 +139,9 @@ static void clk_prepare_unlock(void)
 static unsigned long clk_enable_lock(void)
 	__acquires(enable_lock)
 {
-	unsigned long flags = 0;
+	unsigned long flags;
 
-	/*
-	 * When CONFIG_SMP=n, spin_trylock_irqsave() always returns true (unless
-	 * CONFIG_DEBUG_SPINLOCK=y), so for single processor systems, we just
-	 * rely on the reference counting to ensure that spin_lock_irqsave() is
-	 * only called once.
-	 */
-	if (!IS_ENABLED(CONFIG_SMP) ||
-	    !spin_trylock_irqsave(&enable_lock, flags)) {
+	if (!spin_trylock_irqsave(&enable_lock, flags)) {
 		if (enable_owner == current) {
 			enable_refcnt++;
 			__acquire(enable_lock);
