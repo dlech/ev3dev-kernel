@@ -382,11 +382,6 @@ static struct davinci_clk usb20_clk = {
 	.gpsc		= 1,
 };
 
-static struct davinci_clk cppi41_clk = {
-	.name		= "cppi41",
-	.parent		= &usb20_clk,
-};
-
 static struct davinci_clk spi0_clk = {
 	.name		= "spi0",
 	.parent		= &pll0_sysclk2,
@@ -514,7 +509,7 @@ static __init void da850_clk_init(void)
 	davinci_clk_init(&usb11_clk, "usb11", "ohci-da8xx");
 	davinci_clk_init(&usb20_clk, "usb20", "musb-da8xx");
 	clk_register_clkdev(usb20_clk.hw.clk, "usb20", "da8xx-usb-phy-clk");
-	davinci_clk_init(&cppi41_clk, NULL, "cppi41-dmaengine");
+	clk_register_clkdev(usb20_clk.hw.clk, "usb20", "cppi41-dmaengine");
 	davinci_clk_init(&spi0_clk, NULL, "spi_davinci.0");
 	davinci_clk_init(&spi1_clk, NULL, "spi_davinci.1");
 	davinci_clk_init(&vpif_clk, NULL, "vpif");
