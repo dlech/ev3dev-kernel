@@ -31,30 +31,6 @@ static LIST_HEAD(clocks);
 static DEFINE_MUTEX(clocks_mutex);
 static DEFINE_SPINLOCK(clockfw_lock);
 
-void davinci_clk_enable(struct davinci_clk *clk)
-{
-	if (clk->usecount++ == 0) {
-		if (clk->flags & CLK_PSC)
-			davinci_psc_config(clk->domain, clk->gpsc, clk->lpsc,
-					   true, clk->flags);
-		else if (clk->clk_enable)
-			clk->clk_enable(clk);
-	}
-}
-
-void davinci_clk_disable(struct davinci_clk *clk)
-{
-	if (WARN_ON(clk->usecount == 0))
-		return;
-	if (--clk->usecount == 0) {
-		if (!(clk->flags & CLK_PLL) && (clk->flags & CLK_PSC))
-			davinci_psc_config(clk->domain, clk->gpsc, clk->lpsc,
-					   false, clk->flags);
-		else if (clk->clk_disable)
-			clk->clk_disable(clk);
-	}
-}
-
 static int davinci_clk_reset(struct davinci_clk *clk, bool reset)
 {
 	unsigned long flags;
@@ -95,16 +71,19 @@ EXPORT_SYMBOL(davinci_clk_reset_deassert);
 static int _clk_enable(struct clk_hw *hw)
 {
 	struct davinci_clk *clk = to_davinci_clk(hw);
-	unsigned long flags;
 
 	if (!clk)
 		return 0;
 	else if (IS_ERR(clk))
 		return -EINVAL;
 
-	spin_lock_irqsave(&clockfw_lock, flags);
-	davinci_clk_enable(clk);
-	spin_unlock_irqrestore(&clockfw_lock, flags);
+	if (clk->usecount++ == 0) {
+		if (clk->flags & CLK_PSC)
+			davinci_psc_config(clk->domain, clk->gpsc, clk->lpsc,
+					   true, clk->flags);
+		else if (clk->clk_enable)
+			clk->clk_enable(clk);
+	}
 
 	return 0;
 }
@@ -112,14 +91,19 @@ static int _clk_enable(struct clk_hw *hw)
 static void _clk_disable(struct clk_hw *hw)
 {
 	struct davinci_clk *clk = to_davinci_clk(hw);
-	unsigned long flags;
 
 	if (clk == NULL || IS_ERR(clk))
 		return;
 
-	spin_lock_irqsave(&clockfw_lock, flags);
-	davinci_clk_disable(clk);
-	spin_unlock_irqrestore(&clockfw_lock, flags);
+	if (WARN_ON(clk->usecount == 0))
+		return;
+	if (--clk->usecount == 0) {
+		if (!(clk->flags & CLK_PLL) && (clk->flags & CLK_PSC))
+			davinci_psc_config(clk->domain, clk->gpsc, clk->lpsc,
+					   false, clk->flags);
+		else if (clk->clk_disable)
+			clk->clk_disable(clk);
+	}
 }
 
 static unsigned long _clk_recalc_rate(struct clk_hw *hw,
@@ -150,23 +134,10 @@ static long _clk_round_rate(struct clk_hw *hw, unsigned long rate,
 	return clk->rate;
 }
 
-/* Propagate rate to children */
-static void propagate_rate(struct davinci_clk *root)
-{
-	struct davinci_clk *clk;
-
-	list_for_each_entry(clk, &root->children, childnode) {
-		if (clk->recalc)
-			clk->rate = clk->recalc(clk);
-		propagate_rate(clk);
-	}
-}
-
 static int _clk_set_rate(struct clk_hw *hw, unsigned long rate,
 			 unsigned long parent_rate)
 {
 	struct davinci_clk *clk = to_davinci_clk(hw);
-	unsigned long flags;
 	int ret = -EINVAL;
 
 	if (!clk)
@@ -176,14 +147,6 @@ static int _clk_set_rate(struct clk_hw *hw, unsigned long rate,
 
 	if (clk->set_rate)
 		ret = clk->set_rate(clk, rate);
-
-	spin_lock_irqsave(&clockfw_lock, flags);
-	if (ret == 0) {
-		if (clk->recalc)
-			clk->rate = clk->recalc(clk);
-		propagate_rate(clk);
-	}
-	spin_unlock_irqrestore(&clockfw_lock, flags);
 
 	return ret;
 }
@@ -196,10 +159,10 @@ static const struct clk_ops davinci_clk_ops = {
 	.set_rate	= _clk_set_rate,
 };
 
-int davinci_clk_register(struct davinci_clk *clk)
+struct clk *davinci_clk_register(struct davinci_clk *clk)
 {
 	struct clk_init_data init = {};
-	int ret;
+	struct clk *ret;
 
 	if (clk == NULL || IS_ERR(clk))
 		return -EINVAL;
@@ -208,8 +171,6 @@ int davinci_clk_register(struct davinci_clk *clk)
 			"CLK: %s parent %s has no rate!\n",
 			clk->name, clk->parent->name))
 		return -EINVAL;
-
-	INIT_LIST_HEAD(&clk->children);
 
 	mutex_lock(&clocks_mutex);
 	list_add_tail(&clk->node, &clocks);
@@ -222,7 +183,6 @@ int davinci_clk_register(struct davinci_clk *clk)
 				return ret;
 			}
 		}
-		list_add_tail(&clk->childnode, &clk->parent->children);
 	}
 	mutex_unlock(&clocks_mutex);
 
@@ -234,13 +194,13 @@ int davinci_clk_register(struct davinci_clk *clk)
 	}
 	clk->hw.init = &init;
 
-	ret = clk_hw_register(NULL, &clk->hw);
-	if (WARN(ret, "Failed to register clock '%s'\n", clk->name))
+	ret = clk_register(NULL, &clk->hw);
+	if (WARN(IS_ERR(ret), "Failed to register clock '%s'\n", clk->name))
 		return ret;
 
 	/* If rate is already set, use it */
 	if (clk->rate)
-		return 0;
+		return ret;
 
 	/* Else, see if there is a way to calculate it */
 	if (clk->recalc)
@@ -250,7 +210,7 @@ int davinci_clk_register(struct davinci_clk *clk)
 	else if (clk->parent)
 		clk->rate = clk->parent->rate;
 
-	return 0;
+	return ret;
 }
 
 static unsigned long clk_sysclk_recalc(struct davinci_clk *clk)
@@ -514,9 +474,11 @@ int davinci_set_pllrate(struct pll_data *pll, unsigned int prediv,
 	return 0;
 }
 
-void __init davinci_clk_init(struct davinci_clk *clk, const char *con_id,
-			     const char *dev_id)
+struct clk * __init davinci_clk_init(struct davinci_clk *clk, const char *con_id,
+				     const char *dev_id)
 {
+	struct clk *ret;
+
 	if (!clk->recalc) {
 
 		/* Check if clock is a PLL */
@@ -553,10 +515,15 @@ void __init davinci_clk_init(struct davinci_clk *clk, const char *con_id,
 	if (clk->flags & PSC_LRST)
 		clk->reset = davinci_clk_reset;
 
-	davinci_clk_register(clk);
-	clk_register_clkdev(clk->hw.clk, con_id, dev_id);
+	ret = davinci_clk_register(clk);
+	if (IS_ERR(ret))
+		return ret;
+
+	clk_register_clkdev(ret, con_id, dev_id);
 
 	/* Turn on clocks that Linux doesn't otherwise manage */
 	if (clk->flags & ALWAYS_ENABLED)
-		clk_prepare_enable(clk->hw.clk);
+		clk_prepare_enable(ret);
+
+	return ret;
 }
