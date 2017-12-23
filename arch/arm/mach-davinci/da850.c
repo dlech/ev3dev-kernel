@@ -469,6 +469,7 @@ static __init void da850_clk_init(void)
 	davinci_clk_init(&ref_clk, "ref", NULL);
 	davinci_clk_init(&pll0_clk, "pll0", NULL);
 	davinci_clk_init(&pll0_aux_clk, "pll0_aux", NULL);
+	clk_register_clkdev(pll0_aux_clk.hw.clk, "pll0_aux", "da8xx-usb-phy-clk");
 	davinci_clk_init(&pll0_sysclk1, "pll0_sysclk1", NULL);
 	davinci_clk_init(&pll0_sysclk2, "pll0_sysclk2", NULL);
 	davinci_clk_init(&pll0_sysclk3, "pll0_sysclk3", NULL);
@@ -512,6 +513,7 @@ static __init void da850_clk_init(void)
 	clk_register_clkdev(aemif_clk.hw.clk, "aemif", "davinci-nand.0");
 	davinci_clk_init(&usb11_clk, "usb11", "ohci-da8xx");
 	davinci_clk_init(&usb20_clk, "usb20", "musb-da8xx");
+	clk_register_clkdev(usb20_clk.hw.clk, "usb20", "da8xx-usb-phy-clk");
 	davinci_clk_init(&cppi41_clk, NULL, "cppi41-dmaengine");
 	davinci_clk_init(&spi0_clk, NULL, "spi_davinci.0");
 	davinci_clk_init(&spi1_clk, NULL, "spi_davinci.1");

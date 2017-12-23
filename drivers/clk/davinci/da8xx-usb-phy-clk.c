@@ -29,6 +29,7 @@
  * @usb1_hw: The USB 1.1 PHY clock (mux)
  * @usb0_clk: The USB 2.0 subsystem PSC clock
  * @regmap: The CFGCHIP syscon regmap
+ */
 struct da8xx_usb_phy_clk {
 	struct clk_hw usb0_hw;
 	struct clk_hw usb1_hw;
