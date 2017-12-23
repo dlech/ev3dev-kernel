@@ -1,0 +1,1 @@
+obj-$(CONFIG_PHY_DA8XX_USB) += da8xx-usb-phy-clk.o
