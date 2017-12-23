@@ -1041,23 +1041,16 @@ int __init da8xx_register_spi_bus(int instance, unsigned num_chipselect)
 }
 
 #ifdef CONFIG_ARCH_DAVINCI_DA850
-static struct davinci_clk sata_refclk = {
-	.name		= "sata_refclk",
-	.set_rate	= davinci_simple_set_rate,
-};
 
-int __init da850_register_sata_refclk(int rate)
+int __init da850_register_sata_refclk(unsigned long rate)
 {
-	int ret;
+	struct clk *clk;
 
-	sata_refclk.rate = rate;
-	ret = davinci_clk_register(&sata_refclk);
-	if (ret)
-		return ret;
+	clk = clk_register_fixed_rate(NULL, "sata_refclk", NULL, 0, rate);
+	if (IS_ERR(clk))
+		return PTR_ERR(clk);
 
-	clk_register_clkdev(sata_refclk.hw.clk, "refclk", "ahci_da850");
-
-	return 0;
+	return clk_register_clkdev(clk, "refclk", "ahci_da850");
 }
 
 static struct resource da850_sata_resources[] = {
