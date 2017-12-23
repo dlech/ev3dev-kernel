@@ -98,8 +98,6 @@ struct davinci_clk {
 	u8			domain;
 	u32			flags;
 	struct davinci_clk	*parent;
-	struct list_head	children; 	/* list of children */
-	struct list_head	childnode;	/* parent's child list node */
 	struct pll_data         *pll_data;
 	u32                     div_reg;
 	unsigned long (*recalc)(struct davinci_clk *clk);
@@ -126,8 +124,6 @@ int davinci_set_pllrate(struct pll_data *pll, unsigned int prediv,
 
 int davinci_set_sysclk_rate(struct davinci_clk *clk, unsigned long rate);
 int davinci_simple_set_rate(struct davinci_clk *clk, unsigned long rate);
-void davinci_clk_enable(struct davinci_clk *clk);
-void davinci_clk_disable(struct davinci_clk *clk);
 int davinci_clk_register(struct davinci_clk *clk);
 
 static inline struct davinci_clk *to_davinci_clk(struct clk_hw *hw)
