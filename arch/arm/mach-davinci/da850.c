@@ -40,6 +40,7 @@
 
 #define DA850_REF_FREQ		24000000
 
+#define CFGCHIP1_TBCLKSYNC	12
 #define CFGCHIP3_ASYNC3_CLKSRC	BIT(4)
 #define CFGCHIP3_PLL1_MASTER_LOCK	BIT(5)
 #define CFGCHIP0_PLL_MASTER_LOCK	BIT(4)
@@ -425,33 +426,6 @@ static struct davinci_clk ehrpwm_clk = {
 	.gpsc		= 1,
 };
 
-#define DA8XX_EHRPWM_TBCLKSYNC	BIT(12)
-
-static void ehrpwm_tblck_enable(struct davinci_clk *clk)
-{
-	u32 val;
-
-	val = readl(DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP1_REG));
-	val |= DA8XX_EHRPWM_TBCLKSYNC;
-	writel(val, DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP1_REG));
-}
-
-static void ehrpwm_tblck_disable(struct davinci_clk *clk)
-{
-	u32 val;
-
-	val = readl(DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP1_REG));
-	val &= ~DA8XX_EHRPWM_TBCLKSYNC;
-	writel(val, DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP1_REG));
-}
-
-static struct davinci_clk ehrpwm_tbclk = {
-	.name		= "ehrpwm_tbclk",
-	.parent		= &ehrpwm_clk,
-	.clk_enable	= ehrpwm_tblck_enable,
-	.clk_disable	= ehrpwm_tblck_disable,
-};
-
 static struct davinci_clk ecap_clk = {
 	.name		= "ecap",
 	.parent		= &async3_clk,
@@ -567,7 +541,9 @@ static __init void da850_clk_init(void)
 	clk = davinci_clk_init(&ehrpwm_clk);
 	clk_register_clkdev(clk, "fck", "ehrpwm.0");
 	clk_register_clkdev(clk, "fck", "ehrpwm.1");
-	clk = davinci_clk_init(&ehrpwm_tbclk);
+	clk = clk_register_gate(NULL, "ehrpwm_tbclk", "ehrpwm", 0,
+				DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP1_REG),
+				CFGCHIP1_TBCLKSYNC, 0, NULL);
 	clk_register_clkdev(clk, "tbclk", "ehrpwm.0");
 	clk_register_clkdev(clk, "tbclk", "ehrpwm.1");
 	clk = davinci_clk_init(&ecap_clk);
