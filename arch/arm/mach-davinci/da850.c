@@ -187,26 +187,6 @@ static struct davinci_clk async3_clk = {
 	.set_parent	= da850_async3_set_parent,
 };
 
-static struct davinci_clk i2c0_clk = {
-	.name		= "i2c0",
-	.parent		= &pll0_aux_clk,
-};
-
-static struct davinci_clk timerp64_0_clk = {
-	.name		= "timer0",
-	.parent		= &pll0_aux_clk,
-};
-
-static struct davinci_clk timerp64_1_clk = {
-	.name		= "timer1",
-	.parent		= &pll0_aux_clk,
-};
-
-static struct davinci_clk rmii_clk = {
-	.name		= "rmii",
-	.parent		= &pll0_sysclk7,
-};
-
 #define PSC_CLK davinci_psc_clk_register
 
 static __init void da850_clk_init(void)
@@ -247,11 +227,11 @@ static __init void da850_clk_init(void)
 	clk_register_clkdev(clk, "pll1_sysclk3", NULL);
 	clk = davinci_clk_init(&async3_clk);
 	clk_register_clkdev(clk, "async3", NULL);
-	clk = davinci_clk_init(&i2c0_clk);
+	clk = clk_register_fixed_factor(NULL, "i2c0", "pll0_aux_clk", 0, 1, 1);
 	clk_register_clkdev(clk, NULL, "i2c_davinci.1");
-	clk = davinci_clk_init(&timerp64_0_clk);
+	clk = clk_register_fixed_factor(NULL, "timer0", "pll0_aux_clk", 0, 1, 1);
 	clk_register_clkdev(clk, "timer0", NULL);
-	clk = davinci_clk_init(&timerp64_1_clk);
+	clk = clk_register_fixed_factor(NULL, "timer1", "pll0_aux_clk", 0, 1, 1);
 	clk_register_clkdev(clk, NULL, "davinci-wdt");
 	clk = PSC_CLK("arm_rom", "pll0_sysclk2", psc0, DA8XX_LPSC0_ARM_RAM_ROM, 0);
 	clk_prepare_enable(clk); /* always on */
@@ -292,7 +272,7 @@ static __init void da850_clk_init(void)
 	clk = PSC_CLK("arm", "pll0_sysclk6", psc0, DA8XX_LPSC0_ARM, 0);
 	clk_prepare_enable(clk); /* always on */
 	clk_register_clkdev(clk, "arm", NULL);
-	clk = davinci_clk_init(&rmii_clk);
+	clk = clk_register_fixed_factor(NULL, "rmii", "pll0_sysclk7", 0, 1, 1);
 	clk_register_clkdev(clk, "rmii", NULL);
 	clk = PSC_CLK("emac", "pll0_sysclk4", psc1, DA8XX_LPSC1_CPGMAC, 0);
 	clk_register_clkdev(clk, NULL, "davinci_emac.1");
