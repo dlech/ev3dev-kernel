@@ -42,7 +42,7 @@
 #define DA850_REF_FREQ		24000000
 
 #define CFGCHIP1_TBCLKSYNC	12
-#define CFGCHIP3_ASYNC3_CLKSRC	BIT(4)
+#define CFGCHIP3_ASYNC3_CLKSRC	4
 #define CFGCHIP3_PLL1_MASTER_LOCK	BIT(5)
 #define CFGCHIP0_PLL_MASTER_LOCK	BIT(4)
 
@@ -160,39 +160,12 @@ static struct davinci_clk pll1_sysclk3 = {
 	.div_reg	= PLLDIV3,
 };
 
-static int da850_async3_set_parent(struct davinci_clk *clk,
-				   struct davinci_clk *parent)
-{
-	u32 val;
-
-	val = readl(DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP3_REG));
-
-	if (parent == &pll0_sysclk2) {
-		val &= ~CFGCHIP3_ASYNC3_CLKSRC;
-	} else if (parent == &pll1_sysclk2) {
-		val |= CFGCHIP3_ASYNC3_CLKSRC;
-	} else {
-		pr_err("Bad parent on async3 clock mux\n");
-		return -EINVAL;
-	}
-
-	writel(val, DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP3_REG));
-
-	return 0;
-}
-
-static struct davinci_clk async3_clk = {
-	.name		= "async3",
-	.parent		= &pll1_sysclk2,
-	.set_parent	= da850_async3_set_parent,
-};
-
 #define PSC_CLK davinci_psc_clk_register
 
 static __init void da850_clk_init(void)
 {
 	void __iomem *psc0, *psc1;
-	struct clk *clk;
+	struct clk *clk, *pll1_sysclk2_clk;
 
 	psc0 = ioremap(DA8XX_PSC0_BASE, SZ_4K);
 	psc1 = ioremap(DA8XX_PSC1_BASE, SZ_4K);
@@ -222,10 +195,16 @@ static __init void da850_clk_init(void)
 	clk = davinci_clk_init(&pll1_aux_clk);
 	clk_register_clkdev(clk, "pll1_aux", NULL);
 	clk = davinci_clk_init(&pll1_sysclk2);
+	pll1_sysclk2_clk = clk;
 	clk_register_clkdev(clk, "pll1_sysclk2", NULL);
 	clk = davinci_clk_init(&pll1_sysclk3);
 	clk_register_clkdev(clk, "pll1_sysclk3", NULL);
-	clk = davinci_clk_init(&async3_clk);
+	clk = clk_register_mux(NULL, "async3",
+		(const char * const[]){ "pll0_sysclk2", "pll1_sysclk2" }, 2, 0,
+		DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP3_REG), CFGCHIP3_ASYNC3_CLKSRC,
+		32, 0, NULL);
+	/* pll1_sysclk2 is not affected by CPU scaling, so use it */
+	clk_set_parent(clk, pll1_sysclk2_clk);
 	clk_register_clkdev(clk, "async3", NULL);
 	clk = clk_register_fixed_factor(NULL, "i2c0", "pll0_aux_clk", 0, 1, 1);
 	clk_register_clkdev(clk, NULL, "i2c_davinci.1");
