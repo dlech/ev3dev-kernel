@@ -392,10 +392,17 @@ static int da8xx_cfgchip_clk_probe(struct platform_device *pdev)
 	return 0;
 }
 
+static const struct of_device_id da8xx_cfgchip_clk_ids[] = {
+	{ .compatible = "ti,da830-cfgchip-clk" },
+	{ }
+};
+MODULE_DEVICE_TABLE(of, da8xx_cfgchip_clk_ids);
+
 static struct platform_driver da8xx_cfgchip_clk_driver = {
 	.probe = da8xx_cfgchip_clk_probe,
 	.driver = {
 		.name = "da8xx-cfgchip-clk",
+		.of_match_table = da8xx_cfgchip_clk_ids,
 	},
 };
 module_platform_driver(da8xx_cfgchip_clk_driver);

@@ -16,6 +16,8 @@
 #include <linux/clk-provider.h>
 #include <linux/err.h>
 #include <linux/io.h>
+#include <linux/of_address.h>
+#include <linux/of.h>
 #include <linux/slab.h>
 
 /* PSC register offsets */
@@ -215,3 +217,47 @@ int davinci_clk_reset_deassert(struct clk *clk)
 	return davinci_psc_clk_reset(psc, false);
 }
 EXPORT_SYMBOL(davinci_clk_reset_deassert);
+
+/**
+ * of_davinci_psc_clk_init - initialize psc clock through DT
+ * @node: device tree node for this clock
+ */
+static void of_davinci_psc_clk_init(struct device_node *node)
+{
+	void __iomem *base;
+	struct device_node *child;
+
+	base = of_iomap(node, 0);
+	if (!base) {
+		pr_err("%s: ioremap failed\n", __func__);
+		return;
+	}
+
+	for_each_available_child_of_node(node, child) {
+		const char *clk_name, *parent_name;
+		struct clk *clk;
+		u32 lpsc, pd;
+
+		of_property_read_string(child, "clock-output-names", &clk_name);
+		of_property_read_u32(child, "local-domain", &lpsc);
+		of_property_read_u32(child, "power-domain", &pd);
+
+		parent_name = of_clk_get_parent_name(child, 0);
+		if (!parent_name) {
+			pr_warn("%s: Parent clock for %s not found\n",
+				__func__, clk_name);
+			continue;
+		}
+
+		clk = davinci_psc_clk_register(clk_name, parent_name, base,
+					       lpsc, pd);
+		if (IS_ERR(clk)) {
+			pr_warn("%s: Failed to register clock %s\n",
+				__func__, clk_name);
+			continue;
+		}
+		of_clk_add_provider(child, of_clk_src_simple_get, clk);
+	}
+}
+
+CLK_OF_DECLARE(davinci_psc_clk, "ti,davinci-psc-clock", of_davinci_psc_clk_init);
