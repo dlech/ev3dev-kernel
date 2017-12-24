@@ -150,11 +150,11 @@ int __init da8xx_register_usb_refclkin(unsigned long rate)
 }
 
 static struct platform_device da8xx_phy_clocks_device = {
-	.name		= "da8xx-cfgchip-clk",
+	.name		= "da8xx-usb-phy-clk",
 	.id		= -1,
 };
 
-int __init da8xx_register_usb_phy_clocks(struct da8xx_cfgchip_clk_data *pdata)
+int __init da8xx_register_usb_phy_clocks(struct da8xx_usb_phy_clk_data *pdata)
 {
 	da8xx_phy_clocks_device.dev.platform_data = pdata;
 	return platform_device_register(&da8xx_phy_clocks_device);

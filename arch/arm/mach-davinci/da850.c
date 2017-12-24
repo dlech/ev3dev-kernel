@@ -61,7 +61,7 @@ static __init void da850_clk_init(void)
 	clk = PLL_CLK("pll0", "ref_clk", pll0);
 	clk_register_clkdev(clk, "pll0", NULL);
 	clk = PLL_AUX_CLK("pll0_aux_clk", "ref_clk", pll0);
-	clk_register_clkdev(clk, "pll0_aux", "da8xx-cfgchip-clk");
+	clk_register_clkdev(clk, "pll0_aux", "da8xx-usb-phy-clk");
 	clk = PLL_DIV_CLK("pll0_sysclk1", "pll0", pll0, 1);
 	clk_register_clkdev(clk, "pll0_sysclk1", NULL);
 	clk = PLL_DIV_CLK("pll0_sysclk2", "pll0", pll0, 2);
@@ -161,7 +161,7 @@ static __init void da850_clk_init(void)
 	clk = PSC_CLK("usb11", "pll0_sysclk4", psc1, DA8XX_LPSC1_USB11, 0);
 	clk_register_clkdev(clk, "usb11", "ohci-da8xx");
 	clk = PSC_CLK("usb20", "pll0_sysclk2", psc1, DA8XX_LPSC1_USB20, 0);
-	clk_register_clkdev(clk, "usb20", "da8xx-cfgchip-clk");
+	clk_register_clkdev(clk, "usb20", "da8xx-usb-phy-clk");
 	clk_register_clkdev(clk, "usb20", "musb-da8xx");
 	clk_register_clkdev(clk, NULL, "cppi41-dmaengine");
 	clk = PSC_CLK("spi0", "pll0_sysclk2", psc0, DA8XX_LPSC0_SPI0, 0);
