@@ -46,158 +46,42 @@
 #define CFGCHIP3_PLL1_MASTER_LOCK	BIT(5)
 #define CFGCHIP0_PLL_MASTER_LOCK	BIT(4)
 
-static int da850_set_armrate(struct davinci_clk *clk, unsigned long rate);
-static int da850_round_armrate(struct davinci_clk *clk, unsigned long rate);
-static int da850_set_pll0rate(struct davinci_clk *clk, unsigned long armrate);
-
-static struct pll_data pll0_data = {
-	.num		= 1,
-	.phys_base	= DA8XX_PLL0_BASE,
-	.flags		= PLL_HAS_PREDIV | PLL_HAS_POSTDIV,
-};
-
-static struct davinci_clk ref_clk = {
-	.name		= "ref_clk",
-	.rate		= DA850_REF_FREQ,
-	.set_rate	= davinci_simple_set_rate,
-};
-
-static struct davinci_clk pll0_clk = {
-	.name		= "pll0",
-	.parent		= &ref_clk,
-	.pll_data	= &pll0_data,
-	.flags		= CLK_PLL,
-	.set_rate	= da850_set_pll0rate,
-};
-
-static struct davinci_clk pll0_aux_clk = {
-	.name		= "pll0_aux_clk",
-	.parent		= &pll0_clk,
-	.flags		= CLK_PLL | PRE_PLL,
-};
-
-static struct davinci_clk pll0_sysclk1 = {
-	.name		= "pll0_sysclk1",
-	.parent		= &pll0_clk,
-	.flags		= CLK_PLL,
-	.div_reg	= PLLDIV1,
-};
-
-static struct davinci_clk pll0_sysclk2 = {
-	.name		= "pll0_sysclk2",
-	.parent		= &pll0_clk,
-	.flags		= CLK_PLL,
-	.div_reg	= PLLDIV2,
-};
-
-static struct davinci_clk pll0_sysclk3 = {
-	.name		= "pll0_sysclk3",
-	.parent		= &pll0_clk,
-	.flags		= CLK_PLL,
-	.div_reg	= PLLDIV3,
-	.set_rate	= davinci_set_sysclk_rate,
-	.maxrate	= 100000000,
-};
-
-static struct davinci_clk pll0_sysclk4 = {
-	.name		= "pll0_sysclk4",
-	.parent		= &pll0_clk,
-	.flags		= CLK_PLL,
-	.div_reg	= PLLDIV4,
-};
-
-static struct davinci_clk pll0_sysclk5 = {
-	.name		= "pll0_sysclk5",
-	.parent		= &pll0_clk,
-	.flags		= CLK_PLL,
-	.div_reg	= PLLDIV5,
-};
-
-static struct davinci_clk pll0_sysclk6 = {
-	.name		= "pll0_sysclk6",
-	.parent		= &pll0_clk,
-	.flags		= CLK_PLL,
-	.div_reg	= PLLDIV6,
-};
-
-static struct davinci_clk pll0_sysclk7 = {
-	.name		= "pll0_sysclk7",
-	.parent		= &pll0_clk,
-	.flags		= CLK_PLL,
-	.div_reg	= PLLDIV7,
-};
-
-static struct pll_data pll1_data = {
-	.num		= 2,
-	.phys_base	= DA850_PLL1_BASE,
-	.flags		= PLL_HAS_POSTDIV,
-};
-
-static struct davinci_clk pll1_clk = {
-	.name		= "pll1",
-	.parent		= &ref_clk,
-	.pll_data	= &pll1_data,
-	.flags		= CLK_PLL,
-};
-
-static struct davinci_clk pll1_aux_clk = {
-	.name		= "pll1_aux_clk",
-	.parent		= &pll1_clk,
-	.flags		= CLK_PLL | PRE_PLL,
-};
-
-static struct davinci_clk pll1_sysclk2 = {
-	.name		= "pll1_sysclk2",
-	.parent		= &pll1_clk,
-	.flags		= CLK_PLL,
-	.div_reg	= PLLDIV2,
-};
-
-static struct davinci_clk pll1_sysclk3 = {
-	.name		= "pll1_sysclk3",
-	.parent		= &pll1_clk,
-	.flags		= CLK_PLL,
-	.div_reg	= PLLDIV3,
-};
-
-#define PSC_CLK davinci_psc_clk_register
-
 static __init void da850_clk_init(void)
 {
-	void __iomem *psc0, *psc1;
+	void __iomem *pll0, *pll1, *psc0, *psc1;
 	struct clk *clk, *pll1_sysclk2_clk;
 
 	psc0 = ioremap(DA8XX_PSC0_BASE, SZ_4K);
 	psc1 = ioremap(DA8XX_PSC1_BASE, SZ_4K);
 
-	clk = davinci_clk_init(&ref_clk);
+	clk = EXT_CLK("ref_clk", DA850_REF_FREQ);
 	clk_register_clkdev(clk, "ref", NULL);
-	clk = davinci_clk_init(&pll0_clk);
+	clk = PLL_CLK("pll0", "ref_clk", pll0);
 	clk_register_clkdev(clk, "pll0", NULL);
-	clk = davinci_clk_init(&pll0_aux_clk);
+	clk = PLL_AUX_CLK("pll0_aux_clk", "ref_clk", pll0);
 	clk_register_clkdev(clk, "pll0_aux", "da8xx-cfgchip-clk");
-	clk = davinci_clk_init(&pll0_sysclk1);
+	clk = PLL_DIV_CLK("pll0_sysclk1", "pll0", pll0, 1);
 	clk_register_clkdev(clk, "pll0_sysclk1", NULL);
-	clk = davinci_clk_init(&pll0_sysclk2);
+	clk = PLL_DIV_CLK("pll0_sysclk2", "pll0", pll0, 2);
 	clk_register_clkdev(clk, "pll0_sysclk2", NULL);
-	clk = davinci_clk_init(&pll0_sysclk3);
+	clk = PLL_DIV_CLK("pll0_sysclk3", "pll0", pll0, 3);
 	clk_register_clkdev(clk, "pll0_sysclk3", NULL);
-	clk = davinci_clk_init(&pll0_sysclk4);
+	clk = PLL_DIV_CLK("pll0_sysclk4", "pll0", pll0, 4);
 	clk_register_clkdev(clk, "pll0_sysclk4", NULL);
-	clk = davinci_clk_init(&pll0_sysclk5);
+	clk = PLL_DIV_CLK("pll0_sysclk5", "pll0", pll0, 5);
 	clk_register_clkdev(clk, "pll0_sysclk5", NULL);
-	clk = davinci_clk_init(&pll0_sysclk6);
+	clk = PLL_DIV_CLK("pll0_sysclk6", "pll0", pll0, 6);
 	clk_register_clkdev(clk, "pll0_sysclk6", NULL);
-	clk = davinci_clk_init(&pll0_sysclk7);
+	clk = PLL_DIV_CLK("pll0_sysclk7", "pll0", pll0, 7);
 	clk_register_clkdev(clk, "pll0_sysclk7", NULL);
-	clk = davinci_clk_init(&pll1_clk);
+	clk = PLL_CLK("pll1", "ref_clk", pll1);
 	clk_register_clkdev(clk, "pll1", NULL);
-	clk = davinci_clk_init(&pll1_aux_clk);
+	clk = PLL_AUX_CLK("pll1_aux_clk", "ref_clk", pll1);
 	clk_register_clkdev(clk, "pll1_aux", NULL);
-	clk = davinci_clk_init(&pll1_sysclk2);
+	clk = PLL_DIV_CLK("pll1_sysclk2", "pll1", pll1, 2);
 	pll1_sysclk2_clk = clk;
 	clk_register_clkdev(clk, "pll1_sysclk2", NULL);
-	clk = davinci_clk_init(&pll1_sysclk3);
+	clk = PLL_DIV_CLK("pll1_sysclk3", "pll1", pll1, 3);
 	clk_register_clkdev(clk, "pll1_sysclk3", NULL);
 	clk = clk_register_mux(NULL, "async3",
 		(const char * const[]){ "pll0_sysclk2", "pll1_sysclk2" }, 2, 0,
