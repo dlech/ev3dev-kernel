@@ -11,13 +11,13 @@
 #include <linux/types.h>
 
 /**
- * da8xx_cfgchip_clk_data - DA8xx CFGCHIP clock platform data
+ * da8xx_usb_phy_clk_data - DA8xx USB PHY clock platform data
  * @usb0_use_refclkin: when true, use USB_REFCLKIN, otherwise use AUXCLK for
  *                     USB 2.0 PHY clock
  * @usb1_use_refclkin: when true, use USB_REFCLKIN, otherwise use USB 2.0 PHY
  *                     PLL for USB 1.1 PHY clock
  */
-struct da8xx_cfgchip_clk_data {
+struct da8xx_usb_phy_clk_data {
 	bool usb0_use_refclkin;
 	bool usb1_use_refclkin;
 };

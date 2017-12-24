@@ -13,6 +13,8 @@
 #include <linux/clk-provider.h>
 #include <linux/err.h>
 #include <linux/io.h>
+#include <linux/of_address.h>
+#include <linux/of.h>
 #include <linux/slab.h>
 
 #define REVID		0x000
@@ -331,3 +333,91 @@ struct clk *davinci_pll_div_clk_register(const char *name,
 
 	return clk;
 }
+
+#ifdef CONFIG_OF
+#define MAX_NAME_SIZE 20
+
+static void of_davinci_pll_init(struct device_node *node, const char *name,
+				u8 num_sysclk)
+{
+	struct device_node *child;
+	const char *parent_name;
+	void __iomem *base;
+	struct clk *clk;
+
+	base = of_iomap(node, 0);
+	if (!base) {
+		pr_err("%s: ioremap failed\n", __func__);
+		return;
+	}
+
+	parent_name = of_clk_get_parent_name(node, 0);
+
+	clk = davinci_pll_clk_register(name, parent_name, base);
+	if (IS_ERR(clk)) {
+		pr_err("%s: failed to register %s (%ld)\n", __func__, name,
+		       PTR_ERR(clk));
+		return;
+	}
+
+	child = of_get_child_by_name(node, "sysclk");
+	if (child && of_device_is_available(child)) {
+		struct clk_onecell_data *clk_data;
+		char child_name[MAX_NAME_SIZE];
+		u32 id;
+
+		clk_data = clk_alloc_onecell_data(num_sysclk + 1);
+		if (!clk_data) {
+			pr_err("%s: out of memory\n", __func__);
+			return;
+		}
+
+		for (id = 1; id <= num_sysclk; id++) {
+			/* Hack to keep DDR PHY clock (pll1_sysclk1) on */
+			if (strcmp(name, "pll1") == 0 && id == 1)
+				continue;
+
+			snprintf(child_name, MAX_NAME_SIZE, "%s_sysclk%d",
+				 name, id);
+
+			clk = davinci_pll_div_clk_register(child_name, name,
+							   base, id);
+			if (IS_ERR(clk))
+				pr_warn("%s: failed to register %s (%ld)\n",
+					__func__, child_name, PTR_ERR(clk));
+			else
+				clk_data->clks[id] = clk;
+		}
+		of_clk_add_provider(child, of_clk_src_onecell_get, clk_data);
+
+	}
+	of_node_put(child);
+
+	child = of_get_child_by_name(node, "auxclk");
+	if (child && of_device_is_available(child)) {
+		char child_name[MAX_NAME_SIZE];
+
+		snprintf(child_name, MAX_NAME_SIZE, "%s_aux_clk", name);
+
+		clk = davinci_pll_aux_clk_register(child_name, parent_name, base);
+		if (IS_ERR(clk))
+			pr_warn("%s: failed to register %s (%ld)\n", __func__,
+				child_name, PTR_ERR(clk));
+		else
+			of_clk_add_provider(child, of_clk_src_simple_get, clk);
+	}
+	of_node_put(child);
+}
+
+static void of_da850_pll0_auxclk_init(struct device_node *node)
+{
+	of_davinci_pll_init(node, "pll0", 7);
+}
+CLK_OF_DECLARE(da850_pll0_auxclk, "ti,da850-pll0", of_da850_pll0_auxclk_init);
+
+static void of_da850_pll1_auxclk_init(struct device_node *node)
+{
+	of_davinci_pll_init(node, "pll1", 3);
+}
+CLK_OF_DECLARE(da850_pll1_auxclk, "ti,da850-pll1", of_da850_pll1_auxclk_init);
+#endif
