@@ -102,7 +102,7 @@ int da8xx_register_usb_phy(void);
 int da8xx_register_usb20(unsigned mA, unsigned potpgt);
 int da8xx_register_usb11(struct da8xx_ohci_root_hub *pdata);
 int da8xx_register_usb_refclkin(unsigned long rate);
-int da8xx_register_usb_phy_clocks(struct da8xx_cfgchip_clk_data *pdata);
+int da8xx_register_usb_phy_clocks(struct da8xx_usb_phy_clk_data *pdata);
 int da850_register_sata_refclk(unsigned long rate);
 int da8xx_register_emac(void);
 int da8xx_register_uio_pruss(void);

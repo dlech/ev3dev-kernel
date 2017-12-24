@@ -16,6 +16,8 @@
 #include <linux/clk-provider.h>
 #include <linux/err.h>
 #include <linux/io.h>
+#include <linux/of_address.h>
+#include <linux/of.h>
 #include <linux/slab.h>
 
 /* PSC register offsets */
@@ -215,3 +217,118 @@ int davinci_clk_reset_deassert(struct clk *clk)
 	return davinci_psc_clk_reset(psc, false);
 }
 EXPORT_SYMBOL(davinci_clk_reset_deassert);
+
+#ifdef CONFIG_OF
+struct davinci_psc_clk_info {
+	const char *name;
+	const char *parent;
+	u32 lpsc;
+	u32 pd;
+	unsigned long flags;
+	bool has_reset;
+};
+
+#define DAVINCI_PSC_ALWAYS_ENABLED	BIT(1) /* never disable this clock */
+#define DAVINCI_PSC_LOCAL_RESET		BIT(2) /* acts as reset provider */
+
+#define PSC(n, p, l, d, f)	\
+{				\
+	.name	= #n,		\
+	.parent	= #p,		\
+	.lpsc	= (l),		\
+	.pd	= (d),		\
+	.flags	= (f),		\
+}
+
+static const struct davinci_psc_clk_info da850_psc0_info[] = {
+	PSC(tpcc0, pll0_sysclk2, 0, 0, DAVINCI_PSC_ALWAYS_ENABLED),
+	PSC(tptc0, pll0_sysclk2, 1, 0, DAVINCI_PSC_ALWAYS_ENABLED),
+	PSC(tptc1, pll0_sysclk2, 2, 0, DAVINCI_PSC_ALWAYS_ENABLED),
+	PSC(aemif, pll0_sysclk3, 3, 0, 0),
+	PSC(spi0, pll0_sysclk2, 4, 0, 0),
+	PSC(mmcsd0, pll0_sysclk2, 5, 0, 0),
+	PSC(aintc, pll0_sysclk4, 6, 0, DAVINCI_PSC_ALWAYS_ENABLED),
+	PSC(arm_rom, pll0_sysclk2, 7, 0, DAVINCI_PSC_ALWAYS_ENABLED),
+	PSC(uart0, pll0_sysclk2, 9, 0, 0),
+	PSC(pruss, pll0_sysclk2, 13, 0, 0),
+	PSC(arm, pll0_sysclk6, 14, 0, DAVINCI_PSC_ALWAYS_ENABLED),
+	PSC(dsp, pll0_sysclk1, 15, 1, DAVINCI_PSC_LOCAL_RESET),
+	{ }
+};
+
+static const struct davinci_psc_clk_info da850_psc1_info[] = {
+	PSC(tpcc1, pll0_sysclk2, 0, 0, DAVINCI_PSC_ALWAYS_ENABLED),
+	PSC(usb0, pll0_sysclk2, 1, 0, 0),
+	PSC(usb1, pll0_sysclk4, 2, 0, 0),
+	PSC(gpio, pll0_sysclk4, 3, 0, 0),
+	PSC(emac, pll0_sysclk4, 5, 0, 0),
+	PSC(emif3, pll0_sysclk5, 6, 0, DAVINCI_PSC_ALWAYS_ENABLED),
+	PSC(mcasp0, async3, 7, 0, 0),
+	PSC(sata, pll0_sysclk2, 8, 0, 0),
+	PSC(vpif, pll0_sysclk2, 9, 0, 0),
+	PSC(spi1, async3, 10, 0, 0),
+	PSC(i2c1, pll0_sysclk4, 11, 0, 0),
+	PSC(uart1, async3, 12, 0, 0),
+	PSC(uart2, async3, 13, 0, 0),
+	PSC(mcbsp0, async3, 14, 0, 0),
+	PSC(mcbsp1, async3, 15, 0, 0),
+	PSC(lcdc, pll0_sysclk2, 16, 0, 0),
+	PSC(ehrpwm, async3, 17, 0, 0),
+	PSC(mmcsd1, pll0_sysclk2, 18, 0, 0),
+	PSC(ecap, async3, 20, 0, 0),
+	PSC(tptc2, pll0_sysclk2, 21, 0, DAVINCI_PSC_ALWAYS_ENABLED),
+	{ }
+};
+
+static void of_davinci_psc_clk_init(struct device_node *node,
+				    const struct davinci_psc_clk_info *info,
+				    u8 num_clks)
+{
+	struct clk_onecell_data *clk_data;
+	void __iomem *base;
+
+	base = of_iomap(node, 0);
+	if (!base) {
+		pr_err("%s: ioremap failed\n", __func__);
+		return;
+	}
+
+	clk_data = clk_alloc_onecell_data(num_clks);
+	if (!clk_data) {
+		pr_err("%s: Out of memory\n", __func__);
+		return;
+	}
+
+	for (; info->name; info++) {
+		struct clk *clk;
+		u32 clk_flags = 0;
+
+		if (info->flags & DAVINCI_PSC_ALWAYS_ENABLED)
+			clk_flags |= CLK_IS_CRITICAL;
+
+		clk = davinci_psc_clk_register(info->name, info->parent, base,
+					info->lpsc, info->pd, clk_flags);
+		if (IS_ERR(clk)) {
+			pr_warn("%s: Failed to register %s:%s (%ld)\n", __func__,
+				node->full_name, info->name, PTR_ERR(clk));
+			continue;
+		}
+
+		clk_data->clks[info->lpsc] = clk;
+	}
+
+	of_clk_add_provider(node, of_clk_src_onecell_get, clk_data);
+}
+
+static void of_da850_psc0_clk_init(struct device_node *node)
+{
+	of_davinci_psc_clk_init(node, da850_psc0_info, 16);
+}
+CLK_OF_DECLARE(da850_psc0_clk, "ti,da850-psc0", of_da850_psc0_clk_init);
+
+static void of_da850_psc1_clk_init(struct device_node *node)
+{
+	of_davinci_psc_clk_init(node, da850_psc1_info, 32);
+}
+CLK_OF_DECLARE(da850_psc1_clk, "ti,da850-psc1", of_da850_psc1_clk_init);
+#endif
