@@ -51,6 +51,8 @@ static __init void da850_clk_init(void)
 	void __iomem *pll0, *pll1, *psc0, *psc1;
 	struct clk *clk, *pll1_sysclk2_clk;
 
+	pll0 = ioremap(DA8XX_PLL0_BASE, SZ_4K);
+	pll1 = ioremap(DA850_PLL1_BASE, SZ_4K);
 	psc0 = ioremap(DA8XX_PSC0_BASE, SZ_4K);
 	psc1 = ioremap(DA8XX_PSC1_BASE, SZ_4K);
 
@@ -90,11 +92,11 @@ static __init void da850_clk_init(void)
 	/* pll1_sysclk2 is not affected by CPU scaling, so use it */
 	clk_set_parent(clk, pll1_sysclk2_clk);
 	clk_register_clkdev(clk, "async3", NULL);
-	clk = clk_register_fixed_factor(NULL, "i2c0", "pll0_aux_clk", 0, 1, 1);
+	clk = FIX_CLK("i2c0", "pll0_aux_clk");
 	clk_register_clkdev(clk, NULL, "i2c_davinci.1");
-	clk = clk_register_fixed_factor(NULL, "timer0", "pll0_aux_clk", 0, 1, 1);
+	clk = FIX_CLK("timer0", "pll0_aux_clk");
 	clk_register_clkdev(clk, "timer0", NULL);
-	clk = clk_register_fixed_factor(NULL, "timer1", "pll0_aux_clk", 0, 1, 1);
+	clk = FIX_CLK("timer1", "pll0_aux_clk");
 	clk_register_clkdev(clk, NULL, "davinci-wdt");
 	clk = PSC_CLK("arm_rom", "pll0_sysclk2", psc0, DA8XX_LPSC0_ARM_RAM_ROM, 0);
 	clk_prepare_enable(clk); /* always on */
@@ -135,7 +137,7 @@ static __init void da850_clk_init(void)
 	clk = PSC_CLK("arm", "pll0_sysclk6", psc0, DA8XX_LPSC0_ARM, 0);
 	clk_prepare_enable(clk); /* always on */
 	clk_register_clkdev(clk, "arm", NULL);
-	clk = clk_register_fixed_factor(NULL, "rmii", "pll0_sysclk7", 0, 1, 1);
+	clk = FIX_CLK("rmii", "pll0_sysclk7");
 	clk_register_clkdev(clk, "rmii", NULL);
 	clk = PSC_CLK("emac", "pll0_sysclk4", psc1, DA8XX_LPSC1_CPGMAC, 0);
 	clk_register_clkdev(clk, NULL, "davinci_emac.1");
@@ -771,88 +773,10 @@ int da850_register_cpufreq(char *async_clk)
 
 	return platform_device_register(&da850_cpufreq_device);
 }
-
-static int da850_round_armrate(struct davinci_clk *clk, unsigned long rate)
-{
-	int ret = 0, diff;
-	unsigned int best = (unsigned int) -1;
-	struct cpufreq_frequency_table *table = cpufreq_info.freq_table;
-	struct cpufreq_frequency_table *pos;
-
-	rate /= 1000; /* convert to kHz */
-
-	cpufreq_for_each_entry(pos, table) {
-		diff = pos->frequency - rate;
-		if (diff < 0)
-			diff = -diff;
-
-		if (diff < best) {
-			best = diff;
-			ret = pos->frequency;
-		}
-	}
-
-	return ret * 1000;
-}
-
-static int da850_set_armrate(struct davinci_clk *clk, unsigned long index)
-{
-	struct davinci_clk *pllclk = &pll0_clk;
-
-	return clk_set_rate(pllclk->hw.clk, index);
-}
-
-static int da850_set_pll0rate(struct davinci_clk *clk, unsigned long rate)
-{
-	struct pll_data *pll = clk->pll_data;
-	struct cpufreq_frequency_table *freq;
-	unsigned int prediv, mult, postdiv;
-	struct da850_opp *opp = NULL;
-	int ret;
-
-	rate /= 1000;
-
-	for (freq = da850_freq_table;
-	     freq->frequency != CPUFREQ_TABLE_END; freq++) {
-		/* rate is in Hz, freq->frequency is in KHz */
-		if (freq->frequency == rate) {
-			opp = (struct da850_opp *)freq->driver_data;
-			break;
-		}
-	}
-
-	if (!opp)
-		return -EINVAL;
-
-	prediv = opp->prediv;
-	mult = opp->mult;
-	postdiv = opp->postdiv;
-
-	ret = davinci_set_pllrate(pll, prediv, mult, postdiv);
-	if (WARN_ON(ret))
-		return ret;
-
-	return 0;
-}
 #else
 int __init da850_register_cpufreq(char *async_clk)
 {
 	return 0;
-}
-
-static int da850_set_armrate(struct davinci_clk *clk, unsigned long rate)
-{
-	return -EINVAL;
-}
-
-static int da850_set_pll0rate(struct davinci_clk *clk, unsigned long armrate)
-{
-	return -EINVAL;
-}
-
-static int da850_round_armrate(struct davinci_clk *clk, unsigned long rate)
-{
-	return clk->rate;
 }
 #endif
 

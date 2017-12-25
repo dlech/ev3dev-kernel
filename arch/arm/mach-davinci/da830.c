@@ -65,11 +65,11 @@ static __init void da830_clk_init(void)
 	clk_register_clkdev(clk, "pll0_sysclk6", NULL);
 	clk = PLL_DIV_CLK("pll0_sysclk7", "pll0", pll0, 7);
 	clk_register_clkdev(clk, "pll0_sysclk7", NULL);
-	clk = clk_register_fixed_factor(NULL, "i2c0", "pll0_aux_clk", 0, 1, 1);
+	clk = FIX_CLK("i2c0", "pll0_aux_clk");
 	clk_register_clkdev(clk, NULL, "i2c_davinci.1");
-	clk = clk_register_fixed_factor(NULL, "timer0", "pll0_aux_clk", 0, 1, 1);
+	clk = FIX_CLK("timer0", "pll0_aux_clk");
 	clk_register_clkdev(clk, "timer0", NULL);
-	clk = clk_register_fixed_factor(NULL, "timer1", "pll0_aux_clk", 0, 1, 1);
+	clk = FIX_CLK("timer1", "pll0_aux_clk");
 	clk_register_clkdev(clk, NULL, "davinci-wdt");
 	clk = PSC_CLK("arm_rom", "pll0_sysclk2", psc0, DA8XX_LPSC0_ARM_RAM_ROM, 0);
 	clk_prepare_enable(clk); /* always enabled */
@@ -153,7 +153,7 @@ static __init void da830_clk_init(void)
 	clk = PSC_CLK("arm", "pll0_sysclk6", psc0, DA8XX_LPSC0_ARM, 0);
 	clk_prepare_enable(clk); /* always enabled */
 	clk_register_clkdev(clk, "arm", NULL);
-	clk = clk_register_fixed_factor(NULL, "rmii", "pll0_sysclk7", 0, 1, 1);
+	clk = FIX_CLK("rmii", "pll0_sysclk7");
 	clk_register_clkdev(clk, "rmii", NULL);
 }
 

@@ -138,7 +138,7 @@ static __init void dm646x_clk_init(unsigned long ref_clk_rate,
 	clk_register_clkdev(clk, "timer0", NULL);
 	clk = PSC_CLK("timer1", "pll1_sysclk3", psc, DM646X_LPSC_TIMER1, 0);
 	clk_register_clkdev(clk, "timer1", NULL);
-	clk = clk_register_fixed_factor(NULL, "timer2", "pll1_sysclk3", 0, 1, 1);
+	clk = FIX_CLK("timer2", "pll1_sysclk3");
 	clk_prepare_enable(clk); /* no LPSC, always enabled; c.f. spruep9a */
 	clk_register_clkdev(clk, NULL, "davinci-wdt");
 	clk = PSC_CLK("ide", "pll1_sysclk4", psc, DAVINCI_LPSC_ATA, 0);

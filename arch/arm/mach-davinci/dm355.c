@@ -94,10 +94,10 @@ static __init void dm355_clk_init(void)
 	clk_register_clkdev(clk, "master", "vpss");
 	clk = PSC_CLK("vpss_slave", "pll1_sysclk4", psc, DAVINCI_LPSC_VPSSSLV, 0);
 	clk_register_clkdev(clk, "slave", "vpss");
-	clk = clk_register_fixed_factor(NULL, "clkout1", "pll1_aux_clk", 0, 1, 1);
+	clk = FIX_CLK("clkout1", "pll1_aux_clk");
 	/* NOTE:  clkout1 can be externally gated by muxing GPIO-18 */
 	clk_register_clkdev(clk, "clkout1", NULL);
-	clk = clk_register_fixed_factor(NULL, "clkout2", "pll1_sysclkbp", 0, 1, 1);
+	clk = FIX_CLK("clkout2", "pll1_sysclkbp");
 	clk_register_clkdev(clk, "clkout2", NULL);
 	clk = PLL_CLK("pll2", "ref_clk", pll2);
 	clk_register_clkdev(clk, "pll2", NULL);
@@ -105,7 +105,7 @@ static __init void dm355_clk_init(void)
 	clk_register_clkdev(clk, "pll2_sysclk1", NULL);
 	clk = PLL_BP_CLK("pll2_sysclkbp", "ref_clk", pll2);
 	clk_register_clkdev(clk, "pll2_sysclkbp", NULL);
-	clk = clk_register_fixed_factor(NULL, "clkout3", "pll2_sysclkbp", 0, 1, 1);
+	clk = FIX_CLK("clkout3", "pll2_sysclkbp");
 	/* NOTE:  clkout3 can be externally gated by muxing GPIO-16 */
 	clk_register_clkdev(clk, "clkout3", NULL);
 	clk = PSC_CLK("arm_clk", "pll1_sysclk1", psc, DAVINCI_LPSC_ARM, 0);
