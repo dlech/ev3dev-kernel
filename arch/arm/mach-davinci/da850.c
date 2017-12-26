@@ -442,7 +442,7 @@ static __init void da850_clk_init(void)
 	clk = davinci_clk_init(&pll0_clk);
 	clk_register_clkdev(clk, "pll0", NULL);
 	clk = davinci_clk_init(&pll0_aux_clk);
-	clk_register_clkdev(clk, "pll0_aux", NULL);
+	clk_register_clkdev(clk, "pll0_aux", "da8xx-cfgchip-clk");
 	clk = davinci_clk_init(&pll0_sysclk1);
 	clk_register_clkdev(clk, "pll0_sysclk1", NULL);
 	clk = davinci_clk_init(&pll0_sysclk2);
@@ -526,6 +526,7 @@ static __init void da850_clk_init(void)
 	clk = davinci_clk_init(&usb11_clk);
 	clk_register_clkdev(clk, "usb11", "ohci-da8xx");
 	clk = davinci_clk_init(&usb20_clk);
+	clk_register_clkdev(clk, "usb20", "da8xx-cfgchip-clk");
 	clk_register_clkdev(clk, "usb20", "musb-da8xx");
 	clk_register_clkdev(clk, NULL, "cppi41-dmaengine");
 	clk = davinci_clk_init(&spi0_clk);
