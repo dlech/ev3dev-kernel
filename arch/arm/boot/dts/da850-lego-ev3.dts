@@ -131,6 +131,15 @@
 		amp-supply = <&amp>;
 	};
 
+	cvdd: regulator0 {
+		compatible = "regulator-fixed";
+		regulator-name = "cvdd";
+		regulator-min-microvolt = <1200000>;
+		regulator-max-microvolt = <1200000>;
+		regulator-always-on;
+		regulator-boot-on;
+	};
+
 	/*
 	 * This is a 5V current limiting regulator that is shared by USB,
 	 * the sensor (input) ports, the motor (output) ports and the A/DC.
@@ -215,6 +224,10 @@
 			mode-loader = <0x5555aaaa>;
 		};
 	};
+};
+
+&cpu {
+	cpu-supply = <&cvdd>;
 };
 
 &pmx_core {
