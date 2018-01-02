@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
- * da8xx-cfgchip-clk - TI DaVinci DA8xx CFGCHIP clocks driver
+ * da8xx-usb-phy-clk - TI DaVinci DA8xx USB PHY clocks driver
  *
  * Copyright (C) 2017 David Lechner <david@lechnology.com>
  *
@@ -24,13 +24,13 @@
 #include <linux/regmap.h>
 
 /**
- * da8xx_cfgchip_clk
+ * da8xx_usb_phy_clk
  * @usb0_hw: The USB 2.0 PHY clock (mux + PLL)
  * @usb1_hw: The USB 1.1 PHY clock (mux)
  * @usb0_clk: The USB 2.0 subsystem PSC clock
  * @regmap: The CFGCHIP syscon regmap
  */
-struct da8xx_cfgchip_clk {
+struct da8xx_usb_phy_clk {
 	struct clk_hw usb0_hw;
 	struct clk_hw usb1_hw;
 	struct clk *usb0_clk;
@@ -55,8 +55,8 @@ enum usb1_phy_clk_parent {
 
 static int usb0_phy_clk_prepare(struct clk_hw *hw)
 {
-	struct da8xx_cfgchip_clk *clk =
-			container_of(hw, struct da8xx_cfgchip_clk, usb0_hw);
+	struct da8xx_usb_phy_clk *clk =
+			container_of(hw, struct da8xx_usb_phy_clk, usb0_hw);
 
 	/* The USB 2.0 PSC clock is only needed temporarily during the USB 2.0
 	 * PHY clock enable, but since clk_prepare() can't be called in an
@@ -67,16 +67,16 @@ static int usb0_phy_clk_prepare(struct clk_hw *hw)
 
 static void usb0_phy_clk_unprepare(struct clk_hw *hw)
 {
-	struct da8xx_cfgchip_clk *clk =
-			container_of(hw, struct da8xx_cfgchip_clk, usb0_hw);
+	struct da8xx_usb_phy_clk *clk =
+			container_of(hw, struct da8xx_usb_phy_clk, usb0_hw);
 
 	clk_unprepare(clk->usb0_clk);
 }
 
 static int usb0_phy_clk_enable(struct clk_hw *hw)
 {
-	struct da8xx_cfgchip_clk *clk =
-			container_of(hw, struct da8xx_cfgchip_clk, usb0_hw);
+	struct da8xx_usb_phy_clk *clk =
+			container_of(hw, struct da8xx_usb_phy_clk, usb0_hw);
 	unsigned int mask, val;
 	int ret;
 
@@ -102,8 +102,8 @@ static int usb0_phy_clk_enable(struct clk_hw *hw)
 
 static void usb0_phy_clk_disable(struct clk_hw *hw)
 {
-	struct da8xx_cfgchip_clk *clk =
-			container_of(hw, struct da8xx_cfgchip_clk, usb0_hw);
+	struct da8xx_usb_phy_clk *clk =
+			container_of(hw, struct da8xx_usb_phy_clk, usb0_hw);
 	unsigned int val;
 
 	val = CFGCHIP2_PHYPWRDN;
@@ -113,8 +113,8 @@ static void usb0_phy_clk_disable(struct clk_hw *hw)
 static unsigned long usb0_phy_clk_recalc_rate(struct clk_hw *hw,
 					      unsigned long parent_rate)
 {
-	struct da8xx_cfgchip_clk *clk =
-			container_of(hw, struct da8xx_cfgchip_clk, usb0_hw);
+	struct da8xx_usb_phy_clk *clk =
+			container_of(hw, struct da8xx_usb_phy_clk, usb0_hw);
 	unsigned int mask, val;
 
 	/* The parent clock rate must be one of the following */
@@ -165,8 +165,8 @@ static long usb0_phy_clk_round_rate(struct clk_hw *hw, unsigned long rate,
 
 static int usb0_phy_clk_set_parent(struct clk_hw *hw, u8 index)
 {
-	struct da8xx_cfgchip_clk *clk =
-			container_of(hw, struct da8xx_cfgchip_clk, usb0_hw);
+	struct da8xx_usb_phy_clk *clk =
+			container_of(hw, struct da8xx_usb_phy_clk, usb0_hw);
 	unsigned int mask, val;
 
 
@@ -190,8 +190,8 @@ static int usb0_phy_clk_set_parent(struct clk_hw *hw, u8 index)
 
 static u8 usb0_phy_clk_get_parent(struct clk_hw *hw)
 {
-	struct da8xx_cfgchip_clk *clk =
-			container_of(hw, struct da8xx_cfgchip_clk, usb0_hw);
+	struct da8xx_usb_phy_clk *clk =
+			container_of(hw, struct da8xx_usb_phy_clk, usb0_hw);
 	unsigned int val;
 
 	regmap_read(clk->regmap, CFGCHIP(2), &val);
@@ -229,8 +229,8 @@ static const struct clk_init_data usb0_phy_clk_init_data = {
 
 static int usb1_phy_clk_set_parent(struct clk_hw *hw, u8 index)
 {
-	struct da8xx_cfgchip_clk *clk =
-			container_of(hw, struct da8xx_cfgchip_clk, usb1_hw);
+	struct da8xx_usb_phy_clk *clk =
+			container_of(hw, struct da8xx_usb_phy_clk, usb1_hw);
 	unsigned int mask, val;
 
 	/* Set the USB 1.1 PHY clock mux based on the parent clock. */
@@ -253,8 +253,8 @@ static int usb1_phy_clk_set_parent(struct clk_hw *hw, u8 index)
 
 static u8 usb1_phy_clk_get_parent(struct clk_hw *hw)
 {
-	struct da8xx_cfgchip_clk *clk =
-			container_of(hw, struct da8xx_cfgchip_clk, usb1_hw);
+	struct da8xx_usb_phy_clk *clk =
+			container_of(hw, struct da8xx_usb_phy_clk, usb1_hw);
 	unsigned int val;
 
 	regmap_read(clk->regmap, CFGCHIP(2), &val);
@@ -282,10 +282,10 @@ static struct clk_init_data usb1_phy_clk_init_data = {
 	.num_parents	= ARRAY_SIZE(usb1_phy_clk_parent_names),
 };
 
-static struct clk *da8xx_cfgchip_clk_src_get(struct of_phandle_args *clkspec,
+static struct clk *da8xx_usb_phy_clk_src_get(struct of_phandle_args *clkspec,
 					     void *data)
 {
-	struct da8xx_cfgchip_clk *clk = data;
+	struct da8xx_usb_phy_clk *clk = data;
 
 	if (clkspec->args_count != 1)
 		return ERR_PTR(-EINVAL);
@@ -302,12 +302,12 @@ static struct clk *da8xx_cfgchip_clk_src_get(struct of_phandle_args *clkspec,
 
 /* --- platform driver --- */
 
-static int da8xx_cfgchip_clk_probe(struct platform_device *pdev)
+static int da8xx_usb_phy_clk_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
-	struct da8xx_cfgchip_clk_data *pdata = dev->platform_data;
+	struct da8xx_usb_phy_clk_data *pdata = dev->platform_data;
 	struct device_node *node = dev->of_node;
-	struct da8xx_cfgchip_clk *phy_clk;
+	struct da8xx_usb_phy_clk *phy_clk;
 	const char *parent_name;
 	struct clk *parent;
 	int ret;
@@ -363,7 +363,7 @@ static int da8xx_cfgchip_clk_probe(struct platform_device *pdev)
 		return ret;
 	}
 
-	clk_hw_register_clkdev(&phy_clk->usb0_hw, NULL, "da8xx-cfgchip-clk");
+	clk_hw_register_clkdev(&phy_clk->usb0_hw, NULL, "da8xx-usb-phy-clk");
 
 	parent_name = pdata->usb1_use_refclkin ? "usb_refclkin" : "usb0_phy_clk";
 	parent = devm_clk_get(dev, parent_name);
@@ -381,7 +381,7 @@ static int da8xx_cfgchip_clk_probe(struct platform_device *pdev)
 	}
 
 	if (node) {
-		of_clk_add_provider(node, da8xx_cfgchip_clk_src_get, phy_clk);
+		of_clk_add_provider(node, da8xx_usb_phy_clk_src_get, phy_clk);
 	} else {
 		clk_hw_register_clkdev(&phy_clk->usb0_hw, "usb20_phy",
 				       "da8xx-usb-phy");
@@ -392,22 +392,22 @@ static int da8xx_cfgchip_clk_probe(struct platform_device *pdev)
 	return 0;
 }
 
-static const struct of_device_id da8xx_cfgchip_clk_ids[] = {
+static const struct of_device_id da8xx_usb_phy_clk_ids[] = {
 	{ .compatible = "ti,da830-cfgchip-clk" },
 	{ }
 };
-MODULE_DEVICE_TABLE(of, da8xx_cfgchip_clk_ids);
+MODULE_DEVICE_TABLE(of, da8xx_usb_phy_clk_ids);
 
-static struct platform_driver da8xx_cfgchip_clk_driver = {
-	.probe = da8xx_cfgchip_clk_probe,
+static struct platform_driver da8xx_usb_phy_clk_driver = {
+	.probe = da8xx_usb_phy_clk_probe,
 	.driver = {
-		.name = "da8xx-cfgchip-clk",
-		.of_match_table = da8xx_cfgchip_clk_ids,
+		.name = "da8xx-usb-phy-clk",
+		.of_match_table = da8xx_usb_phy_clk_ids,
 	},
 };
-module_platform_driver(da8xx_cfgchip_clk_driver);
+module_platform_driver(da8xx_usb_phy_clk_driver);
 
-MODULE_ALIAS("platform:da8xx-cfgchip-clk");
+MODULE_ALIAS("platform:da8xx-usb-phy-clk");
 MODULE_AUTHOR("David Lechner <david@lechnology.com>");
-MODULE_DESCRIPTION("TI DA8xx CFGCHIP clock driver");
+MODULE_DESCRIPTION("TI DA8xx USB PHY clock driver");
 MODULE_LICENSE("GPL v2");

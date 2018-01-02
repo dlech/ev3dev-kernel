@@ -53,7 +53,7 @@ static struct of_dev_auxdata da850_auxdata_lookup[] __initdata = {
 	OF_DEV_AUXDATA("ti,da830-ohci", 0x01e25000, "ohci-da8xx", NULL),
 	OF_DEV_AUXDATA("ti,da830-musb", 0x01e00000, "musb-da8xx", NULL),
 	OF_DEV_AUXDATA("ti,da830-usb-phy", 0x01c1417c, "da8xx-usb-phy", NULL),
-	OF_DEV_AUXDATA("ti,da830-cfgchip-clk", 0x01c1417c, "da8xx-cfgchip-clk", NULL),
+	OF_DEV_AUXDATA("ti,da830-cfgchip-clk", 0x01c1417c, "da8xx-usb-phy-clk", NULL),
 	OF_DEV_AUXDATA("ti,da850-ahci", 0x01e18000, "ahci_da850", NULL),
 	OF_DEV_AUXDATA("ti,da850-vpif", 0x01e17000, "vpif", NULL),
 	OF_DEV_AUXDATA("ti,da850-dsp", 0x11800000, "davinci-rproc.0", NULL),
@@ -62,7 +62,7 @@ static struct of_dev_auxdata da850_auxdata_lookup[] __initdata = {
 
 #ifdef CONFIG_ARCH_DAVINCI_DA850
 
-static struct da8xx_cfgchip_clk_data usb_phy_clk_data = {
+static struct da8xx_usb_phy_clk_data usb_phy_clk_data = {
 	.usb0_use_refclkin = false,
 	.usb1_use_refclkin = false,
 };
@@ -99,7 +99,7 @@ static const char *const da850_boards_compat[] __initconst = {
 
 DT_MACHINE_START(DA850_DT, "Generic DA850/OMAP-L138/AM18x")
 	.map_io		= da850_init,
-	.init_time	= da850_init_time,
+	.init_time	= da850_of_init_time,
 	.init_machine	= da850_init_machine,
 	.dt_compat	= da850_boards_compat,
 	.init_late	= davinci_init_late,

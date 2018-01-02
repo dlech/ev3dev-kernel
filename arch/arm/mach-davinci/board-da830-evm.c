@@ -107,7 +107,7 @@ static irqreturn_t da830_evm_usb_ocic_irq(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-static struct da8xx_cfgchip_clk_data usb_phy_clk_data = {
+static struct da8xx_usb_phy_clk_data usb_phy_clk_data = {
 	.usb0_use_refclkin = false,
 	.usb1_use_refclkin = false,
 };
