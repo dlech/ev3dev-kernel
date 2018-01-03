@@ -333,9 +333,9 @@ static struct clock_event_device clockevent_davinci = {
 };
 
 
-void __init davinci_timer_init(void)
+static int __init of_davinci_timer_init(struct device_node *node)
 {
-	struct clk *timer_clk;
+	struct clk *timer_clk = NULL;
 	struct davinci_soc_info *soc_info = &davinci_soc_info;
 	unsigned int clockevent_id;
 	unsigned int clocksource_id;
@@ -371,7 +371,10 @@ void __init davinci_timer_init(void)
 		}
 	}
 
-	timer_clk = clk_get(NULL, "timer0");
+	if (node)
+		timer_clk = of_clk_get(node, 0);
+	if (IS_ERR_OR_NULL(timer_clk))
+		timer_clk = clk_get(NULL, "timer0");
 	BUG_ON(IS_ERR(timer_clk));
 	clk_prepare_enable(timer_clk);
 
@@ -399,4 +402,12 @@ void __init davinci_timer_init(void)
 
 	for (i=0; i< ARRAY_SIZE(timers); i++)
 		timer32_config(&timers[i]);
+
+	return 0;
+}
+TIMER_OF_DECLARE(davinci_timer, "ti,davinci-timer", of_davinci_timer_init);
+
+void __init davinci_timer_init(void)
+{
+	of_davinci_timer_init(NULL);
 }
