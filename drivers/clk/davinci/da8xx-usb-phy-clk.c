@@ -14,6 +14,7 @@
 #include <linux/clk-provider.h>
 #include <linux/clk.h>
 #include <linux/mfd/da8xx-cfgchip.h>
+#include <linux/mfd/syscon.h>
 #include <linux/of.h>
 #include <linux/regmap.h>
 #include <linux/slab.h>
@@ -313,3 +314,86 @@ struct clk* da8xx_usb1_phy_clk_register(const char *name,
 
 	return clk_register(NULL, &clk->hw);
 }
+
+#ifdef CONFIG_OF
+static void da8xx_usb0_phy_clk_init(struct device_node *np)
+{
+	struct of_phandle_args clkspec;
+	const char *name = np->name;
+	const char *parent0, *parent1;
+	struct regmap *regmap;
+	struct clk *usb0_psc_clk, *clk;
+	int ret;
+
+	of_property_read_string(np, "clock-output-names", &name);
+	parent0 = of_clk_get_parent_name(np, 0);
+	parent1 = of_clk_get_parent_name(np, 1);
+	
+	regmap = syscon_node_to_regmap(of_get_parent(np));
+	if (IS_ERR(regmap)) {
+		pr_err("%s: No regmap for syscon parent of %s (%ld)\n",
+		       __func__, np->full_name, PTR_ERR(regmap));
+		return;
+	}
+
+	ret = of_parse_phandle_with_args(np, "usb0-psc-clocks", "#clock-cells",
+					 0, &clkspec);
+	if (ret < 0) {
+		pr_err("%s: Could not get usb0-psc-clocks property for %s (%d)\n",
+		       __func__, np->full_name, ret);
+		return;
+	}
+
+	usb0_psc_clk = of_clk_get_from_provider(&clkspec);
+	if (IS_ERR(usb0_psc_clk)) {
+		pr_err("%s: Could not get usb0-psc-clocks for %s (%ld)\n",
+		       __func__, np->full_name, PTR_ERR(usb0_psc_clk));
+		return;
+	}
+
+	clk = da8xx_usb0_phy_clk_register(name, parent0, parent1, usb0_psc_clk,
+					  regmap);
+	if (IS_ERR(clk)) {
+		pr_err("%s: Failed to register clock %s (%ld)\n",
+		       __func__, np->full_name, PTR_ERR(clk));
+		clk_put(usb0_psc_clk);
+		return;
+	}
+
+	of_clk_add_provider(np, of_clk_src_simple_get, clk);
+}
+
+CLK_OF_DECLARE(da8xx_usb0_phy_clk, "ti,da830-usb0-phy-clock",
+	       da8xx_usb0_phy_clk_init);
+
+static void da8xx_usb1_phy_clk_init(struct device_node *np)
+{
+	const char *name = np->name;
+	const char *parent0, *parent1;
+	struct regmap *regmap;
+	struct clk *clk;
+
+	of_property_read_string(np, "clock-output-names", &name);
+	parent0 = of_clk_get_parent_name(np, 0);
+	parent1 = of_clk_get_parent_name(np, 1);
+	
+	regmap = syscon_node_to_regmap(of_get_parent(np));
+	if (IS_ERR(regmap)) {
+		pr_err("%s: No regmap for syscon parent of %s (%ld)\n",
+		       __func__, np->full_name, PTR_ERR(regmap));
+		return;
+	}
+
+	clk = da8xx_usb1_phy_clk_register(name, parent0, parent1, regmap);
+	if (IS_ERR(clk)) {
+		pr_err("%s: Failed to register clock %s (%ld)\n",
+		       __func__, np->full_name, PTR_ERR(clk));
+		return;
+	}
+
+	of_clk_add_provider(np, of_clk_src_simple_get, clk);
+}
+
+CLK_OF_DECLARE(da8xx_usb1_phy_clk, "ti,da830-usb1-phy-clock",
+	       da8xx_usb1_phy_clk_init);
+#endif

@@ -213,6 +213,10 @@
 	};
 };
 
+&cpu {
+	cpu-supply = <&cvdd>;
+};
+
 &pmx_core {
 	status = "okay";
 

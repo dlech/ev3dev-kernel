@@ -62,18 +62,6 @@ static struct of_dev_auxdata da850_auxdata_lookup[] __initdata = {
 
 static void __init da850_init_machine(void)
 {
-	int ret;
-
-	ret = da8xx_register_usb20_phy_clock();
-	if (ret)
-		pr_warn("%s: USB 2.0 PHY clock registration failed: %d\n",
-			__func__, ret);
-
-	ret = da8xx_register_usb11_phy_clock();
-	if (ret)
-		pr_warn("%s: USB 1.1 PHY clock registration failed: %d\n",
-			__func__, ret);
-
 	of_platform_default_populate(NULL, da850_auxdata_lookup, NULL);
 	davinci_pm_init();
 	pdata_quirks_init();
