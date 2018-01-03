@@ -10,6 +10,8 @@
 #include <linux/clk-provider.h>
 #include <linux/types.h>
 
+struct regmap;
+
 struct clk *davinci_pll_clk_register(const char *name,
 				     const char *parent_name,
 				     void __iomem *base);
@@ -32,6 +34,15 @@ struct clk *davinci_psc_clk_register(const char *name,
 				     const char *parent_name,
 				     void __iomem *base,
 				     u32 lpsc, u32 pd);
+struct clk* da8xx_usb0_phy_clk_register(const char *name,
+					const char *parent0,
+					const char *parent1,
+					struct clk *usb0_psc_clk,
+					struct regmap *regmap);
+struct clk* da8xx_usb1_phy_clk_register(const char *name,
+					const char *parent0,
+					const char *parent1,
+					struct regmap *regmap);
 
 /* convience macros for board declaration files */
 #define EXT_CLK(n, r) clk_register_fixed_rate(NULL, (n), NULL, 0, (r))
