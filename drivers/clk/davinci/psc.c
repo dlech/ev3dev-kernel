@@ -144,11 +144,12 @@ static const struct clk_ops davinci_psc_clk_ops = {
  * @base: memory mapped register for the PSC
  * @lpsc: local PSC number
  * @pd: power domain
+ * @flags: clock flags
  */
 struct clk *davinci_psc_clk_register(const char *name,
 				     const char *parent_name,
 				     void __iomem *base,
-				     u32 lpsc, u32 pd)
+				     u32 lpsc, u32 pd, u32 flags)
 {
 	struct clk_init_data init;
 	struct davinci_psc_clk *psc;
@@ -160,9 +161,9 @@ struct clk *davinci_psc_clk_register(const char *name,
 
 	init.name = name;
 	init.ops = &davinci_psc_clk_ops;
-	init.flags = 0;
 	init.parent_names = (parent_name ? &parent_name : NULL);
 	init.num_parents = (parent_name ? 1 : 0);
+	init.flags = flags;
 
 	psc->base = base;
 	psc->hw.init = &init;
