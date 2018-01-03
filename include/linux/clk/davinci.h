@@ -33,7 +33,7 @@ struct clk *davinci_pll_div_clk_register(const char *name,
 struct clk *davinci_psc_clk_register(const char *name,
 				     const char *parent_name,
 				     void __iomem *base,
-				     u32 lpsc, u32 pd);
+				     u32 lpsc, u32 pd, u32 flags);
 struct clk* da8xx_usb0_phy_clk_register(const char *name,
 					const char *parent0,
 					const char *parent1,
