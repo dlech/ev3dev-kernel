@@ -11,7 +11,6 @@
 #include <linux/of_irq.h>
 #include <linux/of_platform.h>
 #include <linux/irqdomain.h>
-#include <linux/platform_data/davinci_clk.h>
 #include <linux/platform_data/ti-aemif.h>
 
 #include <asm/mach/arch.h>
@@ -53,7 +52,6 @@ static struct of_dev_auxdata da850_auxdata_lookup[] __initdata = {
 	OF_DEV_AUXDATA("ti,da830-ohci", 0x01e25000, "ohci-da8xx", NULL),
 	OF_DEV_AUXDATA("ti,da830-musb", 0x01e00000, "musb-da8xx", NULL),
 	OF_DEV_AUXDATA("ti,da830-usb-phy", 0x01c1417c, "da8xx-usb-phy", NULL),
-	OF_DEV_AUXDATA("ti,da830-cfgchip-clk", 0x01c1417c, "da8xx-usb-phy-clk", NULL),
 	OF_DEV_AUXDATA("ti,da850-ahci", 0x01e18000, "ahci_da850", NULL),
 	OF_DEV_AUXDATA("ti,da850-vpif", 0x01e17000, "vpif", NULL),
 	OF_DEV_AUXDATA("ti,da850-dsp", 0x11800000, "davinci-rproc.0", NULL),
@@ -62,26 +60,18 @@ static struct of_dev_auxdata da850_auxdata_lookup[] __initdata = {
 
 #ifdef CONFIG_ARCH_DAVINCI_DA850
 
-static struct da8xx_usb_phy_clk_data usb_phy_clk_data = {
-	.usb0_use_refclkin = false,
-	.usb1_use_refclkin = false,
-};
-
 static void __init da850_init_machine(void)
 {
-	/* All existing boards use 100MHz SATA refclkpn */
-	static const unsigned long sata_refclkpn = 100 * 1000 * 1000;
-
 	int ret;
 
-	ret = da8xx_register_usb_phy_clocks(&usb_phy_clk_data);
+	ret = da8xx_register_usb20_phy_clock();
 	if (ret)
-		pr_warn("%s: registering USB PHY clocks failed: %d",
+		pr_warn("%s: USB 2.0 PHY clock registration failed: %d\n",
 			__func__, ret);
 
-	ret = da850_register_sata_refclk(sata_refclkpn);
+	ret = da8xx_register_usb11_phy_clock();
 	if (ret)
-		pr_warn("%s: registering SATA REFCLK failed: %d",
+		pr_warn("%s: USB 1.1 PHY clock registration failed: %d\n",
 			__func__, ret);
 
 	of_platform_default_populate(NULL, da850_auxdata_lookup, NULL);

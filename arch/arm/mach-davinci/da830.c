@@ -128,7 +128,7 @@ static __init void da830_clk_init(void)
 	clk = PSC_CLK("mcasp2", "pll0_sysclk2", psc1, DA830_LPSC1_McASP2, 0);
 	clk_register_clkdev(clk, NULL, "davinci-mcasp.2");
 	clk = PSC_CLK("usb20", "pll0_sysclk2", psc1, DA8XX_LPSC1_USB20, 0);
-	clk_register_clkdev(clk, "usb20", "musb-da8xx");
+	clk_register_clkdev(clk, NULL, "musb-da8xx");
 	clk_register_clkdev(clk, NULL, "cppi41-dmaengine");
 	clk = PSC_CLK("aemif", "pll0_sysclk3", psc0, DA8XX_LPSC0_EMIF25, 0);
 	clk_prepare_enable(clk); /* always enabled */
@@ -147,7 +147,7 @@ static __init void da830_clk_init(void)
 	clk = PSC_CLK("i2c1", "pll0_sysclk4", psc1, DA8XX_LPSC1_I2C, 0);
 	clk_register_clkdev(clk, NULL, "i2c_davinci.2");
 	clk = PSC_CLK("usb11", "pll0_sysclk4", psc1, DA8XX_LPSC1_USB11, 0);
-	clk_register_clkdev(clk, "usb11", "ohci-da8xx");
+	clk_register_clkdev(clk, NULL, "ohci-da8xx");
 	clk = PSC_CLK("emif3", "pll0_sysclk5", psc1, DA8XX_LPSC1_EMIF3C, 0);
 	clk_prepare_enable(clk); /* always enabled */
 	clk_register_clkdev(clk, "emif3", NULL);

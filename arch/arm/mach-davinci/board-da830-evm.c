@@ -23,7 +23,6 @@
 #include <linux/mtd/partitions.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
-#include <linux/platform_data/davinci_clk.h>
 #include <linux/platform_data/gpio-davinci.h>
 #include <linux/platform_data/mtd-davinci.h>
 #include <linux/platform_data/mtd-davinci-aemif.h>
@@ -107,19 +106,18 @@ static irqreturn_t da830_evm_usb_ocic_irq(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-static struct da8xx_usb_phy_clk_data usb_phy_clk_data = {
-	.usb0_use_refclkin = false,
-	.usb1_use_refclkin = false,
-};
-
 static __init void da830_evm_usb_init(void)
 {
 	int ret;
 
-	/* USB_REFCLKIN is not used. */
-	ret = da8xx_register_usb_phy_clocks(&usb_phy_clk_data);
+	ret = da8xx_register_usb20_phy_clock();
 	if (ret)
-		pr_warn("%s: registering USB PHY clocks failed: %d",
+		pr_warn("%s: USB 2.0 PHY clock registration failed: %d\n",
+			__func__, ret);
+
+	ret = da8xx_register_usb11_phy_clock();
+	if (ret)
+		pr_warn("%s: USB 1.1 PHY clock registration failed: %d\n",
 			__func__, ret);
 
 	ret = da8xx_register_usb_phy();
