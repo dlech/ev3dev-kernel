@@ -23,7 +23,6 @@
 #include <mach/serial.h>
 #include <mach/pm.h>
 #include <linux/platform_data/edma.h>
-#include <linux/platform_data/davinci_clk.h>
 #include <linux/platform_data/i2c-davinci.h>
 #include <linux/platform_data/mmc-davinci.h>
 #include <linux/platform_data/usb-davinci.h>
@@ -92,17 +91,18 @@ void da830_init_time(void);
 
 void da850_init(void);
 void da850_init_time(void);
+void da850_of_init_time(void);
 
 int da830_register_edma(struct edma_rsv_info *rsv);
 int da850_register_edma(struct edma_rsv_info *rsv[2]);
 int da8xx_register_i2c(int instance, struct davinci_i2c_platform_data *pdata);
 int da8xx_register_spi_bus(int instance, unsigned num_chipselect);
 int da8xx_register_watchdog(void);
+int da8xx_register_usb20_phy_clock(void);
+int da8xx_register_usb11_phy_clock(void);
 int da8xx_register_usb_phy(void);
 int da8xx_register_usb20(unsigned mA, unsigned potpgt);
 int da8xx_register_usb11(struct da8xx_ohci_root_hub *pdata);
-int da8xx_register_usb_refclkin(unsigned long rate);
-int da8xx_register_usb_phy_clocks(struct da8xx_usb_phy_clk_data *pdata);
 int da850_register_sata_refclk(unsigned long rate);
 int da8xx_register_emac(void);
 int da8xx_register_uio_pruss(void);
