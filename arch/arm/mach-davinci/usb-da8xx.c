@@ -4,13 +4,13 @@
  */
 #include <linux/clk-provider.h>
 #include <linux/clk.h>
+#include <linux/clk/davinci.h>
 #include <linux/clkdev.h>
 #include <linux/delay.h>
 #include <linux/dma-mapping.h>
 #include <linux/init.h>
-#include <linux/mfd/da8xx-cfgchip.h>
+#include <linux/mfd/syscon.h>
 #include <linux/phy/phy.h>
-#include <linux/platform_data/davinci_clk.h>
 #include <linux/platform_data/usb-davinci.h>
 #include <linux/platform_device.h>
 #include <linux/usb/musb.h>
@@ -53,7 +53,6 @@ static struct musb_hdrc_config musb_config = {
 static struct musb_hdrc_platform_data usb_data = {
 	/* OTG requires a Mini-AB connector */
 	.mode           = MUSB_OTG,
-	.clock		= "usb20",
 	.config		= &musb_config,
 };
 
@@ -129,33 +128,46 @@ int __init da8xx_register_usb11(struct da8xx_ohci_root_hub *pdata)
 	return platform_device_register(&da8xx_usb11_device);
 }
 
-/**
- * da8xx_register_usb_refclkin - register USB_REFCLKIN clock
- *
- * @rate: The clock rate in Hz
- *
- * This clock is only needed if the board provides an external USB_REFCLKIN
- * signal, in which case it will be used as the parent of usb20_phy_clk and/or
- * usb11_phy_clk.
- */
-int __init da8xx_register_usb_refclkin(unsigned long rate)
+int __init da8xx_register_usb20_phy_clock(void)
 {
+	struct regmap *cfgchip;
+	struct clk *usb0_psc_clk, *clk;
+
+	cfgchip = syscon_regmap_lookup_by_compatible("ti,da830-cfgchip");
+	if (IS_ERR(cfgchip))
+		cfgchip = syscon_regmap_lookup_by_pdevname("syscon");
+	if (IS_ERR(cfgchip))
+		return PTR_ERR(cfgchip);
+
+	usb0_psc_clk = clk_get(NULL, "usb20_psc_clk");
+	if (IS_ERR(usb0_psc_clk))
+		return PTR_ERR(usb0_psc_clk);
+
+	clk = da8xx_usb0_phy_clk_register("usb0_phy_clk", "usb_refclkin",
+					"pll0_aux_clk", usb0_psc_clk, cfgchip);
+	if (IS_ERR(clk)) {
+		clk_put(usb0_psc_clk);
+		return PTR_ERR(clk);
+	}
+
+	return clk_register_clkdev(clk, "usb20_phy", "da8xx-usb-phy");
+}
+
+int __init da8xx_register_usb11_phy_clock(void)
+{
+	struct regmap *cfgchip;
 	struct clk *clk;
 
-	clk = clk_register_fixed_rate(NULL, "usb_refclkin", NULL, 0, rate);
+	cfgchip = syscon_regmap_lookup_by_compatible("ti,da830-cfgchip");
+	if (IS_ERR(cfgchip))
+		cfgchip = syscon_regmap_lookup_by_pdevname("syscon");
+	if (IS_ERR(cfgchip))
+		return PTR_ERR(cfgchip);
+
+	clk = da8xx_usb1_phy_clk_register("usb1_phy_clk", "usb0_phy_clk",
+					  "usb_refclkin", cfgchip);
 	if (IS_ERR(clk))
 		return PTR_ERR(clk);
 
-	return clk_register_clkdev(clk, "usb_refclkin", NULL);
-}
-
-static struct platform_device da8xx_phy_clocks_device = {
-	.name		= "da8xx-usb-phy-clk",
-	.id		= -1,
-};
-
-int __init da8xx_register_usb_phy_clocks(struct da8xx_usb_phy_clk_data *pdata)
-{
-	da8xx_phy_clocks_device.dev.platform_data = pdata;
-	return platform_device_register(&da8xx_phy_clocks_device);
+	return clk_register_clkdev(clk, "usb11_phy", "da8xx-usb-phy");
 }
