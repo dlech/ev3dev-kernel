@@ -98,7 +98,7 @@ static int clk_mt2701_mm_probe(struct platform_device *pdev)
 	int r;
 	struct device_node *node = pdev->dev.of_node;
 
-	clk_data = mtk_alloc_clk_data(CLK_MM_NR);
+	clk_data = clk_alloc_onecell_data(CLK_MM_NR);
 
 	mtk_clk_register_gates(node, mm_clks, ARRAY_SIZE(mm_clks),
 						clk_data);

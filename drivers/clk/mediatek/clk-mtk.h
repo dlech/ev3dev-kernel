@@ -189,8 +189,6 @@ void mtk_clk_register_dividers(const struct mtk_clk_divider *mcds,
 			int num, void __iomem *base, spinlock_t *lock,
 				struct clk_onecell_data *clk_data);
 
-struct clk_onecell_data *mtk_alloc_clk_data(unsigned int clk_num);
-
 #define HAVE_RST_BAR	BIT(0)
 #define PLL_AO		BIT(1)
 

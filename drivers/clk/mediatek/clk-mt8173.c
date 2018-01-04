@@ -941,7 +941,7 @@ static void __init mtk_topckgen_init(struct device_node *node)
 		return;
 	}
 
-	mt8173_top_clk_data = clk_data = mtk_alloc_clk_data(CLK_TOP_NR_CLK);
+	mt8173_top_clk_data = clk_data = clk_alloc_onecell_data(CLK_TOP_NR_CLK);
 
 	mtk_clk_register_fixed_clks(fixed_clks, ARRAY_SIZE(fixed_clks), clk_data);
 	mtk_clk_register_factors(top_divs, ARRAY_SIZE(top_divs), clk_data);
@@ -962,7 +962,7 @@ static void __init mtk_infrasys_init(struct device_node *node)
 	struct clk_onecell_data *clk_data;
 	int r;
 
-	clk_data = mtk_alloc_clk_data(CLK_INFRA_NR_CLK);
+	clk_data = clk_alloc_onecell_data(CLK_INFRA_NR_CLK);
 
 	mtk_clk_register_gates(node, infra_clks, ARRAY_SIZE(infra_clks),
 						clk_data);
@@ -992,7 +992,7 @@ static void __init mtk_pericfg_init(struct device_node *node)
 		return;
 	}
 
-	clk_data = mtk_alloc_clk_data(CLK_PERI_NR_CLK);
+	clk_data = clk_alloc_onecell_data(CLK_PERI_NR_CLK);
 
 	mtk_clk_register_gates(node, peri_gates, ARRAY_SIZE(peri_gates),
 						clk_data);
@@ -1096,7 +1096,7 @@ static void __init mtk_apmixedsys_init(struct device_node *node)
 		return;
 	}
 
-	mt8173_pll_clk_data = clk_data = mtk_alloc_clk_data(CLK_APMIXED_NR_CLK);
+	mt8173_pll_clk_data = clk_data = clk_alloc_onecell_data(CLK_APMIXED_NR_CLK);
 	if (!clk_data) {
 		iounmap(base);
 		return;
@@ -1139,7 +1139,7 @@ static void __init mtk_imgsys_init(struct device_node *node)
 	struct clk_onecell_data *clk_data;
 	int r;
 
-	clk_data = mtk_alloc_clk_data(CLK_IMG_NR_CLK);
+	clk_data = clk_alloc_onecell_data(CLK_IMG_NR_CLK);
 
 	mtk_clk_register_gates(node, img_clks, ARRAY_SIZE(img_clks),
 						clk_data);
@@ -1157,7 +1157,7 @@ static void __init mtk_mmsys_init(struct device_node *node)
 	struct clk_onecell_data *clk_data;
 	int r;
 
-	clk_data = mtk_alloc_clk_data(CLK_MM_NR_CLK);
+	clk_data = clk_alloc_onecell_data(CLK_MM_NR_CLK);
 
 	mtk_clk_register_gates(node, mm_clks, ARRAY_SIZE(mm_clks),
 						clk_data);
@@ -1174,7 +1174,7 @@ static void __init mtk_vdecsys_init(struct device_node *node)
 	struct clk_onecell_data *clk_data;
 	int r;
 
-	clk_data = mtk_alloc_clk_data(CLK_VDEC_NR_CLK);
+	clk_data = clk_alloc_onecell_data(CLK_VDEC_NR_CLK);
 
 	mtk_clk_register_gates(node, vdec_clks, ARRAY_SIZE(vdec_clks),
 						clk_data);
@@ -1191,7 +1191,7 @@ static void __init mtk_vencsys_init(struct device_node *node)
 	struct clk_onecell_data *clk_data;
 	int r;
 
-	clk_data = mtk_alloc_clk_data(CLK_VENC_NR_CLK);
+	clk_data = clk_alloc_onecell_data(CLK_VENC_NR_CLK);
 
 	mtk_clk_register_gates(node, venc_clks, ARRAY_SIZE(venc_clks),
 						clk_data);
@@ -1208,7 +1208,7 @@ static void __init mtk_vencltsys_init(struct device_node *node)
 	struct clk_onecell_data *clk_data;
 	int r;
 
-	clk_data = mtk_alloc_clk_data(CLK_VENCLT_NR_CLK);
+	clk_data = clk_alloc_onecell_data(CLK_VENCLT_NR_CLK);
 
 	mtk_clk_register_gates(node, venclt_clks, ARRAY_SIZE(venclt_clks),
 						clk_data);
