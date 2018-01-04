@@ -79,7 +79,7 @@ static int clk_mt7622_ethsys_init(struct platform_device *pdev)
 	struct device_node *node = pdev->dev.of_node;
 	int r;
 
-	clk_data = mtk_alloc_clk_data(CLK_ETH_NR_CLK);
+	clk_data = clk_alloc_onecell_data(CLK_ETH_NR_CLK);
 
 	mtk_clk_register_gates(node, eth_clks, ARRAY_SIZE(eth_clks),
 			       clk_data);
@@ -101,7 +101,7 @@ static int clk_mt7622_sgmiisys_init(struct platform_device *pdev)
 	struct device_node *node = pdev->dev.of_node;
 	int r;
 
-	clk_data = mtk_alloc_clk_data(CLK_SGMII_NR_CLK);
+	clk_data = clk_alloc_onecell_data(CLK_SGMII_NR_CLK);
 
 	mtk_clk_register_gates(node, sgmii_clks, ARRAY_SIZE(sgmii_clks),
 			       clk_data);

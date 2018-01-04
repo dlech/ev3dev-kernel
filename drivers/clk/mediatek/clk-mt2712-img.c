@@ -50,7 +50,7 @@ static int clk_mt2712_img_probe(struct platform_device *pdev)
 	int r;
 	struct device_node *node = pdev->dev.of_node;
 
-	clk_data = mtk_alloc_clk_data(CLK_IMG_NR_CLK);
+	clk_data = clk_alloc_onecell_data(CLK_IMG_NR_CLK);
 
 	mtk_clk_register_gates(node, img_clks, ARRAY_SIZE(img_clks),
 			clk_data);

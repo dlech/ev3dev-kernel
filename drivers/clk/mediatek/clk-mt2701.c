@@ -688,7 +688,7 @@ static int mtk_topckgen_init(struct platform_device *pdev)
 	if (IS_ERR(base))
 		return PTR_ERR(base);
 
-	clk_data = mtk_alloc_clk_data(CLK_TOP_NR);
+	clk_data = clk_alloc_onecell_data(CLK_TOP_NR);
 
 	mtk_clk_register_fixed_clks(top_fixed_clks, ARRAY_SIZE(top_fixed_clks),
 								clk_data);
@@ -755,7 +755,7 @@ static void __init mtk_infrasys_init_early(struct device_node *node)
 	int r, i;
 
 	if (!infra_clk_data) {
-		infra_clk_data = mtk_alloc_clk_data(CLK_INFRA_NR);
+		infra_clk_data = clk_alloc_onecell_data(CLK_INFRA_NR);
 
 		for (i = 0; i < CLK_INFRA_NR; i++)
 			infra_clk_data->clks[i] = ERR_PTR(-EPROBE_DEFER);
@@ -781,7 +781,7 @@ static int mtk_infrasys_init(struct platform_device *pdev)
 	struct device_node *node = pdev->dev.of_node;
 
 	if (!infra_clk_data) {
-		infra_clk_data = mtk_alloc_clk_data(CLK_INFRA_NR);
+		infra_clk_data = clk_alloc_onecell_data(CLK_INFRA_NR);
 	} else {
 		for (i = 0; i < CLK_INFRA_NR; i++) {
 			if (infra_clk_data->clks[i] == ERR_PTR(-EPROBE_DEFER))
@@ -909,7 +909,7 @@ static int mtk_pericfg_init(struct platform_device *pdev)
 	if (IS_ERR(base))
 		return PTR_ERR(base);
 
-	clk_data = mtk_alloc_clk_data(CLK_PERI_NR);
+	clk_data = clk_alloc_onecell_data(CLK_PERI_NR);
 
 	mtk_clk_register_gates(node, peri_clks, ARRAY_SIZE(peri_clks),
 						clk_data);
@@ -981,7 +981,7 @@ static int mtk_apmixedsys_init(struct platform_device *pdev)
 	struct clk_onecell_data *clk_data;
 	struct device_node *node = pdev->dev.of_node;
 
-	clk_data = mtk_alloc_clk_data(CLK_APMIXED_NR);
+	clk_data = clk_alloc_onecell_data(CLK_APMIXED_NR);
 	if (!clk_data)
 		return -ENOMEM;
 

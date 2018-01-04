@@ -1226,7 +1226,7 @@ static int clk_mt2712_apmixed_probe(struct platform_device *pdev)
 	int r;
 	struct device_node *node = pdev->dev.of_node;
 
-	clk_data = mtk_alloc_clk_data(CLK_APMIXED_NR_CLK);
+	clk_data = clk_alloc_onecell_data(CLK_APMIXED_NR_CLK);
 
 	mtk_clk_register_plls(node, plls, ARRAY_SIZE(plls), clk_data);
 
@@ -1246,7 +1246,7 @@ static void clk_mt2712_top_init_early(struct device_node *node)
 	int r, i;
 
 	if (!top_clk_data) {
-		top_clk_data = mtk_alloc_clk_data(CLK_TOP_NR_CLK);
+		top_clk_data = clk_alloc_onecell_data(CLK_TOP_NR_CLK);
 
 		for (i = 0; i < CLK_TOP_NR_CLK; i++)
 			top_clk_data->clks[i] = ERR_PTR(-EPROBE_DEFER);
@@ -1278,7 +1278,7 @@ static int clk_mt2712_top_probe(struct platform_device *pdev)
 	}
 
 	if (!top_clk_data) {
-		top_clk_data = mtk_alloc_clk_data(CLK_TOP_NR_CLK);
+		top_clk_data = clk_alloc_onecell_data(CLK_TOP_NR_CLK);
 	} else {
 		for (i = 0; i < CLK_TOP_NR_CLK; i++) {
 			if (top_clk_data->clks[i] == ERR_PTR(-EPROBE_DEFER))
@@ -1313,7 +1313,7 @@ static int clk_mt2712_infra_probe(struct platform_device *pdev)
 	int r;
 	struct device_node *node = pdev->dev.of_node;
 
-	clk_data = mtk_alloc_clk_data(CLK_INFRA_NR_CLK);
+	clk_data = clk_alloc_onecell_data(CLK_INFRA_NR_CLK);
 
 	mtk_clk_register_gates(node, infra_clks, ARRAY_SIZE(infra_clks),
 			clk_data);
@@ -1335,7 +1335,7 @@ static int clk_mt2712_peri_probe(struct platform_device *pdev)
 	int r;
 	struct device_node *node = pdev->dev.of_node;
 
-	clk_data = mtk_alloc_clk_data(CLK_PERI_NR_CLK);
+	clk_data = clk_alloc_onecell_data(CLK_PERI_NR_CLK);
 
 	mtk_clk_register_gates(node, peri_clks, ARRAY_SIZE(peri_clks),
 			clk_data);
@@ -1365,7 +1365,7 @@ static int clk_mt2712_mcu_probe(struct platform_device *pdev)
 		return PTR_ERR(base);
 	}
 
-	clk_data = mtk_alloc_clk_data(CLK_MCU_NR_CLK);
+	clk_data = clk_alloc_onecell_data(CLK_MCU_NR_CLK);
 
 	mtk_clk_register_composites(mcu_muxes, ARRAY_SIZE(mcu_muxes), base,
 			&mt2712_clk_lock, clk_data);
