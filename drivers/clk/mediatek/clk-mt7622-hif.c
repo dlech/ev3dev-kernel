@@ -90,7 +90,7 @@ static int clk_mt7622_ssusbsys_init(struct platform_device *pdev)
 	struct device_node *node = pdev->dev.of_node;
 	int r;
 
-	clk_data = mtk_alloc_clk_data(CLK_SSUSB_NR_CLK);
+	clk_data = clk_alloc_onecell_data(CLK_SSUSB_NR_CLK);
 
 	mtk_clk_register_gates(node, ssusb_clks, ARRAY_SIZE(ssusb_clks),
 			       clk_data);
@@ -112,7 +112,7 @@ static int clk_mt7622_pciesys_init(struct platform_device *pdev)
 	struct device_node *node = pdev->dev.of_node;
 	int r;
 
-	clk_data = mtk_alloc_clk_data(CLK_PCIE_NR_CLK);
+	clk_data = clk_alloc_onecell_data(CLK_PCIE_NR_CLK);
 
 	mtk_clk_register_gates(node, pcie_clks, ARRAY_SIZE(pcie_clks),
 			       clk_data);

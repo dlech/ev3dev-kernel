@@ -52,7 +52,7 @@ static int clk_mt2701_hif_probe(struct platform_device *pdev)
 	int r;
 	struct device_node *node = pdev->dev.of_node;
 
-	clk_data = mtk_alloc_clk_data(CLK_HIFSYS_NR);
+	clk_data = clk_alloc_onecell_data(CLK_HIFSYS_NR);
 
 	mtk_clk_register_gates(node, hif_clks, ARRAY_SIZE(hif_clks),
 						clk_data);
