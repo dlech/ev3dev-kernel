@@ -785,6 +785,8 @@ struct clk_onecell_data {
 	unsigned int clk_num;
 };
 
+struct clk_onecell_data *clk_alloc_onecell_data(size_t num_clks);
+
 struct clk_hw_onecell_data {
 	unsigned int num;
 	struct clk_hw *hws[];
