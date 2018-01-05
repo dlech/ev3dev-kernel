@@ -88,68 +88,12 @@ static __init void dm646x_clk_init(unsigned long ref_clk_rate,
 	clk_register_clkdev(clk, "pll2", NULL);
 	clk = PLL_DIV_CLK("pll2_sysclk1", "pll2", pll2, 2);
 	clk_register_clkdev(clk, "pll2_sysclk1", NULL);
-	clk = PSC_CLK("dsp", "pll1_sysclk1", psc, DM646X_LPSC_C64X_CPU, 0,
-		      CLK_IS_CRITICAL); /* REVISIT how to disable? */
-	clk_register_clkdev(clk, "dsp", NULL);
-	clk = PSC_CLK("arm", "pll1_sysclk2", psc, DM646X_LPSC_ARM, 0,
-		      CLK_IS_CRITICAL);
-	clk_register_clkdev(clk, "arm", NULL);
-	clk = PSC_CLK("edma_cc", "pll1_sysclk2", psc, DM646X_LPSC_TPCC, 0,
-		      CLK_IS_CRITICAL);
-	clk_register_clkdev(clk, "edma_cc", NULL);
-	clk = PSC_CLK("edma_tc0", "pll1_sysclk2", psc, DM646X_LPSC_TPTC0, 0,
-		      CLK_IS_CRITICAL);
-	clk_register_clkdev(clk, "edma_tc0", NULL);
-	clk = PSC_CLK("edma_tc1", "pll1_sysclk2", psc, DM646X_LPSC_TPTC1, 0,
-		      CLK_IS_CRITICAL);
-	clk_register_clkdev(clk, "edma_tc1", NULL);
-	clk = PSC_CLK("edma_tc2", "pll1_sysclk2", psc, DM646X_LPSC_TPTC2, 0,
-		      CLK_IS_CRITICAL);
-	clk_register_clkdev(clk, "edma_tc2", NULL);
-	clk = PSC_CLK("edma_tc3", "pll1_sysclk2", psc, DM646X_LPSC_TPTC3, 0,
-		      CLK_IS_CRITICAL);
-	clk_register_clkdev(clk, "edma_tc3", NULL);
-	clk = PSC_CLK("uart0", "aux_clkin", psc, DM646X_LPSC_UART0, 0, 0);
-	clk_register_clkdev(clk, NULL, "serial8250.0");
-	clk = PSC_CLK("uart1", "aux_clkin", psc, DM646X_LPSC_UART1, 0, 0);
-	clk_register_clkdev(clk, NULL, "serial8250.1");
-	clk = PSC_CLK("uart2", "aux_clkin", psc, DM646X_LPSC_UART2, 0, 0);
-	clk_register_clkdev(clk, NULL, "serial8250.2");
-	clk = PSC_CLK("I2CCLK", "pll1_sysclk3", psc, DM646X_LPSC_I2C, 0, 0);
-	clk_register_clkdev(clk, NULL, "i2c_davinci.1");
-	clk = PSC_CLK("gpio", "pll1_sysclk3", psc, DM646X_LPSC_GPIO, 0, 0);
-	clk_register_clkdev(clk, "gpio", NULL);
-	clk = PSC_CLK("mcasp0", "pll1_sysclk3", psc, DM646X_LPSC_McASP0, 0, 0);
-	clk_register_clkdev(clk, NULL, "davinci-mcasp.0");
-	clk = PSC_CLK("mcasp1", "pll1_sysclk3", psc, DM646X_LPSC_McASP1, 0, 0);
-	clk_register_clkdev(clk, NULL, "davinci-mcasp.1");
-	clk = PSC_CLK("aemif", "pll1_sysclk3", psc, DM646X_LPSC_AEMIF, 0,
-		      CLK_IS_CRITICAL);
-	clk_register_clkdev(clk, "aemif", NULL);
-	clk = PSC_CLK("emac", "pll1_sysclk3", psc, DM646X_LPSC_EMAC, 0, 0);
-	clk_register_clkdev(clk, NULL, "davinci_emac.1");
-	clk_register_clkdev(clk, "fck", "davinci_mdio.0");
-	clk = PSC_CLK("pwm0", "pll1_sysclk3", psc, DM646X_LPSC_PWM0, 0,
-		      CLK_IS_CRITICAL); /* REVIST: disabling hangs system */
-	clk_register_clkdev(clk, "pwm0", NULL);
-	clk = PSC_CLK("pwm1", "pll1_sysclk3", psc, DM646X_LPSC_PWM1, 0,
-		      CLK_IS_CRITICAL); /* REVIST: disabling hangs system */
-	clk_register_clkdev(clk, "pwm1", NULL);
-	clk = PSC_CLK("timer0", "pll1_sysclk3", psc, DM646X_LPSC_TIMER0, 0, 0);
-	clk_register_clkdev(clk, "timer0", NULL);
-	clk = PSC_CLK("timer1", "pll1_sysclk3", psc, DM646X_LPSC_TIMER1, 0, 0);
-	clk_register_clkdev(clk, "timer1", NULL);
+
+	dm646x_psc_clk_init(psc);
+
 	/* no LPSC, always enabled; c.f. spruep9a */
 	clk = FIX_CLK("timer2", "pll1_sysclk3");
 	clk_register_clkdev(clk, NULL, "davinci-wdt");
-	clk = PSC_CLK("ide", "pll1_sysclk4", psc, DAVINCI_LPSC_ATA, 0, 0);
-	clk_register_clkdev(clk, NULL, "palm_bk3710");
-	clk = PSC_CLK("vpif0", "ref_clk", psc, DM646X_LPSC_VPSSMSTR, 0,
-		      CLK_IS_CRITICAL);
-	clk_register_clkdev(clk, "vpif0", NULL);
-	clk = PSC_CLK("vpif1", "ref_clk", psc, DM646X_LPSC_VPSSSLV, 0,
-		      CLK_IS_CRITICAL);
-	clk_register_clkdev(clk, "vpif1", NULL);
 }
 
 static struct emac_platform_data dm646x_emac_pdata = {

@@ -98,94 +98,16 @@ static __init void da850_clk_init(void)
 	clk_register_clkdev(clk, "timer0", NULL);
 	clk = FIX_CLK("timer1", "pll0_aux_clk");
 	clk_register_clkdev(clk, NULL, "davinci-wdt");
-	clk = PSC_CLK("arm_rom", "pll0_sysclk2", psc0, DA8XX_LPSC0_ARM_RAM_ROM,
-		      0, CLK_IS_CRITICAL);
-	clk_register_clkdev(clk, "arm_rom", NULL);
-	clk = PSC_CLK("tpcc0", "pll0_sysclk2", psc0, DA8XX_LPSC0_TPCC, 0,
-		      CLK_IS_CRITICAL);
-	clk_register_clkdev(clk, "tpcc0", NULL);
-	clk = PSC_CLK("tptc0", "pll0_sysclk2", psc0, DA8XX_LPSC0_TPTC0, 0,
-		      CLK_IS_CRITICAL);
-	clk_register_clkdev(clk, "tptc0", NULL);
-	clk = PSC_CLK("tptc1", "pll0_sysclk2", psc0, DA8XX_LPSC0_TPTC1, 0,
-		      CLK_IS_CRITICAL);
-	clk_register_clkdev(clk, "tptc1", NULL);
-	clk = PSC_CLK("tpcc1", "pll0_sysclk2", psc1, DA850_LPSC1_TPCC1, 0,
-		      CLK_IS_CRITICAL);
-	clk_register_clkdev(clk, "tpcc1", NULL);
-	clk = PSC_CLK("tptc2", "pll0_sysclk2", psc1, DA850_LPSC1_TPTC2, 0,
-		      CLK_IS_CRITICAL);
-	clk_register_clkdev(clk, "tptc2", NULL);
-	clk = PSC_CLK("pruss", "pll0_sysclk2", psc0, DA8XX_LPSC0_PRUSS, 0, 0);
-	clk_register_clkdev(clk, "pruss", "pruss_uio");
-	clk = PSC_CLK("uart0", "pll0_sysclk2", psc0, DA8XX_LPSC0_UART0, 0, 0);
-	clk_register_clkdev(clk, NULL, "serial8250.0");
-	clk = PSC_CLK("uart1", "async3", psc1, DA8XX_LPSC1_UART1, 0, 0);
-	clk_register_clkdev(clk, NULL, "serial8250.1");
-	clk = PSC_CLK("uart2", "async3", psc1, DA8XX_LPSC1_UART2, 0, 0);
-	clk_register_clkdev(clk, NULL, "serial8250.2");
-	clk = PSC_CLK("aintc", "pll0_sysclk4", psc0, DA8XX_LPSC0_AINTC, 0,
-		      CLK_IS_CRITICAL);
-	clk_register_clkdev(clk, "aintc", NULL);
-	clk = PSC_CLK("gpio", "pll0_sysclk4", psc1, DA8XX_LPSC1_GPIO, 0, 0);
-	clk_register_clkdev(clk, "gpio", NULL);
-	clk = PSC_CLK("i2c1", "pll0_sysclk4", psc1, DA8XX_LPSC1_I2C, 0, 0);
-	clk_register_clkdev(clk, NULL, "i2c_davinci.2");
-	clk = PSC_CLK("emif3", "pll0_sysclk5", psc1, DA8XX_LPSC1_EMIF3C, 0,
-		      CLK_IS_CRITICAL);
-	clk_register_clkdev(clk, "emif3", NULL);
-	clk = PSC_CLK("arm", "pll0_sysclk6", psc0, DA8XX_LPSC0_ARM, 0,
-		      CLK_IS_CRITICAL);
-	clk_register_clkdev(clk, "arm", NULL);
+
+	da850_psc_clk_init(psc0, psc1);
+
 	clk = FIX_CLK("rmii", "pll0_sysclk7");
 	clk_register_clkdev(clk, "rmii", NULL);
-	clk = PSC_CLK("emac", "pll0_sysclk4", psc1, DA8XX_LPSC1_CPGMAC, 0, 0);
-	clk_register_clkdev(clk, NULL, "davinci_emac.1");
-	clk_register_clkdev(clk, "fck", "davinci_mdio.0");
-	clk = PSC_CLK("mcasp", "async3", psc1, DA8XX_LPSC1_McASP0, 0, 0);
-	clk_register_clkdev(clk, NULL, "davinci-mcasp.0");
-	clk = PSC_CLK("mcbsp0", "async3", psc1, DA850_LPSC1_McBSP0, 0, 0);
-	clk_register_clkdev(clk, NULL, "davinci-mcbsp.0");
-	clk = PSC_CLK("mcbsp1", "async3", psc1, DA850_LPSC1_McBSP1, 0, 0);
-	clk_register_clkdev(clk, NULL, "davinci-mcbsp.1");
-	clk = PSC_CLK("lcdc", "pll0_sysclk2", psc1, DA8XX_LPSC1_LCDC, 0, 0);
-	clk_register_clkdev(clk, "fck", "da8xx_lcdc.0");
-	clk = PSC_CLK("mmcsd0", "pll0_sysclk2", psc0, DA8XX_LPSC0_MMC_SD, 0, 0);
-	clk_register_clkdev(clk, NULL, "da830-mmc.0");
-	clk = PSC_CLK("mmcsd1", "pll0_sysclk2", psc1, DA850_LPSC1_MMC_SD1, 0, 0);
-	clk_register_clkdev(clk, NULL, "da830-mmc.1");
-	clk = PSC_CLK("aemif", "pll0_sysclk3", psc0, DA8XX_LPSC0_EMIF25, 0,
-		      CLK_IS_CRITICAL);
-	clk_register_clkdev(clk, NULL, "ti-aemif");
-	clk_register_clkdev(clk, "aemif", "davinci-nand.0");
-	clk = PSC_CLK("usb11", "pll0_sysclk4", psc1, DA8XX_LPSC1_USB11, 0, 0);
-	clk_register_clkdev(clk, NULL, "ohci-da8xx");
-	clk = PSC_CLK("usb20", "pll0_sysclk2", psc1, DA8XX_LPSC1_USB20, 0, 0);
-	clk_register_clkdev(clk, "usb20_psc_clk", NULL);
-	clk_register_clkdev(clk, NULL, "musb-da8xx");
-	clk_register_clkdev(clk, NULL, "cppi41-dmaengine");
-	clk = PSC_CLK("spi0", "pll0_sysclk2", psc0, DA8XX_LPSC0_SPI0, 0, 0);
-	clk_register_clkdev(clk, NULL, "spi_davinci.0");
-	clk = PSC_CLK("spi1", "async3", psc1, DA8XX_LPSC1_SPI1, 0, 0);
-	clk_register_clkdev(clk, NULL, "spi_davinci.1");
-	clk = PSC_CLK("vpif", "pll0_sysclk2", psc1, DA850_LPSC1_VPIF, 0, 0);
-	clk_register_clkdev(clk, NULL, "vpif");
-	clk = PSC_CLK("sata", "pll0_sysclk2", psc1, DA850_LPSC1_SATA, 0, 0);
-	clk_register_clkdev(clk, "fck", "ahci_da850");
-	clk = PSC_CLK("dsp", "pll0_sysclk1", psc0, DA8XX_LPSC0_GEM, 1, 0);
-	clk_register_clkdev(clk, NULL, "davinci-rproc.0");
-	clk = PSC_CLK("ehrpwm", "async3", psc1, DA8XX_LPSC1_PWM, 0, 0);
-	clk_register_clkdev(clk, "fck", "ehrpwm.0");
-	clk_register_clkdev(clk, "fck", "ehrpwm.1");
 	clk = clk_register_gate(NULL, "ehrpwm_tbclk", "ehrpwm", 0,
 				DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP1_REG),
 				CFGCHIP1_TBCLKSYNC, 0, NULL);
 	clk_register_clkdev(clk, "tbclk", "ehrpwm.0");
 	clk_register_clkdev(clk, "tbclk", "ehrpwm.1");
-	clk = PSC_CLK("ecap", "async3", psc1, DA8XX_LPSC1_ECAP, 0, 0);
-	clk_register_clkdev(clk, "fck", "ecap.0");
-	clk_register_clkdev(clk, "fck", "ecap.1");
-	clk_register_clkdev(clk, "fck", "ecap.2");
 }
 
 /*

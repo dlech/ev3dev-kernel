@@ -89,14 +89,6 @@ static __init void dm355_clk_init(void)
 	clk_register_clkdev(clk, "pll1_aux", NULL);
 	clk = PLL_BP_CLK("pll1_sysclkbp", "ref_clk", pll1);
 	clk_register_clkdev(clk, "pll1_sysclkbp", NULL);
-	clk = PSC_CLK("vpss_dac", "pll1_sysclk3", psc, DM355_LPSC_VPSS_DAC, 0, 0);
-	clk_register_clkdev(clk, "vpss_dac", NULL);
-	clk = PSC_CLK("vpss_master", "pll1_sysclk4", psc, DAVINCI_LPSC_VPSSMSTR,
-		      0, 0);
-	clk_register_clkdev(clk, "master", "vpss");
-	clk = PSC_CLK("vpss_slave", "pll1_sysclk4", psc, DAVINCI_LPSC_VPSSSLV,
-		      0, 0);
-	clk_register_clkdev(clk, "slave", "vpss");
 	clk = FIX_CLK("clkout1", "pll1_aux_clk");
 	/* NOTE:  clkout1 can be externally gated by muxing GPIO-18 */
 	clk_register_clkdev(clk, "clkout1", NULL);
@@ -111,58 +103,8 @@ static __init void dm355_clk_init(void)
 	clk = FIX_CLK("clkout3", "pll2_sysclkbp");
 	/* NOTE:  clkout3 can be externally gated by muxing GPIO-16 */
 	clk_register_clkdev(clk, "clkout3", NULL);
-	clk = PSC_CLK("arm_clk", "pll1_sysclk1", psc, DAVINCI_LPSC_ARM, 0,
-		      CLK_IS_CRITICAL);
-	clk_register_clkdev(clk, "arm", NULL);
-	clk = PSC_CLK("mjcp", "pll1_sysclk1", psc, DAVINCI_LPSC_IMCOP, 0, 0);
-	clk_register_clkdev(clk, "mjcp", NULL);
-	clk = PSC_CLK("uart0", "pll1_aux_clk", psc, DAVINCI_LPSC_UART0, 0, 0);
-	clk_register_clkdev(clk, NULL, "serial8250.0");
-	clk = PSC_CLK("uart1", "pll1_aux_clk", psc, DAVINCI_LPSC_UART1, 0, 0);
-	clk_register_clkdev(clk, NULL, "serial8250.1");
-	clk = PSC_CLK("uart2", "pll1_sysclk2", psc, DAVINCI_LPSC_UART2, 0, 0);
-	clk_register_clkdev(clk, NULL, "serial8250.2");
-	clk = PSC_CLK("i2c", "pll1_aux_clk", psc, DAVINCI_LPSC_I2C, 0, 0);
-	clk_register_clkdev(clk, NULL, "i2c_davinci.1");
-	clk = PSC_CLK("asp0", "pll1_sysclk2", psc, DAVINCI_LPSC_McBSP, 0, 0);
-	clk_register_clkdev(clk, NULL, "davinci-mcbsp.0");
-	clk = PSC_CLK("asp1", "pll1_sysclk2", psc, DM355_LPSC_McBSP1, 0, 0);
-	clk_register_clkdev(clk, NULL, "davinci-mcbsp.1");
-	clk = PSC_CLK("mmcsd0", "pll1_sysclk2", psc, DAVINCI_LPSC_MMC_SD, 0, 0);
-	clk_register_clkdev(clk, NULL, "dm6441-mmc.0");
-	clk = PSC_CLK("mmcsd1", "pll1_sysclk2", psc, DM355_LPSC_MMC_SD1, 0, 0);
-	clk_register_clkdev(clk, NULL, "dm6441-mmc.1");
-	clk = PSC_CLK("spi0", "pll1_sysclk2", psc, DAVINCI_LPSC_SPI, 0, 0);
-	clk_register_clkdev(clk, NULL, "spi_davinci.0");
-	clk = PSC_CLK("spi1", "pll1_sysclk2", psc, DM355_LPSC_SPI1, 0, 0);
-	clk_register_clkdev(clk, NULL, "spi_davinci.1");
-	clk = PSC_CLK("spi2", "pll1_sysclk2", psc, DM355_LPSC_SPI2, 0, 0);
-	clk_register_clkdev(clk, NULL, "spi_davinci.2");
-	clk = PSC_CLK("gpio", "pll1_sysclk2", psc, DAVINCI_LPSC_GPIO, 0, 0);
-	clk_register_clkdev(clk, "gpio", NULL);
-	clk = PSC_CLK("aemif", "pll1_sysclk2", psc, DAVINCI_LPSC_AEMIF, 0, 0);
-	clk_register_clkdev(clk, "aemif", NULL);
-	clk = PSC_CLK("pwm0", "pll1_aux_clk", psc, DAVINCI_LPSC_PWM0, 0, 0);
-	clk_register_clkdev(clk, "pwm0", NULL);
-	clk = PSC_CLK("pwm1", "pll1_aux_clk", psc, DAVINCI_LPSC_PWM1, 0, 0);
-	clk_register_clkdev(clk, "pwm1", NULL);
-	clk = PSC_CLK("pwm2", "pll1_aux_clk", psc, DAVINCI_LPSC_PWM2, 0, 0);
-	clk_register_clkdev(clk, "pwm2", NULL);
-	clk = PSC_CLK("pwm3", "pll1_aux_clk", psc, DM355_LPSC_PWM3, 0, 0);
-	clk_register_clkdev(clk, "pwm3", NULL);
-	clk = PSC_CLK("timer0", "pll1_aux_clk", psc, DAVINCI_LPSC_TIMER0, 0, 0);
-	clk_register_clkdev(clk, "timer0", NULL);
-	clk = PSC_CLK("timer1", "pll1_aux_clk", psc, DAVINCI_LPSC_TIMER1, 0, 0);
-	clk_register_clkdev(clk, "timer1", NULL);
-	clk = PSC_CLK("timer2", "pll1_aux_clk", psc, DAVINCI_LPSC_TIMER2, 0,
-		      CLK_IS_CRITICAL); /* REVISIT: why can't this be disabled? */
-	clk_register_clkdev(clk, NULL, "davinci-wdt");
-	clk = PSC_CLK("timer3", "pll1_aux_clk", psc, DM355_LPSC_TIMER3, 0, 0);
-	clk_register_clkdev(clk, "timer3", NULL);
-	clk = PSC_CLK("rto", "pll1_aux_clk", psc, DM355_LPSC_RTO, 0, 0);
-	clk_register_clkdev(clk, "rto", NULL);
-	clk = PSC_CLK("usb", "pll1_sysclk2", psc, DAVINCI_LPSC_USB, 0, 0);
-	clk_register_clkdev(clk, "usb", NULL);
+
+	dm355_psc_clk_init(psc);
 }
 
 /*----------------------------------------------------------------------*/
