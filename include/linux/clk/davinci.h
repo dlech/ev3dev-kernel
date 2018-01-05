@@ -48,7 +48,6 @@ struct clk* da8xx_usb1_phy_clk_register(const char *name,
 					struct regmap *regmap);
 
 /* convience macros for board declaration files */
-#define EXT_CLK(n, r) clk_register_fixed_rate(NULL, (n), NULL, 0, (r))
 #define PLL_CLK davinci_pll_clk_register
 #define PLL_DIV_CLK davinci_pll_div_clk_register
 #define PLL_AUX_CLK davinci_pll_aux_clk_register

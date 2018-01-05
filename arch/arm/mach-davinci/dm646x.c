@@ -58,10 +58,8 @@ static __init void dm646x_clk_init(unsigned long ref_clk_rate,
 	pll2 = ioremap(DAVINCI_PLL2_BASE, SZ_4K);
 	psc = ioremap(DAVINCI_PWR_SLEEP_CNTRL_BASE, SZ_4K);
 
-	clk = EXT_CLK("ref_clk", ref_clk_rate);
-	clk_register_clkdev(clk, "ref", NULL);
-	clk = EXT_CLK("aux_clkin", aux_clkin_rate);
-	clk_register_clkdev(clk, "aux", NULL);
+	clk_register_fixed_rate(NULL, "ref_clk", NULL, 0, ref_clk_rate);
+	clk_register_fixed_rate(NULL, "aux_clkin", NULL, 0, aux_clkin_rate);
 	clk = PLL_CLK("pll1", "ref_clk", pll1);
 	clk_register_clkdev(clk, "pll1", NULL);
 	clk = PLL_DIV_CLK("pll1_sysclk1", "pll1", pll1, 1);
