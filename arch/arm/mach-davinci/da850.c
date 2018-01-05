@@ -56,8 +56,7 @@ static __init void da850_clk_init(void)
 	psc0 = ioremap(DA8XX_PSC0_BASE, SZ_4K);
 	psc1 = ioremap(DA8XX_PSC1_BASE, SZ_4K);
 
-	clk = EXT_CLK("ref_clk", DA850_REF_FREQ);
-	clk_register_clkdev(clk, "ref", NULL);
+	clk_register_fixed_rate(NULL, "ref_clk", NULL, 0, DA850_REF_FREQ);
 	clk = PLL_CLK("pll0", "ref_clk", pll0);
 	clk_register_clkdev(clk, "pll0", NULL);
 	clk = PLL_AUX_CLK("pll0_aux_clk", "ref_clk", pll0);

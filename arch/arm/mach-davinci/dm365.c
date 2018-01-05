@@ -73,8 +73,7 @@ static __init void dm365_clk_init(void)
 	pll2 = ioremap(DAVINCI_PLL2_BASE, SZ_4K);
 	psc = ioremap(DAVINCI_PWR_SLEEP_CNTRL_BASE, SZ_4K);
 
-	clk = EXT_CLK("ref_clk", DM365_REF_FREQ);
-	clk_register_clkdev(clk, "ref", NULL);
+	clk_register_fixed_rate(NULL, "ref_clk", NULL, 0, DM365_REF_FREQ);
 	clk = PLL_CLK("pll1", "ref_clk", pll1);
 	clk_register_clkdev(clk, "pll1", NULL);
 	clk = PLL_AUX_CLK("pll1_aux_clk", "ref_clk", pll1);
