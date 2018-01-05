@@ -10,6 +10,13 @@
 #include <linux/clk-provider.h>
 #include <linux/types.h>
 
+void da830_psc_clk_init(void __iomem *psc0, void __iomem *psc1);
+void da850_psc_clk_init(void __iomem *psc0, void __iomem *psc1);
+void dm355_psc_clk_init(void __iomem *psc);
+void dm365_psc_clk_init(void __iomem *psc);
+void dm644x_psc_clk_init(void __iomem *psc);
+void dm646x_psc_clk_init(void __iomem *psc);
+
 struct regmap;
 
 struct clk *davinci_pll_clk_register(const char *name,
@@ -30,10 +37,6 @@ struct clk *davinci_pll_div_clk_register(const char *name,
 					 const char *parent_name,
 					 void __iomem *base,
 					 u32 id);
-struct clk *davinci_psc_clk_register(const char *name,
-				     const char *parent_name,
-				     void __iomem *base,
-				     u32 lpsc, u32 pd, u32 flags);
 struct clk* da8xx_usb0_phy_clk_register(const char *name,
 					const char *parent0,
 					const char *parent1,
@@ -52,6 +55,5 @@ struct clk* da8xx_usb1_phy_clk_register(const char *name,
 #define PLL_AUX_CLK davinci_pll_aux_clk_register
 #define PLL_BP_CLK davinci_pll_bpdiv_clk_register
 #define PLL_OBS_CLK davinci_pll_obs_clk_register
-#define PSC_CLK davinci_psc_clk_register
 
 #endif /* __LINUX_CLK_DAVINCI_H__ */

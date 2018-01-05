@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
- * Clock driver for DA8xx/AM17xx/AM18xx/OMAP-L13x PSC controllers
+ * Clock driver for TI Davinci PSC controllers
  *
  * Copyright (C) 2017 David Lechner <david@lechnology.com>
  *
@@ -14,20 +14,25 @@
  */
 
 #include <linux/clk-provider.h>
+#include <linux/clk/davinci.h>
+#include <linux/clkdev.h>
 #include <linux/err.h>
-#include <linux/io.h>
 #include <linux/of_address.h>
 #include <linux/of.h>
+#include <linux/regmap.h>
 #include <linux/slab.h>
+#include <linux/types.h>
+
+#include "psc.h"
 
 /* PSC register offsets */
 #define EPCPR			0x070
 #define PTCMD			0x120
 #define PTSTAT			0x128
-#define PDSTAT			0x200
-#define PDCTL			0x300
-#define MDSTAT			0x800
-#define MDCTL			0xa00
+#define PDSTAT(n)		(0x200 + 4 * (n))
+#define PDCTL(n)		(0x300 + 4 * (n))
+#define MDSTAT(n)		(0x800 + 4 * (n))
+#define MDCTL(n)		(0xa00 + 4 * (n))
 
 /* PSC module states */
 enum davinci_psc_state {
@@ -48,15 +53,17 @@ enum davinci_psc_state {
 /**
  * struct davinci_psc_clk - PSC clock structure
  * @hw: clk_hw for the psc
- * @psc_data: PSC driver specific data
+ * @regmap: PSC MMIO region
  * @lpsc: Local PSC number (module id)
  * @pd: Power domain
+ * @flags: LPSC_* quirk flags
  */
 struct davinci_psc_clk {
 	struct clk_hw hw;
-	void __iomem *base;
+	struct regmap *regmap;
 	u32 lpsc;
 	u32 pd;
+	u32 flags;
 };
 
 #define to_davinci_psc_clk(_hw) container_of(_hw, struct davinci_psc_clk, hw)
@@ -64,44 +71,36 @@ struct davinci_psc_clk {
 static void psc_config(struct davinci_psc_clk *psc,
 		       enum davinci_psc_state next_state)
 {
-	u32 epcpr, ptcmd, pdstat, pdctl, mdstat, mdctl, ptstat;
+	u32 epcpr, pdstat, mdstat, mdctl, ptstat;
 
-	mdctl = readl(psc->base + MDCTL + 4 * psc->lpsc);
-	mdctl &= ~MDSTAT_STATE_MASK;
-	mdctl |= next_state;
-	/* TODO: old davinci clocks for da850 set MDCTL_FORCE bit for sata and
-	 * dsp here. Is this really needed?
-	 */
-	writel(mdctl, psc->base + MDCTL + 4 * psc->lpsc);
+	mdctl = next_state;
+	if (psc->flags & LPSC_FORCE)
+		mdctl |= MDCTL_FORCE;
+	regmap_write_bits(psc->regmap, MDCTL(psc->lpsc), MDSTAT_STATE_MASK,
+			  mdctl);
 
-	pdstat = readl(psc->base + PDSTAT + 4 * psc->pd);
+	regmap_read(psc->regmap, PDSTAT(psc->pd), &pdstat);
 	if ((pdstat & PDSTAT_STATE_MASK) == 0) {
-		pdctl = readl(psc->base + PDSTAT + 4 * psc->pd);
-		pdctl |= PDCTL_NEXT;
-		writel(pdctl, psc->base + PDSTAT + 4 * psc->pd);
+		regmap_write_bits(psc->regmap, PDSTAT(psc->pd),
+				  PDSTAT_STATE_MASK, PDCTL_NEXT);
 
-		ptcmd = BIT(psc->pd);
-		writel(ptcmd, psc->base + PTCMD);
+		regmap_write(psc->regmap, PTCMD, BIT(psc->pd));
 
-		do {
-			epcpr = __raw_readl(psc->base + EPCPR);
-		} while (!(epcpr & BIT(psc->pd)));
+		regmap_read_poll_timeout(psc->regmap, EPCPR, epcpr,
+					 epcpr & BIT(psc->pd), 0, 0);
 
-		pdctl = __raw_readl(psc->base + PDCTL + 4 * psc->pd);
-		pdctl |= PDCTL_EPCGOOD;
-		__raw_writel(pdctl, psc->base + PDCTL + 4 * psc->pd);
+		regmap_write_bits(psc->regmap, PDCTL(psc->pd), PDCTL_EPCGOOD,
+				  PDCTL_EPCGOOD);
 	} else {
-		ptcmd = BIT(psc->pd);
-		writel(ptcmd, psc->base + PTCMD);
+		regmap_write(psc->regmap, PTCMD, BIT(psc->pd));
 	}
 
-	do {
-		ptstat = readl(psc->base + PTSTAT);
-	} while (ptstat & BIT(psc->pd));
+	regmap_read_poll_timeout(psc->regmap, PTSTAT, ptstat,
+				 !(ptstat & BIT(psc->pd)), 0, 0);
 
-	do {
-		mdstat = readl(psc->base + MDSTAT + 4 * psc->lpsc);
-	} while (!((mdstat & MDSTAT_STATE_MASK) == next_state));
+	regmap_read_poll_timeout(psc->regmap, MDSTAT(psc->lpsc), mdstat,
+				 (mdstat & MDSTAT_STATE_MASK) == next_state,
+				 0, 0);
 }
 
 static int davinci_psc_clk_enable(struct clk_hw *hw)
@@ -125,126 +124,15 @@ static int davinci_psc_clk_is_enabled(struct clk_hw *hw)
 	struct davinci_psc_clk *psc = to_davinci_psc_clk(hw);
 	u32 mdstat;
 
-	mdstat = readl(psc->base + MDSTAT + 4 * psc->lpsc);
+	regmap_read(psc->regmap, MDSTAT(psc->lpsc), &mdstat);
 
 	return (mdstat & MDSTAT_MCKOUT) ? 1 : 0;
 }
-
-#ifdef CONFIG_DEBUG_FS
-#include <linux/debugfs.h>
-
-static const struct debugfs_reg32 davinci_psc_regs[] = {
-	{ .name = "REVID",	.offset = 0x000 },
-	{ .name = "INTEVAL",	.offset = 0x018 },
-	{ .name = "MERRPR0",	.offset = 0x040 },
-	{ .name = "MERRCR0",	.offset = 0x050 },
-	{ .name = "PERRPR",	.offset = 0x060 },
-	{ .name = "PERRCR",	.offset = 0x068 },
-	{ .name = "PTCMD",	.offset = 0x120 },
-	{ .name = "PTSTAT",	.offset = 0x128 },
-	{ .name = "PDSTAT0",	.offset = 0x200 },
-	{ .name = "PDSTAT1",	.offset = 0x204 },
-	{ .name = "PDCTL0",	.offset = 0x300 },
-	{ .name = "PDCTL1",	.offset = 0x304 },
-	{ .name = "PDCFG0",	.offset = 0x400 },
-	{ .name = "PDCFG1",	.offset = 0x404 },
-	{ .name = "MDSTAT0",	.offset = 0x800 },
-	{ .name = "MDSTAT1",	.offset = 0x804 },
-	{ .name = "MDSTAT2",	.offset = 0x808 },
-	{ .name = "MDSTAT3",	.offset = 0x80c },
-	{ .name = "MDSTAT4",	.offset = 0x810 },
-	{ .name = "MDSTAT5",	.offset = 0x814 },
-	{ .name = "MDSTAT6",	.offset = 0x818 },
-	{ .name = "MDSTAT7",	.offset = 0x81c },
-	{ .name = "MDSTAT8",	.offset = 0x820 },
-	{ .name = "MDSTAT9",	.offset = 0x824 },
-	{ .name = "MDSTAT10",	.offset = 0x828 },
-	{ .name = "MDSTAT11",	.offset = 0x82c },
-	{ .name = "MDSTAT12",	.offset = 0x830 },
-	{ .name = "MDSTAT13",	.offset = 0x834 },
-	{ .name = "MDSTAT14",	.offset = 0x838 },
-	{ .name = "MDSTAT15",	.offset = 0x83c },
-	{ .name = "MDSTAT16",	.offset = 0x840 },
-	{ .name = "MDSTAT17",	.offset = 0x844 },
-	{ .name = "MDSTAT18",	.offset = 0x848 },
-	{ .name = "MDSTAT19",	.offset = 0x84c },
-	{ .name = "MDSTAT20",	.offset = 0x850 },
-	{ .name = "MDSTAT21",	.offset = 0x854 },
-	{ .name = "MDSTAT22",	.offset = 0x858 },
-	{ .name = "MDSTAT23",	.offset = 0x85c },
-	{ .name = "MDSTAT24",	.offset = 0x860 },
-	{ .name = "MDSTAT25",	.offset = 0x864 },
-	{ .name = "MDSTAT26",	.offset = 0x868 },
-	{ .name = "MDSTAT27",	.offset = 0x86c },
-	{ .name = "MDSTAT28",	.offset = 0x870 },
-	{ .name = "MDSTAT29",	.offset = 0x874 },
-	{ .name = "MDSTAT30",	.offset = 0x878 },
-	{ .name = "MDSTAT30",	.offset = 0x87c },
-	{ .name = "MDCTL0",	.offset = 0xa00 },
-	{ .name = "MDCTL1",	.offset = 0xa04 },
-	{ .name = "MDCTL2",	.offset = 0xa08 },
-	{ .name = "MDCTL3",	.offset = 0xa0c },
-	{ .name = "MDCTL4",	.offset = 0xa10 },
-	{ .name = "MDCTL5",	.offset = 0xa14 },
-	{ .name = "MDCTL6",	.offset = 0xa18 },
-	{ .name = "MDCTL7",	.offset = 0xa1c },
-	{ .name = "MDCTL8",	.offset = 0xa20 },
-	{ .name = "MDCTL9",	.offset = 0xa24 },
-	{ .name = "MDCTL10",	.offset = 0xa28 },
-	{ .name = "MDCTL11",	.offset = 0xa2c },
-	{ .name = "MDCTL12",	.offset = 0xa30 },
-	{ .name = "MDCTL13",	.offset = 0xa34 },
-	{ .name = "MDCTL14",	.offset = 0xa38 },
-	{ .name = "MDCTL15",	.offset = 0xa3c },
-	{ .name = "MDCTL16",	.offset = 0xa40 },
-	{ .name = "MDCTL17",	.offset = 0xa44 },
-	{ .name = "MDCTL18",	.offset = 0xa48 },
-	{ .name = "MDCTL19",	.offset = 0xa4c },
-	{ .name = "MDCTL20",	.offset = 0xa50 },
-	{ .name = "MDCTL21",	.offset = 0xa54 },
-	{ .name = "MDCTL22",	.offset = 0xa58 },
-	{ .name = "MDCTL23",	.offset = 0xa5c },
-	{ .name = "MDCTL24",	.offset = 0xa60 },
-	{ .name = "MDCTL25",	.offset = 0xa64 },
-	{ .name = "MDCTL26",	.offset = 0xa68 },
-	{ .name = "MDCTL27",	.offset = 0xa6c },
-	{ .name = "MDCTL28",	.offset = 0xa70 },
-	{ .name = "MDCTL29",	.offset = 0xa74 },
-	{ .name = "MDCTL30",	.offset = 0xa78 },
-	{ .name = "MDCTL31",	.offset = 0xa7c },
-};
-
-static int davinci_psc_debug_init(struct clk_hw *hw, struct dentry *dentry)
-{
-	struct davinci_psc_clk *psc = to_davinci_psc_clk(hw);
-	struct debugfs_regset32 *regset;
-	struct dentry *d;
-
-	regset = kzalloc(sizeof(regset), GFP_KERNEL);
-	if (!regset)
-		return -ENOMEM;
-
-	regset->regs = davinci_psc_regs;
-	regset->nregs = ARRAY_SIZE(davinci_psc_regs);
-	regset->base = psc->base;
-
-	d = debugfs_create_regset32("registers", 0400, dentry, regset);
-	if (IS_ERR(d)) {
-		kfree(regset);
-		return PTR_ERR(d);
-	}
-
-	return 0;
-}
-#else
-#define davinci_psc_debug_init NULL
-#endif
 
 static const struct clk_ops davinci_psc_clk_ops = {
 	.enable		= davinci_psc_clk_enable,
 	.disable	= davinci_psc_clk_disable,
 	.is_enabled	= davinci_psc_clk_is_enabled,
-	.debug_init	= davinci_psc_debug_init,
 };
 
 /**
@@ -252,15 +140,15 @@ static const struct clk_ops davinci_psc_clk_ops = {
  * @dev: device that is registering this clock
  * @name: name of this clock
  * @parent_name: name of clock's parent
- * @base: memory mapped register for the PSC
+ * @regmap: PSC MMIO region
  * @lpsc: local PSC number
  * @pd: power domain
- * @flags: clock flags
+ * @flags: LPSC_* flags
  */
-struct clk *davinci_psc_clk_register(const char *name,
-				     const char *parent_name,
-				     void __iomem *base,
-				     u32 lpsc, u32 pd, u32 flags)
+static struct clk *davinci_psc_clk_register(const char *name,
+					    const char *parent_name,
+					    struct regmap *regmap,
+					    u32 lpsc, u32 pd, u32 flags)
 {
 	struct clk_init_data init;
 	struct davinci_psc_clk *psc;
@@ -274,12 +162,16 @@ struct clk *davinci_psc_clk_register(const char *name,
 	init.ops = &davinci_psc_clk_ops;
 	init.parent_names = (parent_name ? &parent_name : NULL);
 	init.num_parents = (parent_name ? 1 : 0);
-	init.flags = flags;
+	init.flags = 0;
 
-	psc->base = base;
+	if (flags & LPSC_ALWAYS_ENABLED)
+		init.flags |= CLK_IS_CRITICAL;
+
+	psc->regmap = regmap;
 	psc->hw.init = &init;
 	psc->lpsc = lpsc;
 	psc->pd = pd;
+	psc->flags = flags;
 
 	clk = clk_register(NULL, &psc->hw);
 	if (IS_ERR(clk))
@@ -288,28 +180,20 @@ struct clk *davinci_psc_clk_register(const char *name,
 	return clk;
 }
 
-/* FIXME: This needs to be converted to a reset controller. But, the reset
+/*
+ * FIXME: This needs to be converted to a reset controller. But, the reset
  * framework is currently device tree only.
  */
 
-DEFINE_SPINLOCK(davinci_psc_reset_lock);
-
 static int davinci_psc_clk_reset(struct davinci_psc_clk *psc, bool reset)
 {
-	unsigned long flags;
 	u32 mdctl;
 
 	if (IS_ERR_OR_NULL(psc))
 		return -EINVAL;
 
-	spin_lock_irqsave(&davinci_psc_reset_lock, flags);
-	mdctl = readl(psc->base + MDCTL + 4 * psc->lpsc);
-	if (reset)
-		mdctl &= ~MDCTL_LRESET;
-	else
-		mdctl |= MDCTL_LRESET;
-	writel(mdctl, psc->base + MDCTL + 4 * psc->lpsc);
-	spin_unlock_irqrestore(&davinci_psc_reset_lock, flags);
+	mdctl = reset ? 0 : MDCTL_LRESET;
+	regmap_write_bits(psc->regmap, MDCTL(psc->lpsc), MDCTL_LRESET, mdctl);
 
 	return 0;
 }
@@ -330,71 +214,55 @@ int davinci_clk_reset_deassert(struct clk *clk)
 }
 EXPORT_SYMBOL(davinci_clk_reset_deassert);
 
-#ifdef CONFIG_OF
-struct davinci_psc_clk_info {
-	const char *name;
-	const char *parent;
-	u32 lpsc;
-	u32 pd;
-	unsigned long flags;
-	bool has_reset;
+static const struct regmap_config davinci_psc_regmap_config = {
+	.reg_bits = 32,
+	.reg_stride = 4,
+	.val_bits = 32,
 };
 
-#define DAVINCI_PSC_ALWAYS_ENABLED	BIT(1) /* never disable this clock */
-#define DAVINCI_PSC_LOCAL_RESET		BIT(2) /* acts as reset provider */
+struct clk_onecell_data *
+davinci_psc_register_clocks(void __iomem *base,
+			    const struct davinci_psc_clk_info *info,
+			    u8 num_clks)
+{
+	struct clk_onecell_data *clk_data;
+	struct regmap *regmap;
 
-#define PSC(n, p, l, d, f)	\
-{				\
-	.name	= #n,		\
-	.parent	= #p,		\
-	.lpsc	= (l),		\
-	.pd	= (d),		\
-	.flags	= (f),		\
+	clk_data = clk_alloc_onecell_data(num_clks);
+	if (!clk_data) {
+		pr_err("%s: Out of memory\n", __func__);
+		return NULL;
+	}
+
+	regmap = regmap_init_mmio(NULL, base, &davinci_psc_regmap_config);
+	if (IS_ERR(regmap)) {
+		pr_err("%s: regmap_init_mmio failed (%ld)\n", __func__,
+		       PTR_ERR(regmap));
+		clk_free_onecell_data(clk_data);
+		return NULL;
+	}
+
+	for (; info->name; info++) {
+		struct clk *clk;
+
+		clk = davinci_psc_clk_register(info->name, info->parent, regmap,
+					info->lpsc, info->pd, info->flags);
+		if (IS_ERR(clk)) {
+			pr_warn("%s: Failed to register %s (%ld)\n", __func__,
+				info->name, PTR_ERR(clk));
+			continue;
+		}
+
+		clk_data->clks[info->lpsc] = clk;
+	}
+
+	return clk_data;
 }
 
-static const struct davinci_psc_clk_info da850_psc0_info[] = {
-	PSC(tpcc0, pll0_sysclk2, 0, 0, DAVINCI_PSC_ALWAYS_ENABLED),
-	PSC(tptc0, pll0_sysclk2, 1, 0, DAVINCI_PSC_ALWAYS_ENABLED),
-	PSC(tptc1, pll0_sysclk2, 2, 0, DAVINCI_PSC_ALWAYS_ENABLED),
-	PSC(aemif, pll0_sysclk3, 3, 0, 0),
-	PSC(spi0, pll0_sysclk2, 4, 0, 0),
-	PSC(mmcsd0, pll0_sysclk2, 5, 0, 0),
-	PSC(aintc, pll0_sysclk4, 6, 0, DAVINCI_PSC_ALWAYS_ENABLED),
-	PSC(arm_rom, pll0_sysclk2, 7, 0, DAVINCI_PSC_ALWAYS_ENABLED),
-	PSC(uart0, pll0_sysclk2, 9, 0, 0),
-	PSC(pruss, pll0_sysclk2, 13, 0, 0),
-	PSC(arm, pll0_sysclk6, 14, 0, DAVINCI_PSC_ALWAYS_ENABLED),
-	PSC(dsp, pll0_sysclk1, 15, 1, DAVINCI_PSC_LOCAL_RESET),
-	{ }
-};
-
-static const struct davinci_psc_clk_info da850_psc1_info[] = {
-	PSC(tpcc1, pll0_sysclk2, 0, 0, DAVINCI_PSC_ALWAYS_ENABLED),
-	PSC(usb0, pll0_sysclk2, 1, 0, 0),
-	PSC(usb1, pll0_sysclk4, 2, 0, 0),
-	PSC(gpio, pll0_sysclk4, 3, 0, 0),
-	PSC(emac, pll0_sysclk4, 5, 0, 0),
-	PSC(emif3, pll0_sysclk5, 6, 0, DAVINCI_PSC_ALWAYS_ENABLED),
-	PSC(mcasp0, async3, 7, 0, 0),
-	PSC(sata, pll0_sysclk2, 8, 0, 0),
-	PSC(vpif, pll0_sysclk2, 9, 0, 0),
-	PSC(spi1, async3, 10, 0, 0),
-	PSC(i2c1, pll0_sysclk4, 11, 0, 0),
-	PSC(uart1, async3, 12, 0, 0),
-	PSC(uart2, async3, 13, 0, 0),
-	PSC(mcbsp0, async3, 14, 0, 0),
-	PSC(mcbsp1, async3, 15, 0, 0),
-	PSC(lcdc, pll0_sysclk2, 16, 0, 0),
-	PSC(ehrpwm, async3, 17, 0, 0),
-	PSC(mmcsd1, pll0_sysclk2, 18, 0, 0),
-	PSC(ecap, async3, 20, 0, 0),
-	PSC(tptc2, pll0_sysclk2, 21, 0, DAVINCI_PSC_ALWAYS_ENABLED),
-	{ }
-};
-
-static void of_davinci_psc_clk_init(struct device_node *node,
-				    const struct davinci_psc_clk_info *info,
-				    u8 num_clks)
+#ifdef CONFIG_OF
+void of_davinci_psc_clk_init(struct device_node *node,
+			     const struct davinci_psc_clk_info *info,
+			     u8 num_clks)
 {
 	struct clk_onecell_data *clk_data;
 	void __iomem *base;
@@ -405,42 +273,10 @@ static void of_davinci_psc_clk_init(struct device_node *node,
 		return;
 	}
 
-	clk_data = clk_alloc_onecell_data(num_clks);
-	if (!clk_data) {
-		pr_err("%s: Out of memory\n", __func__);
+	clk_data = davinci_psc_register_clocks(base, info, num_clks);
+	if (!clk_data)
 		return;
-	}
-
-	for (; info->name; info++) {
-		struct clk *clk;
-		u32 clk_flags = 0;
-
-		if (info->flags & DAVINCI_PSC_ALWAYS_ENABLED)
-			clk_flags |= CLK_IS_CRITICAL;
-
-		clk = davinci_psc_clk_register(info->name, info->parent, base,
-					info->lpsc, info->pd, clk_flags);
-		if (IS_ERR(clk)) {
-			pr_warn("%s: Failed to register %s:%s (%ld)\n", __func__,
-				node->full_name, info->name, PTR_ERR(clk));
-			continue;
-		}
-
-		clk_data->clks[info->lpsc] = clk;
-	}
 
 	of_clk_add_provider(node, of_clk_src_onecell_get, clk_data);
 }
-
-static void of_da850_psc0_clk_init(struct device_node *node)
-{
-	of_davinci_psc_clk_init(node, da850_psc0_info, 16);
-}
-CLK_OF_DECLARE(da850_psc0_clk, "ti,da850-psc0", of_da850_psc0_clk_init);
-
-static void of_da850_psc1_clk_init(struct device_node *node)
-{
-	of_davinci_psc_clk_init(node, da850_psc1_info, 32);
-}
-CLK_OF_DECLARE(da850_psc1_clk, "ti,da850-psc1", of_da850_psc1_clk_init);
 #endif

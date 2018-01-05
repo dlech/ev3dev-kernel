@@ -79,62 +79,8 @@ static __init void dm644x_clk_init(void)
 	clk_register_clkdev(clk, "pll2_sysclk2", NULL);
 	clk = PLL_BP_CLK("pll2_sysclkbp", "ref_clk", pll2);
 	clk_register_clkdev(clk, "pll2_sysclkbp", NULL);
-	clk = PSC_CLK("dsp", "pll1_sysclk1", psc, DAVINCI_LPSC_GEM, 1,
-		      CLK_IS_CRITICAL);  /* REVISIT how to disable? */
-	clk_register_clkdev(clk, "dsp", NULL);
-	clk = PSC_CLK("arm", "pll1_sysclk2", psc, DAVINCI_LPSC_ARM, 0,
-		      CLK_IS_CRITICAL);
-	clk_register_clkdev(clk, "arm", NULL);
-	clk = PSC_CLK("vicp", "pll1_sysclk2", psc, DAVINCI_LPSC_IMCOP, 1,
-		      CLK_IS_CRITICAL); /* REVISIT how to disable? */
-	clk_register_clkdev(clk, "vicp", NULL);
-	clk = PSC_CLK("vpss_master", "pll1_sysclk3", psc, DAVINCI_LPSC_VPSSMSTR,
-		      0, 0);
-	clk_register_clkdev(clk, "master", "vpss");
-	clk = PSC_CLK("vpss_slave", "pll1_sysclk3", psc, DAVINCI_LPSC_VPSSSLV,
-		      0, 0);
-	clk_register_clkdev(clk, "slave", "vpss");
-	clk = PSC_CLK("uart0", "pll1_aux_clk", psc, DAVINCI_LPSC_UART0, 0, 0);
-	clk_register_clkdev(clk, NULL, "serial8250.0");
-	clk = PSC_CLK("uart1", "pll1_aux_clk", psc, DAVINCI_LPSC_UART1, 0, 0);
-	clk_register_clkdev(clk, NULL, "serial8250.1");
-	clk = PSC_CLK("uart2", "pll1_aux_clk", psc, DAVINCI_LPSC_UART2, 0, 0);
-	clk_register_clkdev(clk, NULL, "serial8250.2");
-	clk = PSC_CLK("emac", "pll1_sysclk5", psc, DAVINCI_LPSC_EMAC_WRAPPER,
-		      0, 0);
-	clk_register_clkdev(clk, NULL, "davinci_emac.1");
-	clk_register_clkdev(clk, "fck", "davinci_mdio.0");
-	clk = PSC_CLK("i2c", "pll1_aux_clk", psc, DAVINCI_LPSC_I2C, 0, 0);
-	clk_register_clkdev(clk, NULL, "i2c_davinci.1");
-	clk = PSC_CLK("ide", "pll1_sysclk5", psc, DAVINCI_LPSC_ATA, 0, 0);
-	clk_register_clkdev(clk, NULL, "palm_bk3710");
-	clk = PSC_CLK("asp0", "pll1_sysclk5", psc, DAVINCI_LPSC_McBSP, 0, 0);
-	clk_register_clkdev(clk, NULL, "davinci-mcbsp");
-	clk = PSC_CLK("mmcsd", "pll1_sysclk5", psc, DAVINCI_LPSC_MMC_SD, 0, 0);
-	clk_register_clkdev(clk, NULL, "dm6441-mmc.0");
-	clk = PSC_CLK("spi", "pll1_sysclk5", psc, DAVINCI_LPSC_SPI, 0, 0);
-	clk_register_clkdev(clk, "spi", NULL);
-	clk = PSC_CLK("gpio", "pll1_sysclk5", psc, DAVINCI_LPSC_GPIO, 0, 0);
-	clk_register_clkdev(clk, "gpio", NULL);
-	clk = PSC_CLK("usb", "pll1_sysclk5", psc, DAVINCI_LPSC_USB, 0, 0);
-	clk_register_clkdev(clk, "usb", NULL);
-	clk = PSC_CLK("vlynq", "pll1_sysclk5", psc, DAVINCI_LPSC_VLYNQ, 0, 0);
-	clk_register_clkdev(clk, "vlynq", NULL);
-	clk = PSC_CLK("aemif", "pll1_sysclk5", psc, DAVINCI_LPSC_AEMIF, 0, 0);
-	clk_register_clkdev(clk, "aemif", NULL);
-	clk = PSC_CLK("pwm0", "pll1_aux_clk", psc, DAVINCI_LPSC_PWM0, 0, 0);
-	clk_register_clkdev(clk, "pwm0", NULL);
-	clk = PSC_CLK("pwm1", "pll1_aux_clk", psc, DAVINCI_LPSC_PWM1, 0, 0);
-	clk_register_clkdev(clk, "pwm1", NULL);
-	clk = PSC_CLK("pwm2", "pll1_aux_clk", psc, DAVINCI_LPSC_PWM2, 0, 0);
-	clk_register_clkdev(clk, "pwm2", NULL);
-	clk = PSC_CLK("timer0", "pll1_aux_clk", psc, DAVINCI_LPSC_TIMER0, 0, 0);
-	clk_register_clkdev(clk, "timer0", NULL);
-	clk = PSC_CLK("timer1", "pll1_aux_clk", psc, DAVINCI_LPSC_TIMER1, 0, 0);
-	clk_register_clkdev(clk, "timer1", NULL);
-	clk = PSC_CLK("timer2", "pll1_aux_clk", psc, DAVINCI_LPSC_TIMER2, 0,
-		      CLK_IS_CRITICAL); /* REVISIT: why can't this be disabled? */
-	clk_register_clkdev(clk, NULL, "davinci-wdt");
+
+	dm644x_psc_clk_init(psc);
 }
 
 static struct emac_platform_data dm644x_emac_pdata = {
