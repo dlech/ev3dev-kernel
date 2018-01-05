@@ -89,22 +89,20 @@ static __init void dm355_clk_init(void)
 	clk_register_clkdev(clk, "pll1_aux", NULL);
 	clk = PLL_BP_CLK("pll1_sysclkbp", "ref_clk", pll1);
 	clk_register_clkdev(clk, "pll1_sysclkbp", NULL);
-	clk = FIX_CLK("clkout1", "pll1_aux_clk");
-	/* NOTE:  clkout1 can be externally gated by muxing GPIO-18 */
-	clk_register_clkdev(clk, "clkout1", NULL);
-	clk = FIX_CLK("clkout2", "pll1_sysclkbp");
-	clk_register_clkdev(clk, "clkout2", NULL);
 	clk = PLL_CLK("pll2", "ref_clk", pll2);
 	clk_register_clkdev(clk, "pll2", NULL);
 	clk = PLL_DIV_CLK("pll2_sysclk1", "pll2", pll2, 1);
 	clk_register_clkdev(clk, "pll2_sysclk1", NULL);
 	clk = PLL_BP_CLK("pll2_sysclkbp", "ref_clk", pll2);
 	clk_register_clkdev(clk, "pll2_sysclkbp", NULL);
-	clk = FIX_CLK("clkout3", "pll2_sysclkbp");
-	/* NOTE:  clkout3 can be externally gated by muxing GPIO-16 */
-	clk_register_clkdev(clk, "clkout3", NULL);
 
 	dm355_psc_clk_init(psc);
+
+	/* NOTE:  clkout1 can be externally gated by muxing GPIO-18 */
+	clk_register_fixed_factor(NULL, "clkout1", "pll1_aux_clk", 0, 1, 1);
+	clk_register_fixed_factor(NULL, "clkout2", "pll1_sysclkbp", 0, 1, 1);
+	/* NOTE:  clkout3 can be externally gated by muxing GPIO-16 */
+	clk_register_fixed_factor(NULL, "clkout3", "pll2_sysclkbp", 0, 1, 1);
 }
 
 /*----------------------------------------------------------------------*/

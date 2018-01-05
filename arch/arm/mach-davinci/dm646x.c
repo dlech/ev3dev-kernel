@@ -92,7 +92,7 @@ static __init void dm646x_clk_init(unsigned long ref_clk_rate,
 	dm646x_psc_clk_init(psc);
 
 	/* no LPSC, always enabled; c.f. spruep9a */
-	clk = FIX_CLK("timer2", "pll1_sysclk3");
+	clk = clk_register_fixed_factor(NULL, "timer2", "pll1_sysclk3", 0, 1, 1);
 	clk_register_clkdev(clk, NULL, "davinci-wdt");
 }
 

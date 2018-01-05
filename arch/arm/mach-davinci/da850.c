@@ -92,16 +92,16 @@ static __init void da850_clk_init(void)
 	/* pll1_sysclk2 is not affected by CPU scaling, so use it */
 	clk_set_parent(clk, pll1_sysclk2_clk);
 	clk_register_clkdev(clk, "async3", NULL);
-	clk = FIX_CLK("i2c0", "pll0_aux_clk");
-	clk_register_clkdev(clk, NULL, "i2c_davinci.1");
-	clk = FIX_CLK("timer0", "pll0_aux_clk");
-	clk_register_clkdev(clk, "timer0", NULL);
-	clk = FIX_CLK("timer1", "pll0_aux_clk");
-	clk_register_clkdev(clk, NULL, "davinci-wdt");
 
 	da850_psc_clk_init(psc0, psc1);
 
-	clk = FIX_CLK("rmii", "pll0_sysclk7");
+	clk = clk_register_fixed_factor(NULL, "i2c0", "pll0_aux_clk", 0, 1, 1);
+	clk_register_clkdev(clk, NULL, "i2c_davinci.1");
+	clk = clk_register_fixed_factor(NULL, "timer0", "pll0_aux_clk", 0, 1, 1);
+	clk_register_clkdev(clk, "timer0", NULL);
+	clk = clk_register_fixed_factor(NULL, "timer1", "pll0_aux_clk", 0, 1, 1);
+	clk_register_clkdev(clk, NULL, "davinci-wdt");
+	clk = clk_register_fixed_factor(NULL, "rmii", "pll0_sysclk7", 0, 1, 1);
 	clk_register_clkdev(clk, "rmii", NULL);
 	clk = clk_register_gate(NULL, "ehrpwm_tbclk", "ehrpwm", 0,
 				DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP1_REG),
