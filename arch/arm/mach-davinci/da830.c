@@ -8,6 +8,7 @@
  * is licensed "as is" without any warranty of any kind, whether express
  * or implied.
  */
+#include <linux/clk-provider.h>
 #include <linux/clk.h>
 #include <linux/clk/davinci.h>
 #include <linux/clkdev.h>
@@ -49,25 +50,8 @@ static __init void da830_clk_init(void)
 	psc1 = ioremap(DA8XX_PSC1_BASE, SZ_4K);
 
 	clk_register_fixed_rate(NULL, "ref_clk", NULL, 0, DA830_REF_FREQ);
-	clk = PLL_CLK("pll0", "ref_clk", pll0);
-	clk_register_clkdev(clk, "pll0", NULL);
-	clk = PLL_AUX_CLK("pll0_aux_clk", "ref_clk", pll0);
-	clk_register_clkdev(clk, "pll0_aux", NULL);
-	clk = PLL_DIV_CLK("pll0_sysclk2", "pll0", pll0, 2);
-	clk_register_clkdev(clk, "pll0_sysclk2", NULL);
-	clk = PLL_DIV_CLK("pll0_sysclk3", "pll0", pll0, 3);
-	clk_register_clkdev(clk, "pll0_sysclk3", NULL);
-	clk = PLL_DIV_CLK("pll0_sysclk4", "pll0", pll0, 4);
-	clk_register_clkdev(clk, "pll0_sysclk4", NULL);
-	clk = PLL_DIV_CLK("pll0_sysclk5", "pll0", pll0, 5);
-	clk_register_clkdev(clk, "pll0_sysclk5", NULL);
-	clk = PLL_DIV_CLK("pll0_sysclk6", "pll0", pll0, 6);
-	clk_register_clkdev(clk, "pll0_sysclk6", NULL);
-	clk = PLL_DIV_CLK("pll0_sysclk7", "pll0", pll0, 7);
-	clk_register_clkdev(clk, "pll0_sysclk7", NULL);
-
+	da830_pll_clk_init(pll0);
 	da830_psc_clk_init(psc0, psc1);
-
 	clk = clk_register_fixed_factor(NULL, "i2c0", "pll0_aux_clk", 0, 1, 1);
 	clk_register_clkdev(clk, NULL, "i2c_davinci.1");
 	clk = clk_register_fixed_factor(NULL, "timer0", "pll0_aux_clk", 0, 1, 1);

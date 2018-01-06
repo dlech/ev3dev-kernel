@@ -11,6 +11,7 @@
  * is licensed "as is" without any warranty of any kind, whether express
  * or implied.
  */
+#include <linux/clk-provider.h>
 #include <linux/clk.h>
 #include <linux/clk/davinci.h>
 #include <linux/clkdev.h>
@@ -57,43 +58,17 @@ static __init void da850_clk_init(void)
 	psc1 = ioremap(DA8XX_PSC1_BASE, SZ_4K);
 
 	clk_register_fixed_rate(NULL, "ref_clk", NULL, 0, DA850_REF_FREQ);
-	clk = PLL_CLK("pll0", "ref_clk", pll0);
-	clk_register_clkdev(clk, "pll0", NULL);
-	clk = PLL_AUX_CLK("pll0_aux_clk", "ref_clk", pll0);
-	clk_register_clkdev(clk, "pll0_aux", NULL);
-	clk = PLL_DIV_CLK("pll0_sysclk1", "pll0", pll0, 1);
-	clk_register_clkdev(clk, "pll0_sysclk1", NULL);
-	clk = PLL_DIV_CLK("pll0_sysclk2", "pll0", pll0, 2);
-	clk_register_clkdev(clk, "pll0_sysclk2", NULL);
-	clk = PLL_DIV_CLK("pll0_sysclk3", "pll0", pll0, 3);
-	clk_register_clkdev(clk, "pll0_sysclk3", NULL);
-	clk = PLL_DIV_CLK("pll0_sysclk4", "pll0", pll0, 4);
-	clk_register_clkdev(clk, "pll0_sysclk4", NULL);
-	clk = PLL_DIV_CLK("pll0_sysclk5", "pll0", pll0, 5);
-	clk_register_clkdev(clk, "pll0_sysclk5", NULL);
-	clk = PLL_DIV_CLK("pll0_sysclk6", "pll0", pll0, 6);
-	clk_register_clkdev(clk, "pll0_sysclk6", NULL);
-	clk = PLL_DIV_CLK("pll0_sysclk7", "pll0", pll0, 7);
-	clk_register_clkdev(clk, "pll0_sysclk7", NULL);
-	clk = PLL_CLK("pll1", "ref_clk", pll1);
-	clk_register_clkdev(clk, "pll1", NULL);
-	clk = PLL_AUX_CLK("pll1_aux_clk", "ref_clk", pll1);
-	clk_register_clkdev(clk, "pll1_aux", NULL);
-	clk = PLL_DIV_CLK("pll1_sysclk2", "pll1", pll1, 2);
-	pll1_sysclk2_clk = clk;
-	clk_register_clkdev(clk, "pll1_sysclk2", NULL);
-	clk = PLL_DIV_CLK("pll1_sysclk3", "pll1", pll1, 3);
-	clk_register_clkdev(clk, "pll1_sysclk3", NULL);
+	da850_pll_clk_init(pll0, pll1);
+	pll1_sysclk2_clk = clk_get(NULL, "pll1_sysclk2");
 	clk = clk_register_mux(NULL, "async3",
 		(const char * const[]){ "pll0_sysclk2", "pll1_sysclk2" }, 2, 0,
 		DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP3_REG), CFGCHIP3_ASYNC3_CLKSRC,
 		1, 0, NULL);
 	/* pll1_sysclk2 is not affected by CPU scaling, so use it */
 	clk_set_parent(clk, pll1_sysclk2_clk);
+	clk_put(pll1_sysclk2_clk);
 	clk_register_clkdev(clk, "async3", NULL);
-
 	da850_psc_clk_init(psc0, psc1);
-
 	clk = clk_register_fixed_factor(NULL, "i2c0", "pll0_aux_clk", 0, 1, 1);
 	clk_register_clkdev(clk, NULL, "i2c_davinci.1");
 	clk = clk_register_fixed_factor(NULL, "timer0", "pll0_aux_clk", 0, 1, 1);

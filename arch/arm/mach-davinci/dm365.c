@@ -12,6 +12,7 @@
  * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
+#include <linux/clk-provider.h>
 #include <linux/clk.h>
 #include <linux/clk/davinci.h>
 #include <linux/clkdev.h>
@@ -56,79 +57,16 @@
 #define DM365_EMAC_CNTRL_RAM_OFFSET	0x1000
 #define DM365_EMAC_CNTRL_RAM_SIZE	0x2000
 
-static const char * const pll_obsclk_parent_names[] = {
-	"ref_clk",
-};
-
-static u32 pll_obsclk_table[] = {
-	0x10,
-};
-
 static __init void dm365_clk_init(void)
 {
 	void __iomem *pll1, *pll2, *psc;
-	struct clk *clk;
 
 	pll1 = ioremap(DAVINCI_PLL1_BASE, SZ_4K);
 	pll2 = ioremap(DAVINCI_PLL2_BASE, SZ_4K);
 	psc = ioremap(DAVINCI_PWR_SLEEP_CNTRL_BASE, SZ_4K);
 
 	clk_register_fixed_rate(NULL, "ref_clk", NULL, 0, DM365_REF_FREQ);
-	clk = PLL_CLK("pll1", "ref_clk", pll1);
-	clk_register_clkdev(clk, "pll1", NULL);
-	clk = PLL_AUX_CLK("pll1_aux_clk", "ref_clk", pll1);
-	clk_register_clkdev(clk, "pll1_aux", NULL);
-	clk = PLL_BP_CLK("pll1_sysclkbp", "ref_clk", pll1);
-	clk_register_clkdev(clk, "pll1_sysclkbp", NULL);
-	clk = PLL_OBS_CLK("clkout0", pll_obsclk_parent_names,
-			  ARRAY_SIZE(pll_obsclk_parent_names), pll1,
-			  pll_obsclk_table);
-	clk_register_clkdev(clk, "clkout0", NULL);
-	clk = PLL_DIV_CLK("pll1_sysclk1", "pll1", pll1, 1);
-	clk_register_clkdev(clk, "pll1_sysclk1", NULL);
-	clk = PLL_DIV_CLK("pll1_sysclk2", "pll1", pll1, 2);
-	clk_register_clkdev(clk, "pll1_sysclk2", NULL);
-	clk = PLL_DIV_CLK("pll1_sysclk3", "pll1", pll1, 3);
-	clk_register_clkdev(clk, "pll1_sysclk3", NULL);
-	clk = PLL_DIV_CLK("pll1_sysclk4", "pll1", pll1, 4);
-	clk_register_clkdev(clk, "pll1_sysclk4", NULL);
-	clk = PLL_DIV_CLK("pll1_sysclk5", "pll1", pll1, 5);
-	clk_register_clkdev(clk, "pll1_sysclk5", NULL);
-	clk = PLL_DIV_CLK("pll1_sysclk6", "pll1", pll1, 6);
-	clk_register_clkdev(clk, "pll1_sysclk6", NULL);
-	clk = PLL_DIV_CLK("pll1_sysclk7", "pll1", pll1, 7);
-	clk_register_clkdev(clk, "pll1_sysclk7", NULL);
-	clk = PLL_DIV_CLK("pll1_sysclk8", "pll1", pll1, 8);
-	clk_register_clkdev(clk, "pll1_sysclk8", NULL);
-	clk = PLL_DIV_CLK("pll1_sysclk9", "pll1", pll1, 9);
-	clk_register_clkdev(clk, "pll1_sysclk9", NULL);
-	clk = PLL_CLK("pll2", "ref_clk", pll2);
-	clk_register_clkdev(clk, "pll2", NULL);
-	clk = PLL_AUX_CLK("clkout1", "ref_clk", pll2);
-	clk_register_clkdev(clk, "pll2_aux", NULL);
-	clk = PLL_OBS_CLK("clkout1", pll_obsclk_parent_names,
-			  ARRAY_SIZE(pll_obsclk_parent_names), pll2,
-			  pll_obsclk_table);
-	clk_register_clkdev(clk, "clkout1", NULL);
-	clk = PLL_DIV_CLK("pll2_sysclk1", "pll2", pll2, 1);
-	clk_register_clkdev(clk, "pll2_sysclk1", NULL);
-	clk = PLL_DIV_CLK("pll2_sysclk2", "pll2", pll2, 2);
-	clk_register_clkdev(clk, "pll2_sysclk2", NULL);
-	clk = PLL_DIV_CLK("pll2_sysclk3", "pll2", pll2, 3);
-	clk_register_clkdev(clk, "pll2_sysclk3", NULL);
-	clk = PLL_DIV_CLK("pll2_sysclk4", "pll2", pll2, 4);
-	clk_register_clkdev(clk, "pll2_sysclk4", NULL);
-	clk = PLL_DIV_CLK("pll2_sysclk5", "pll2", pll2, 5);
-	clk_register_clkdev(clk, "pll2_sysclk5", NULL);
-	clk = PLL_DIV_CLK("pll2_sysclk6", "pll2", pll2, 6);
-	clk_register_clkdev(clk, "pll2_sysclk6", NULL);
-	clk = PLL_DIV_CLK("pll2_sysclk7", "pll2", pll2, 7);
-	clk_register_clkdev(clk, "pll2_sysclk7", NULL);
-	clk = PLL_DIV_CLK("pll2_sysclk8", "pll2", pll2, 8);
-	clk_register_clkdev(clk, "pll2_sysclk8", NULL);
-	clk = PLL_DIV_CLK("pll2_sysclk9", "pll2", pll2, 9);
-	clk_register_clkdev(clk, "pll2_sysclk9", NULL);
-
+	dm365_pll_clk_init(pll1, pll2);
 	dm365_psc_clk_init(psc);
 }
 
