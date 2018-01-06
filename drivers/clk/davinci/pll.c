@@ -23,6 +23,8 @@
 #include <linux/of.h>
 #include <linux/slab.h>
 
+#include "pll.h"
+
 #define REVID		0x000
 #define PLLCTL		0x100
 #define OCSEL		0x104
@@ -438,30 +440,22 @@ struct clk *davinci_pll_obs_clk_register(const char *name,
 	return clk;
 }
 
-/**
- * davinci_pll_div_clk_register - Register a PLLDIV (SYSCLK) clock
- * @name: The clock name
- * @parent_name: The parent clock name
- * @base: The PLL memory region
- * @id: The id of the divider (n in PLLDIVn)
- */
-struct clk *davinci_pll_div_clk_register(const char *name,
-					 const char *parent_name,
-					 void __iomem *base,
-					 u32 id)
+struct clk *
+davinci_pll_divclk_register(const struct davinci_pll_divclk_info *info,
+			    void __iomem *base)
 {
-	const char * const *parent_names = (parent_name ? &parent_name : NULL);
-	int num_parents = (parent_name ? 1 : 0);
+	const struct clk_ops *divider_ops = &clk_divider_ops;
 	struct clk_gate *gate;
 	struct clk_divider *divider;
 	struct clk *clk;
 	u32 reg;
+	u32 flags = 0;
 
 	/* PLLDIVn registers are not entirely consecutive */
-	if (id < 4)
-		reg = PLLDIV1 + 4 * (id - 1);
+	if (info->id < 4)
+		reg = PLLDIV1 + 4 * (info->id - 1);
 	else
-		reg = PLLDIV4 + 4 * (id - 4);
+		reg = PLLDIV4 + 4 * (info->id - 4);
 
 	gate = kzalloc(sizeof(*gate), GFP_KERNEL);
 	if (!gate)
@@ -478,13 +472,23 @@ struct clk *davinci_pll_div_clk_register(const char *name,
 
 	divider->reg = base + reg;
 	divider->width = PLLDIV_RATIO_WIDTH;
-	divider->flags = CLK_DIVIDER_READ_ONLY;
+	divider->flags = 0;
 
-	clk = clk_register_composite(NULL, name, parent_names, num_parents,
-				     NULL, NULL,
-				     &divider->hw, &clk_divider_ro_ops,
-				     &gate->hw, &clk_gate_ops,
-				     CLK_SET_RATE_PARENT);
+	if (info->flags & DIVCLK_FIXED_DIV) {
+		flags |= CLK_DIVIDER_READ_ONLY;
+		divider_ops = &clk_divider_ro_ops;
+	}
+
+	/* Only the ARM clock can change the parent PLL rate */
+	if (info->flags & DIVCLK_ARM_RATE)
+		flags |= CLK_SET_RATE_PARENT;
+
+	if (info->flags & DIVCLK_ALWAYS_ENABLED)
+		flags |= CLK_IS_CRITICAL;
+
+	clk = clk_register_composite(NULL, info->name, &info->parent_name, 1,
+				     NULL, NULL, &divider->hw, divider_ops,
+				     &gate->hw, &clk_gate_ops, flags);
 	if (IS_ERR(clk)) {
 		kfree(divider);
 		kfree(gate);
@@ -497,7 +501,8 @@ struct clk *davinci_pll_div_clk_register(const char *name,
 #define MAX_NAME_SIZE 20
 
 void of_davinci_pll_init(struct device_node *node, const char *name,
-			 u8 num_sysclk)
+			 const struct davinci_pll_divclk_info *info,
+			 u8 max_divclk_id)
 {
 	struct device_node *child;
 	const char *parent_name;
@@ -522,30 +527,20 @@ void of_davinci_pll_init(struct device_node *node, const char *name,
 	child = of_get_child_by_name(node, "sysclk");
 	if (child && of_device_is_available(child)) {
 		struct clk_onecell_data *clk_data;
-		char child_name[MAX_NAME_SIZE];
-		u32 id;
 
-		clk_data = clk_alloc_onecell_data(num_sysclk + 1);
+		clk_data = clk_alloc_onecell_data(max_divclk_id + 1);
 		if (!clk_data) {
 			pr_err("%s: out of memory\n", __func__);
 			return;
 		}
 
-		for (id = 1; id <= num_sysclk; id++) {
-			/* Hack to keep DDR PHY clock (pll1_sysclk1) on */
-			if (strcmp(name, "pll1") == 0 && id == 1)
-				continue;
-
-			snprintf(child_name, MAX_NAME_SIZE, "%s_sysclk%d",
-				 name, id);
-
-			clk = davinci_pll_div_clk_register(child_name, name,
-							   base, id);
+		for (; info->name; info++) {
+			clk = davinci_pll_divclk_register(info, base);
 			if (IS_ERR(clk))
 				pr_warn("%s: failed to register %s (%ld)\n",
-					__func__, child_name, PTR_ERR(clk));
+					__func__, info->name, PTR_ERR(clk));
 			else
-				clk_data->clks[id] = clk;
+				clk_data->clks[info->id] = clk;
 		}
 		of_clk_add_provider(child, of_clk_src_onecell_get, clk_data);
 
