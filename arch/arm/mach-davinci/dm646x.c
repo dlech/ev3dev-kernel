@@ -8,6 +8,7 @@
  * is licensed "as is" without any warranty of any kind, whether express
  * or implied.
  */
+#include <linux/clk-provider.h>
 #include <linux/clk.h>
 #include <linux/clk/davinci.h>
 #include <linux/clkdev.h>
@@ -60,35 +61,8 @@ static __init void dm646x_clk_init(unsigned long ref_clk_rate,
 
 	clk_register_fixed_rate(NULL, "ref_clk", NULL, 0, ref_clk_rate);
 	clk_register_fixed_rate(NULL, "aux_clkin", NULL, 0, aux_clkin_rate);
-	clk = PLL_CLK("pll1", "ref_clk", pll1);
-	clk_register_clkdev(clk, "pll1", NULL);
-	clk = PLL_DIV_CLK("pll1_sysclk1", "pll1", pll1, 1);
-	clk_register_clkdev(clk, "pll1_sysclk", NULL);
-	clk = PLL_DIV_CLK("pll1_sysclk2", "pll1", pll1, 2);
-	clk_register_clkdev(clk, "pll1_sysclk", NULL);
-	clk = PLL_DIV_CLK("pll1_sysclk3", "pll1", pll1, 3);
-	clk_register_clkdev(clk, "pll1_sysclk", NULL);
-	clk = PLL_DIV_CLK("pll1_sysclk4", "pll1", pll1, 4);
-	clk_register_clkdev(clk, "pll1_sysclk", NULL);
-	clk = PLL_DIV_CLK("pll1_sysclk5", "pll1", pll1, 5);
-	clk_register_clkdev(clk, "pll1_sysclk", NULL);
-	clk = PLL_DIV_CLK("pll1_sysclk6", "pll1", pll1, 6);
-	clk_register_clkdev(clk, "pll1_sysclk", NULL);
-	clk = PLL_DIV_CLK("pll1_sysclk8", "pll1", pll1, 8);
-	clk_register_clkdev(clk, "pll1_sysclk", NULL);
-	clk = PLL_DIV_CLK("pll1_sysclk9", "pll1", pll1, 9);
-	clk_register_clkdev(clk, "pll1_sysclk", NULL);
-	clk = PLL_BP_CLK("pll1_sysclkbp", "ref_clk", pll1);
-	clk_register_clkdev(clk, "pll1_sysclk", NULL);
-	clk = PLL_AUX_CLK("pll1_aux_clk", "ref_clk", pll1);
-	clk_register_clkdev(clk, "pll1_aux", NULL);
-	clk = PLL_CLK("pll2_clk", "ref_clk", pll2);
-	clk_register_clkdev(clk, "pll2", NULL);
-	clk = PLL_DIV_CLK("pll2_sysclk1", "pll2", pll2, 2);
-	clk_register_clkdev(clk, "pll2_sysclk1", NULL);
-
+	dm646x_pll_clk_init(pll1, pll2);
 	dm646x_psc_clk_init(psc);
-
 	/* no LPSC, always enabled; c.f. spruep9a */
 	clk = clk_register_fixed_factor(NULL, "timer2", "pll1_sysclk3", 0, 1, 1);
 	clk_register_clkdev(clk, NULL, "davinci-wdt");

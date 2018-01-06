@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
- * PLL clock driver for Davinci devices
+ * PLL clock driver for TI Davinci SoCs
  *
  * Copyright (C) 2017 David Lechner <david@lechnology.com>
  *
@@ -337,8 +337,8 @@ struct clk *davinci_pll_div_clk_register(const char *name,
 #ifdef CONFIG_OF
 #define MAX_NAME_SIZE 20
 
-static void of_davinci_pll_init(struct device_node *node, const char *name,
-				u8 num_sysclk)
+void of_davinci_pll_init(struct device_node *node, const char *name,
+			 u8 num_sysclk)
 {
 	struct device_node *child;
 	const char *parent_name;
@@ -408,16 +408,4 @@ static void of_davinci_pll_init(struct device_node *node, const char *name,
 	}
 	of_node_put(child);
 }
-
-static void of_da850_pll0_auxclk_init(struct device_node *node)
-{
-	of_davinci_pll_init(node, "pll0", 7);
-}
-CLK_OF_DECLARE(da850_pll0_auxclk, "ti,da850-pll0", of_da850_pll0_auxclk_init);
-
-static void of_da850_pll1_auxclk_init(struct device_node *node)
-{
-	of_davinci_pll_init(node, "pll1", 3);
-}
-CLK_OF_DECLARE(da850_pll1_auxclk, "ti,da850-pll1", of_da850_pll1_auxclk_init);
 #endif

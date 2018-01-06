@@ -8,6 +8,7 @@
  * is licensed "as is" without any warranty of any kind, whether express
  * or implied.
  */
+#include <linux/clk-provider.h>
 #include <linux/clk.h>
 #include <linux/clk/davinci.h>
 #include <linux/clkdev.h>
@@ -45,56 +46,16 @@
  */
 #define DM355_REF_FREQ		24000000	/* 24 or 36 MHz */
 
-/*
- * NOT LISTED below, and not touched by Linux
- *   - in SyncReset state by default
- *	.lpsc = DAVINCI_LPSC_TPCC,
- *	.lpsc = DAVINCI_LPSC_TPTC0,
- *	.lpsc = DAVINCI_LPSC_TPTC1,
- *	.lpsc = DAVINCI_LPSC_DDR_EMIF, .parent = &sysclk2_clk,
- *	.lpsc = DAVINCI_LPSC_MEMSTICK,
- *   - in Enabled state by default
- *	.lpsc = DAVINCI_LPSC_SYSTEM_SUBSYS,
- *	.lpsc = DAVINCI_LPSC_SCR2,	// "bus"
- *	.lpsc = DAVINCI_LPSC_SCR3,	// "bus"
- *	.lpsc = DAVINCI_LPSC_SCR4,	// "bus"
- *	.lpsc = DAVINCI_LPSC_CROSSBAR,	// "emulation"
- *	.lpsc = DAVINCI_LPSC_CFG27,	// "test"
- *	.lpsc = DAVINCI_LPSC_CFG3,	// "test"
- *	.lpsc = DAVINCI_LPSC_CFG5,	// "test"
- */
-
 static __init void dm355_clk_init(void)
 {
 	void __iomem *pll1, *pll2, *psc;
-	struct clk *clk;
 
 	pll1 = ioremap(DAVINCI_PLL1_BASE, SZ_4K);
 	pll2 = ioremap(DAVINCI_PLL2_BASE, SZ_4K);
 	psc = ioremap(DAVINCI_PWR_SLEEP_CNTRL_BASE, SZ_4K);
 
 	clk_register_fixed_rate(NULL, "ref_clk", NULL, 0, DM355_REF_FREQ);
-	clk = PLL_CLK("pll1", "ref_clk", pll1);
-	clk_register_clkdev(clk, "pll1", NULL);
-	clk = PLL_DIV_CLK("pll1_sysclk1", "pll1", pll1, 1);
-	clk_register_clkdev(clk, "pll1_sysclk1", NULL);
-	clk = PLL_DIV_CLK("pll1_sysclk2", "pll1", pll1, 2);
-	clk_register_clkdev(clk, "pll1_sysclk2", NULL);
-	clk = PLL_DIV_CLK("pll1_sysclk3", "pll1", pll1, 3);
-	clk_register_clkdev(clk, "pll1_sysclk3", NULL);
-	clk = PLL_DIV_CLK("pll1_sysclk4", "pll1", pll1, 4);
-	clk_register_clkdev(clk, "pll1_sysclk4", NULL);
-	clk = PLL_AUX_CLK("pll1_aux_clk", "ref_clk", pll1);
-	clk_register_clkdev(clk, "pll1_aux", NULL);
-	clk = PLL_BP_CLK("pll1_sysclkbp", "ref_clk", pll1);
-	clk_register_clkdev(clk, "pll1_sysclkbp", NULL);
-	clk = PLL_CLK("pll2", "ref_clk", pll2);
-	clk_register_clkdev(clk, "pll2", NULL);
-	clk = PLL_DIV_CLK("pll2_sysclk1", "pll2", pll2, 1);
-	clk_register_clkdev(clk, "pll2_sysclk1", NULL);
-	clk = PLL_BP_CLK("pll2_sysclkbp", "ref_clk", pll2);
-	clk_register_clkdev(clk, "pll2_sysclkbp", NULL);
-
+	dm355_pll_clk_init(pll1, pll2);
 	dm355_psc_clk_init(psc);
 
 	/* NOTE:  clkout1 can be externally gated by muxing GPIO-18 */
