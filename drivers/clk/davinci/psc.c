@@ -162,7 +162,7 @@ static struct clk *davinci_psc_clk_register(const char *name,
 	init.ops = &davinci_psc_clk_ops;
 	init.parent_names = (parent_name ? &parent_name : NULL);
 	init.num_parents = (parent_name ? 1 : 0);
-	init.flags = 0;
+	init.flags = CLK_SET_RATE_PARENT;
 
 	if (flags & LPSC_ALWAYS_ENABLED)
 		init.flags |= CLK_IS_CRITICAL;
