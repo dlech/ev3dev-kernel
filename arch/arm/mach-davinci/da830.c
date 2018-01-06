@@ -40,28 +40,6 @@
 
 #define DA830_REF_FREQ		24000000
 
-static __init void da830_clk_init(void)
-{
-	void __iomem *pll0, *psc0, *psc1;
-	struct clk *clk;
-
-	pll0 = ioremap(DA8XX_PLL0_BASE, SZ_4K);
-	psc0 = ioremap(DA8XX_PSC0_BASE, SZ_4K);
-	psc1 = ioremap(DA8XX_PSC1_BASE, SZ_4K);
-
-	clk_register_fixed_rate(NULL, "ref_clk", NULL, 0, DA830_REF_FREQ);
-	da830_pll_clk_init(pll0);
-	da830_psc_clk_init(psc0, psc1);
-	clk = clk_register_fixed_factor(NULL, "i2c0", "pll0_aux_clk", 0, 1, 1);
-	clk_register_clkdev(clk, NULL, "i2c_davinci.1");
-	clk = clk_register_fixed_factor(NULL, "timer0", "pll0_aux_clk", 0, 1, 1);
-	clk_register_clkdev(clk, "timer0", NULL);
-	clk = clk_register_fixed_factor(NULL, "timer1", "pll0_aux_clk", 0, 1, 1);
-	clk_register_clkdev(clk, NULL, "davinci-wdt");
-	clk = clk_register_fixed_factor(NULL, "rmii", "pll0_sysclk7", 0, 1, 1);
-	clk_register_clkdev(clk, "rmii", NULL);
-}
-
 /*
  * Device specific mux setup
  *
@@ -848,6 +826,24 @@ void __init da830_init(void)
 
 void __init da830_init_time(void)
 {
-	da830_clk_init();
+	void __iomem *pll0, *psc0, *psc1;
+	struct clk *clk;
+
+	pll0 = ioremap(DA8XX_PLL0_BASE, SZ_4K);
+	psc0 = ioremap(DA8XX_PSC0_BASE, SZ_4K);
+	psc1 = ioremap(DA8XX_PSC1_BASE, SZ_4K);
+
+	clk_register_fixed_rate(NULL, "ref_clk", NULL, 0, DA830_REF_FREQ);
+	da830_pll_clk_init(pll0);
+	da830_psc_clk_init(psc0, psc1);
+	clk = clk_register_fixed_factor(NULL, "i2c0", "pll0_aux_clk", 0, 1, 1);
+	clk_register_clkdev(clk, NULL, "i2c_davinci.1");
+	clk = clk_register_fixed_factor(NULL, "timer0", "pll0_aux_clk", 0, 1, 1);
+	clk_register_clkdev(clk, "timer0", NULL);
+	clk = clk_register_fixed_factor(NULL, "timer1", "pll0_aux_clk", 0, 1, 1);
+	clk_register_clkdev(clk, NULL, "davinci-wdt");
+	clk = clk_register_fixed_factor(NULL, "rmii", "pll0_sysclk7", 0, 1, 1);
+	clk_register_clkdev(clk, "rmii", NULL);
+
 	davinci_timer_init();
 }

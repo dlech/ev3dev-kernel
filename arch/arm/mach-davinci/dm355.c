@@ -46,27 +46,6 @@
  */
 #define DM355_REF_FREQ		24000000	/* 24 or 36 MHz */
 
-static __init void dm355_clk_init(void)
-{
-	void __iomem *pll1, *pll2, *psc;
-
-	pll1 = ioremap(DAVINCI_PLL1_BASE, SZ_4K);
-	pll2 = ioremap(DAVINCI_PLL2_BASE, SZ_4K);
-	psc = ioremap(DAVINCI_PWR_SLEEP_CNTRL_BASE, SZ_4K);
-
-	clk_register_fixed_rate(NULL, "ref_clk", NULL, 0, DM355_REF_FREQ);
-	dm355_pll_clk_init(pll1, pll2);
-	dm355_psc_clk_init(psc);
-
-	/* NOTE:  clkout1 can be externally gated by muxing GPIO-18 */
-	clk_register_fixed_factor(NULL, "clkout1", "pll1_aux_clk", 0, 1, 1);
-	clk_register_fixed_factor(NULL, "clkout2", "pll1_sysclkbp", 0, 1, 1);
-	/* NOTE:  clkout3 can be externally gated by muxing GPIO-16 */
-	clk_register_fixed_factor(NULL, "clkout3", "pll2_sysclkbp", 0, 1, 1);
-}
-
-/*----------------------------------------------------------------------*/
-
 static u64 dm355_spi0_dma_mask = DMA_BIT_MASK(32);
 
 static struct resource dm355_spi0_resources[] = {
@@ -724,7 +703,22 @@ void __init dm355_init(void)
 
 void __init dm355_init_time(void)
 {
-	dm355_clk_init();
+	void __iomem *pll1, *pll2, *psc;
+
+	pll1 = ioremap(DAVINCI_PLL1_BASE, SZ_4K);
+	pll2 = ioremap(DAVINCI_PLL2_BASE, SZ_4K);
+	psc = ioremap(DAVINCI_PWR_SLEEP_CNTRL_BASE, SZ_4K);
+
+	clk_register_fixed_rate(NULL, "ref_clk", NULL, 0, DM355_REF_FREQ);
+	dm355_pll_clk_init(pll1, pll2);
+	dm355_psc_clk_init(psc);
+
+	/* NOTE:  clkout1 can be externally gated by muxing GPIO-18 */
+	clk_register_fixed_factor(NULL, "clkout1", "pll1_aux_clk", 0, 1, 1);
+	clk_register_fixed_factor(NULL, "clkout2", "pll1_sysclkbp", 0, 1, 1);
+	/* NOTE:  clkout3 can be externally gated by muxing GPIO-16 */
+	clk_register_fixed_factor(NULL, "clkout3", "pll2_sysclkbp", 0, 1, 1);
+
 	davinci_timer_init();
 }
 

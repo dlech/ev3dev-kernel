@@ -49,25 +49,6 @@
 #define DM646X_EMAC_CNTRL_RAM_OFFSET	0x2000
 #define DM646X_EMAC_CNTRL_RAM_SIZE	0x2000
 
-static __init void dm646x_clk_init(unsigned long ref_clk_rate,
-				   unsigned long aux_clkin_rate)
-{
-	void __iomem *pll1, *pll2, *psc;
-	struct clk *clk;
-
-	pll1 = ioremap(DAVINCI_PLL1_BASE, SZ_4K);
-	pll2 = ioremap(DAVINCI_PLL2_BASE, SZ_4K);
-	psc = ioremap(DAVINCI_PWR_SLEEP_CNTRL_BASE, SZ_4K);
-
-	clk_register_fixed_rate(NULL, "ref_clk", NULL, 0, ref_clk_rate);
-	clk_register_fixed_rate(NULL, "aux_clkin", NULL, 0, aux_clkin_rate);
-	dm646x_pll_clk_init(pll1, pll2);
-	dm646x_psc_clk_init(psc);
-	/* no LPSC, always enabled; c.f. spruep9a */
-	clk = clk_register_fixed_factor(NULL, "timer2", "pll1_sysclk3", 0, 1, 1);
-	clk_register_clkdev(clk, NULL, "davinci-wdt");
-}
-
 static struct emac_platform_data dm646x_emac_pdata = {
 	.ctrl_reg_offset	= DM646X_EMAC_CNTRL_OFFSET,
 	.ctrl_mod_reg_offset	= DM646X_EMAC_CNTRL_MOD_OFFSET,
@@ -660,7 +641,21 @@ void __init dm646x_init(void)
 void __init dm646x_init_time(unsigned long ref_clk_rate,
 			     unsigned long aux_clkin_rate)
 {
-	dm646x_clk_init(ref_clk_rate, aux_clkin_rate);
+	void __iomem *pll1, *pll2, *psc;
+	struct clk *clk;
+
+	pll1 = ioremap(DAVINCI_PLL1_BASE, SZ_4K);
+	pll2 = ioremap(DAVINCI_PLL2_BASE, SZ_4K);
+	psc = ioremap(DAVINCI_PWR_SLEEP_CNTRL_BASE, SZ_4K);
+
+	clk_register_fixed_rate(NULL, "ref_clk", NULL, 0, ref_clk_rate);
+	clk_register_fixed_rate(NULL, "aux_clkin", NULL, 0, aux_clkin_rate);
+	dm646x_pll_clk_init(pll1, pll2);
+	dm646x_psc_clk_init(psc);
+	/* no LPSC, always enabled; c.f. spruep9a */
+	clk = clk_register_fixed_factor(NULL, "timer2", "pll1_sysclk3", 0, 1, 1);
+	clk_register_clkdev(clk, NULL, "davinci-wdt");
+
 	davinci_timer_init();
 }
 
