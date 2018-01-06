@@ -57,21 +57,6 @@
 #define DM365_EMAC_CNTRL_RAM_OFFSET	0x1000
 #define DM365_EMAC_CNTRL_RAM_SIZE	0x2000
 
-static __init void dm365_clk_init(void)
-{
-	void __iomem *pll1, *pll2, *psc;
-
-	pll1 = ioremap(DAVINCI_PLL1_BASE, SZ_4K);
-	pll2 = ioremap(DAVINCI_PLL2_BASE, SZ_4K);
-	psc = ioremap(DAVINCI_PWR_SLEEP_CNTRL_BASE, SZ_4K);
-
-	clk_register_fixed_rate(NULL, "ref_clk", NULL, 0, DM365_REF_FREQ);
-	dm365_pll_clk_init(pll1, pll2);
-	dm365_psc_clk_init(psc);
-}
-
-/*----------------------------------------------------------------------*/
-
 #define INTMUX		0x18
 #define EVTMUX		0x1c
 
@@ -751,7 +736,16 @@ void __init dm365_init(void)
 
 void __init dm365_init_time(void)
 {
-	dm365_clk_init();
+	void __iomem *pll1, *pll2, *psc;
+
+	pll1 = ioremap(DAVINCI_PLL1_BASE, SZ_4K);
+	pll2 = ioremap(DAVINCI_PLL2_BASE, SZ_4K);
+	psc = ioremap(DAVINCI_PWR_SLEEP_CNTRL_BASE, SZ_4K);
+
+	clk_register_fixed_rate(NULL, "ref_clk", NULL, 0, DM365_REF_FREQ);
+	dm365_pll_clk_init(pll1, pll2);
+	dm365_psc_clk_init(psc);
+
 	davinci_timer_init();
 }
 

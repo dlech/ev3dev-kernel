@@ -47,43 +47,6 @@
 #define CFGCHIP3_PLL1_MASTER_LOCK	BIT(5)
 #define CFGCHIP0_PLL_MASTER_LOCK	BIT(4)
 
-static __init void da850_clk_init(void)
-{
-	void __iomem *pll0, *pll1, *psc0, *psc1;
-	struct clk *clk, *pll1_sysclk2_clk;
-
-	pll0 = ioremap(DA8XX_PLL0_BASE, SZ_4K);
-	pll1 = ioremap(DA850_PLL1_BASE, SZ_4K);
-	psc0 = ioremap(DA8XX_PSC0_BASE, SZ_4K);
-	psc1 = ioremap(DA8XX_PSC1_BASE, SZ_4K);
-
-	clk_register_fixed_rate(NULL, "ref_clk", NULL, 0, DA850_REF_FREQ);
-	da850_pll_clk_init(pll0, pll1);
-	pll1_sysclk2_clk = clk_get(NULL, "pll1_sysclk2");
-	clk = clk_register_mux(NULL, "async3",
-		(const char * const[]){ "pll0_sysclk2", "pll1_sysclk2" }, 2, 0,
-		DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP3_REG), CFGCHIP3_ASYNC3_CLKSRC,
-		1, 0, NULL);
-	/* pll1_sysclk2 is not affected by CPU scaling, so use it */
-	clk_set_parent(clk, pll1_sysclk2_clk);
-	clk_put(pll1_sysclk2_clk);
-	clk_register_clkdev(clk, "async3", NULL);
-	da850_psc_clk_init(psc0, psc1);
-	clk = clk_register_fixed_factor(NULL, "i2c0", "pll0_aux_clk", 0, 1, 1);
-	clk_register_clkdev(clk, NULL, "i2c_davinci.1");
-	clk = clk_register_fixed_factor(NULL, "timer0", "pll0_aux_clk", 0, 1, 1);
-	clk_register_clkdev(clk, "timer0", NULL);
-	clk = clk_register_fixed_factor(NULL, "timer1", "pll0_aux_clk", 0, 1, 1);
-	clk_register_clkdev(clk, NULL, "davinci-wdt");
-	clk = clk_register_fixed_factor(NULL, "rmii", "pll0_sysclk7", 0, 1, 1);
-	clk_register_clkdev(clk, "rmii", NULL);
-	clk = clk_register_gate(NULL, "ehrpwm_tbclk", "ehrpwm", 0,
-				DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP1_REG),
-				CFGCHIP1_TBCLKSYNC, 0, NULL);
-	clk_register_clkdev(clk, "tbclk", "ehrpwm.0");
-	clk_register_clkdev(clk, "tbclk", "ehrpwm.1");
-}
-
 /*
  * Device specific mux setup
  *
@@ -813,6 +776,39 @@ void __init da850_init(void)
 
 void __init da850_init_time(void)
 {
-	da850_clk_init();
+	void __iomem *pll0, *pll1, *psc0, *psc1;
+	struct clk *clk, *pll1_sysclk2_clk;
+
+	pll0 = ioremap(DA8XX_PLL0_BASE, SZ_4K);
+	pll1 = ioremap(DA850_PLL1_BASE, SZ_4K);
+	psc0 = ioremap(DA8XX_PSC0_BASE, SZ_4K);
+	psc1 = ioremap(DA8XX_PSC1_BASE, SZ_4K);
+
+	clk_register_fixed_rate(NULL, "ref_clk", NULL, 0, DA850_REF_FREQ);
+	da850_pll_clk_init(pll0, pll1);
+	pll1_sysclk2_clk = clk_get(NULL, "pll1_sysclk2");
+	clk = clk_register_mux(NULL, "async3",
+		(const char * const[]){ "pll0_sysclk2", "pll1_sysclk2" }, 2, 0,
+		DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP3_REG), CFGCHIP3_ASYNC3_CLKSRC,
+		1, 0, NULL);
+	/* pll1_sysclk2 is not affected by CPU scaling, so use it */
+	clk_set_parent(clk, pll1_sysclk2_clk);
+	clk_put(pll1_sysclk2_clk);
+	clk_register_clkdev(clk, "async3", NULL);
+	da850_psc_clk_init(psc0, psc1);
+	clk = clk_register_fixed_factor(NULL, "i2c0", "pll0_aux_clk", 0, 1, 1);
+	clk_register_clkdev(clk, NULL, "i2c_davinci.1");
+	clk = clk_register_fixed_factor(NULL, "timer0", "pll0_aux_clk", 0, 1, 1);
+	clk_register_clkdev(clk, "timer0", NULL);
+	clk = clk_register_fixed_factor(NULL, "timer1", "pll0_aux_clk", 0, 1, 1);
+	clk_register_clkdev(clk, NULL, "davinci-wdt");
+	clk = clk_register_fixed_factor(NULL, "rmii", "pll0_sysclk7", 0, 1, 1);
+	clk_register_clkdev(clk, "rmii", NULL);
+	clk = clk_register_gate(NULL, "ehrpwm_tbclk", "ehrpwm", 0,
+				DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP1_REG),
+				CFGCHIP1_TBCLKSYNC, 0, NULL);
+	clk_register_clkdev(clk, "tbclk", "ehrpwm.0");
+	clk_register_clkdev(clk, "tbclk", "ehrpwm.1");
+
 	davinci_timer_init();
 }

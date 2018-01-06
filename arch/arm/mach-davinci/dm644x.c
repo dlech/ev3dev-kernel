@@ -46,19 +46,6 @@
 #define DM644X_EMAC_CNTRL_RAM_OFFSET	0x2000
 #define DM644X_EMAC_CNTRL_RAM_SIZE	0x2000
 
-static __init void dm644x_clk_init(void)
-{
-	void __iomem *pll1, *pll2, *psc;
-
-	pll1 = ioremap(DAVINCI_PLL1_BASE, SZ_4K);
-	pll2 = ioremap(DAVINCI_PLL2_BASE, SZ_4K);
-	psc = ioremap(DAVINCI_PWR_SLEEP_CNTRL_BASE, SZ_4K);
-
-	clk_register_fixed_rate(NULL, "ref_clk", NULL, 0, DM644X_REF_FREQ);
-	dm644x_pll_clk_init(pll1, pll2);
-	dm644x_psc_clk_init(psc);
-}
-
 static struct emac_platform_data dm644x_emac_pdata = {
 	.ctrl_reg_offset	= DM644X_EMAC_CNTRL_OFFSET,
 	.ctrl_mod_reg_offset	= DM644X_EMAC_CNTRL_MOD_OFFSET,
@@ -662,7 +649,16 @@ void __init dm644x_init(void)
 
 void __init dm644x_init_time(void)
 {
-	dm644x_clk_init();
+	void __iomem *pll1, *pll2, *psc;
+
+	pll1 = ioremap(DAVINCI_PLL1_BASE, SZ_4K);
+	pll2 = ioremap(DAVINCI_PLL2_BASE, SZ_4K);
+	psc = ioremap(DAVINCI_PWR_SLEEP_CNTRL_BASE, SZ_4K);
+
+	clk_register_fixed_rate(NULL, "ref_clk", NULL, 0, DM644X_REF_FREQ);
+	dm644x_pll_clk_init(pll1, pll2);
+	dm644x_psc_clk_init(psc);
+
 	davinci_timer_init();
 }
 
