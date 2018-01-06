@@ -49,36 +49,13 @@
 static __init void dm644x_clk_init(void)
 {
 	void __iomem *pll1, *pll2, *psc;
-	struct clk *clk;
 
 	pll1 = ioremap(DAVINCI_PLL1_BASE, SZ_4K);
 	pll2 = ioremap(DAVINCI_PLL2_BASE, SZ_4K);
 	psc = ioremap(DAVINCI_PWR_SLEEP_CNTRL_BASE, SZ_4K);
 
 	clk_register_fixed_rate(NULL, "ref_clk", NULL, 0, DM644X_REF_FREQ);
-	clk = PLL_CLK("pll1", "ref_clk", pll1);
-	clk_register_clkdev(clk, "pll1", NULL);
-	clk = PLL_DIV_CLK("pll1_sysclk1", "pll1", pll1, 1);
-	clk_register_clkdev(clk, "pll1_sysclk1", NULL);
-	clk = PLL_DIV_CLK("pll1_sysclk2", "pll1", pll1, 2);
-	clk_register_clkdev(clk, "pll1_sysclk2", NULL);
-	clk = PLL_DIV_CLK("pll1_sysclk3", "pll1", pll1, 3);
-	clk_register_clkdev(clk, "pll1_sysclk3", NULL);
-	clk = PLL_DIV_CLK("pll1_sysclk5", "pll1", pll1, 5);
-	clk_register_clkdev(clk, "pll1_sysclk5", NULL);
-	clk = PLL_AUX_CLK("pll1_aux_clk", "ref_clk", pll1);
-	clk_register_clkdev(clk, "pll1_aux", NULL);
-	clk = PLL_BP_CLK("pll1_sysclkbp", "ref_clk", pll1);
-	clk_register_clkdev(clk, "pll1_sysclkbp", NULL);
-	clk = PLL_CLK("pll2", "ref_clk", pll2);
-	clk_register_clkdev(clk, "pll2", NULL);
-	clk = PLL_DIV_CLK("pll2_sysclk1", "pll2", pll2, 1);
-	clk_register_clkdev(clk, "pll2_sysclk1", NULL);
-	clk = PLL_DIV_CLK("pll2_sysclk2", "pll2", pll2, 2);
-	clk_register_clkdev(clk, "pll2_sysclk2", NULL);
-	clk = PLL_BP_CLK("pll2_sysclkbp", "ref_clk", pll2);
-	clk_register_clkdev(clk, "pll2_sysclkbp", NULL);
-
+	dm644x_pll_clk_init(pll1, pll2);
 	dm644x_psc_clk_init(psc);
 }
 
