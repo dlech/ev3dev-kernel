@@ -449,6 +449,7 @@ static const struct platform_device_id davinci_psc_id_table[] = {
 	{ .name = "da830-psc1", .driver_data = (kernel_ulong_t)da830_psc1_init },
 	{ .name = "da850-psc0", .driver_data = (kernel_ulong_t)da850_psc0_init },
 	{ .name = "da850-psc1", .driver_data = (kernel_ulong_t)da850_psc1_init },
+	{ .name = "dm355-psc",  .driver_data = (kernel_ulong_t)dm355_psc_init  },
 	{ }
 };
 
