@@ -9,6 +9,9 @@
 
 #include <linux/types.h>
 
+struct clk;
+struct regmap;
+
 void da830_pll_clk_init(void __iomem *pll);
 void da850_pll_clk_init(void __iomem *pll0, void __iomem *pll1);
 void dm355_pll_clk_init(void __iomem *pll1, void __iomem *pll2);
@@ -27,5 +30,8 @@ struct clk *da8xx_cfgchip_register_tbclk(struct regmap *regmap);
 struct clk *da8xx_cfgchip_register_div4p5(struct regmap *regmap);
 struct clk *da8xx_cfgchip_register_async1(struct regmap *regmap);
 struct clk *da8xx_cfgchip_register_async3(struct regmap *regmap);
+struct clk *da8xx_cfgchip_register_usb0_clk48(struct regmap *regmap,
+					      struct clk *usb0_psc_clk);
+struct clk *da8xx_cfgchip_register_usb1_clk48(struct regmap *regmap);
 
 #endif /* __LINUX_CLK_DAVINCI_H__ */
