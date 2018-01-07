@@ -21,5 +21,6 @@ void da850_psc_clk_init(void __iomem *psc0, void __iomem *psc1);
 void dm355_psc_clk_init(void __iomem *psc);
 void dm365_psc_clk_init(void __iomem *psc);
 void dm644x_psc_clk_init(void __iomem *psc);
+void dm646x_psc_clk_init(void __iomem *psc);
 
 #endif /* __LINUX_CLK_DAVINCI_H__ */
