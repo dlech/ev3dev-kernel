@@ -95,5 +95,6 @@ int of_da850_psc0_init(struct device *dev, void __iomem *base);
 int of_da850_psc1_init(struct device *dev, void __iomem *base);
 int dm355_psc_init(struct device *dev, void __iomem *base);
 int dm365_psc_init(struct device *dev, void __iomem *base);
+int dm644x_psc_init(struct device *dev, void __iomem *base);
 
 #endif /* __CLK_DAVINCI_PSC_H__ */
