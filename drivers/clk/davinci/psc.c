@@ -439,12 +439,16 @@ int of_davinci_psc_clk_init(struct device *dev,
 }
 
 static const struct of_device_id davinci_psc_of_match[] = {
+	{ .compatible = "ti,da850-psc0", .data = of_da850_psc0_init },
+	{ .compatible = "ti,da850-psc1", .data = of_da850_psc1_init },
 	{ }
 };
 
 static const struct platform_device_id davinci_psc_id_table[] = {
 	{ .name = "da830-psc0", .driver_data = (kernel_ulong_t)da830_psc0_init },
 	{ .name = "da830-psc1", .driver_data = (kernel_ulong_t)da830_psc1_init },
+	{ .name = "da850-psc0", .driver_data = (kernel_ulong_t)da850_psc0_init },
+	{ .name = "da850-psc1", .driver_data = (kernel_ulong_t)da850_psc1_init },
 	{ }
 };
 
