@@ -86,4 +86,8 @@ int of_davinci_psc_clk_init(struct device *dev,
 			    u8 num_clks,
 			    void __iomem *base);
 
+/* Device-specific callbacks */
+int da830_psc0_init(struct device *dev, void __iomem *base);
+int da830_psc1_init(struct device *dev, void __iomem *base);
+
 #endif /* __CLK_DAVINCI_PSC_H__ */
