@@ -23,4 +23,9 @@ void dm365_psc_clk_init(void __iomem *psc);
 void dm644x_psc_clk_init(void __iomem *psc);
 void dm646x_psc_clk_init(void __iomem *psc);
 
+struct clk *da8xx_cfgchip_register_tbclk(struct regmap *regmap);
+struct clk *da8xx_cfgchip_register_div4p5(struct regmap *regmap);
+struct clk *da8xx_cfgchip_register_async1(struct regmap *regmap);
+struct clk *da8xx_cfgchip_register_async3(struct regmap *regmap);
+
 #endif /* __LINUX_CLK_DAVINCI_H__ */
