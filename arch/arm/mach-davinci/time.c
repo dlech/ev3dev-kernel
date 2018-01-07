@@ -409,11 +409,12 @@ static int __init of_davinci_timer_init(struct device_node *np)
 
 		/*
 		 * Fall back to using ref_clk if the actual clock is not
-		 * available. This currently always happens because platform
-		 * clocks (i.e PLLs and PSCs) are registered as platform
-		 * devices and therefore are not available at this point in
-		 * the boot process.
+		 * available. There will be problems later if the real clock
+		 * source is disabled.
 		 */
+
+		pr_warn("%s: falling back to ref_clk\n", __func__);
+
 		clkspec.np = of_find_node_by_name(NULL, "ref_clk");
 		if (IS_ERR(clkspec.np)) {
 			pr_err("%s: No clock available for timer!\n", __func__);
