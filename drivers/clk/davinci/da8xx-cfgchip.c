@@ -149,16 +149,20 @@ static void da8xx_cfgchip_mux_clk_init(struct device_node *np, u32 reg,
 	struct regmap *regmap;
 	int ret;
 
-	if (of_clk_get_parent_count(np) != 2) {
-		pr_err("%s: %s requires two parent clocks\n",
-		       __func__, np->full_name);
+	ret = of_property_match_string(np, "clock-names", "pll0_sysclk2");
+	parent_names[0] = of_clk_get_parent_name(np, ret);
+	if (!parent_names[0]) {
+		pr_err("%s: missing pll0_sysclk2 clock\n");
 		return;
 	}
 
-	of_property_read_string(np, "clock-output-names", &name);
-	parent_names[0] = of_clk_get_parent_name(np, 0);
-	parent_names[1] = of_clk_get_parent_name(np, 1);
-	
+	ret = of_property_match_string(np, "clock-names", "pll1_sysclk2");
+	parent_names[1] = of_clk_get_parent_name(np, ret);
+	if (!parent_names[1]) {
+		pr_err("%s: missing pll1_sysclk2 clock\n");
+		return;
+	}
+
 	regmap = syscon_node_to_regmap(of_get_parent(np));
 	if (IS_ERR(regmap)) {
 		pr_err("%s: no regmap for syscon parent of %s (%ld)\n",
@@ -166,6 +170,8 @@ static void da8xx_cfgchip_mux_clk_init(struct device_node *np, u32 reg,
 		return;
 	}
 
+	of_property_read_string(np, "clock-output-names", &name);
+	
 	clk = kzalloc(sizeof(*clk), GFP_KERNEL);
 	if (!clk) {
 		pr_err("%s: out of memory\n", __func__);
