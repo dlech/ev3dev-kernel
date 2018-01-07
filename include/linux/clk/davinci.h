@@ -10,5 +10,6 @@
 #include <linux/types.h>
 
 void da830_pll_clk_init(void __iomem *pll);
+void da850_pll_clk_init(void __iomem *pll0, void __iomem *pll1);
 
 #endif /* __LINUX_CLK_DAVINCI_H__ */
