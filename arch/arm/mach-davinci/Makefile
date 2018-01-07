@@ -5,7 +5,7 @@
 #
 
 # Common objects
-obj-y 			:= time.o clock.o serial.o psc.o \
+obj-y 			:= time.o serial.o \
 			   usb.o common.o sram.o aemif.o
 
 obj-$(CONFIG_DAVINCI_MUX)		+= mux.o
