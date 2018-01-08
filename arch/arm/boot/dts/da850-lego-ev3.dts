@@ -246,6 +246,13 @@
 	status = "okay";
 };
 
+&opp_table {
+	opp_408: opp120-408000000 {
+		opp-hz = /bits/ 64 <408000000>;
+		opp-microvolt = <1200000 1140000 1320000>;
+	};
+};
+
 &pmx_core {
 	status = "okay";
 
