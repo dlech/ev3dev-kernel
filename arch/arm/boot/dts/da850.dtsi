@@ -713,6 +713,7 @@
 			#size-cells = <0>;
 			reg = <0x224000 0x1000>;
 			clocks = <&psc1 5>;
+			clock-names = "fck";
 			status = "disabled";
 		};
 		eth0: ethernet@220000 {
