@@ -94,6 +94,7 @@
  */
 struct davinci_pll_clk {
 	struct clk_hw hw;
+	struct spinlock lock;
 	void __iomem *base;
 };
 
@@ -135,7 +136,7 @@ static long davinci_pll_get_best_rate(u32 rate, u32 parent_rate, u32 *mult,
 	u32 best_rate = 0;
 	u32 best_mult = 0;
 	u32 best_postdiv = 0;
-
+printk("%s: enter\n", __func__);
 	for (d = 1; d <= 4; d++) {
 		for (m = min(32U, rate * d / parent_rate); m > 0; m--) {
 			r = parent_rate * m / d;
@@ -159,7 +160,7 @@ out:
 		*mult = best_mult;
 	if (postdiv)
 		*postdiv = best_postdiv;
-
+printk("%s: exit\n", __func__);
 	return best_rate;
 }
 
@@ -183,6 +184,7 @@ static void __davinci_pll_set_rate(struct davinci_pll_clk *pll, u32 prediv,
 			 	   u32 mult, u32 postdiv)
 {
 	u32 ctrl, locktime;
+	unsigned long flags;
 
 	/*
 	 * PLL lock time required per OMAP-L138 datasheet is
@@ -199,6 +201,8 @@ static void __davinci_pll_set_rate(struct davinci_pll_clk *pll, u32 prediv,
 		postdiv = (postdiv - 1) | POSTDIV_POSTDEN;
 	if (mult)
 		mult = mult - 1;
+
+	spin_lock_irqsave(&pll->lock, flags);
 
 	ctrl = readl(pll->base + PLLCTL);
 
@@ -227,6 +231,8 @@ static void __davinci_pll_set_rate(struct davinci_pll_clk *pll, u32 prediv,
 	/* Remove PLL from bypass mode */
 	ctrl |= PLLCTL_PLLEN;
 	writel(ctrl, pll->base + PLLCTL);
+
+	spin_unlock_irqrestore(&pll->lock, flags);
 }
 
 static int davinci_pll_set_rate(struct clk_hw *hw, unsigned long rate,
@@ -337,6 +343,7 @@ struct clk *davinci_pll_clk_register(const char *name,
 
 	pll->base = base;
 	pll->hw.init = &init;
+	spin_lock_init(&pll->lock);
 
 	clk = clk_register(NULL, &pll->hw);
 	if (IS_ERR(clk))
