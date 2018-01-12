@@ -1,10 +1,9 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (C) STMicroelectronics SA 2017
  *
  * Authors: Philippe Cornu <philippe.cornu@st.com>
  *          Yannick Fertre <yannick.fertre@st.com>
- *
- * License terms:  GNU General Public License (GPL), version 2
  */
 
 #include <linux/clk.h>
@@ -66,6 +65,7 @@ enum dsi_color {
 struct dw_mipi_dsi_stm {
 	void __iomem *base;
 	struct clk *pllref_clk;
+	struct dw_mipi_dsi *dsi;
 };
 
 static inline void dsi_write(struct dw_mipi_dsi_stm *dsi, u32 reg, u32 val)
@@ -129,7 +129,7 @@ static int dsi_pll_get_params(int clkin_khz, int clkout_khz,
 	int fvco_min, fvco_max, delta, best_delta; /* all in khz */
 
 	/* Early checks preventing division by 0 & odd results */
-	if ((clkin_khz <= 0) || (clkout_khz <= 0))
+	if (clkin_khz <= 0 || clkout_khz <= 0)
 		return -EINVAL;
 
 	fvco_min = LANE_MIN_KBPS * 2 * ODF_MAX;
@@ -155,7 +155,7 @@ static int dsi_pll_get_params(int clkin_khz, int clkout_khz,
 		for (o = ODF_MIN; o <= ODF_MAX; o *= 2) {
 			n = DIV_ROUND_CLOSEST(i * o * clkout_khz, clkin_khz);
 			/* Check ndiv according to vco range */
-			if ((n < n_min) || (n > n_max))
+			if (n < n_min || n > n_max)
 				continue;
 			/* Check if new delta is better & saves parameters */
 			delta = dsi_pll_get_clkout_khz(clkin_khz, i, n, o) -
@@ -291,11 +291,6 @@ static int dw_mipi_dsi_stm_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	if (!res) {
-		DRM_ERROR("Unable to get resource\n");
-		return -ENODEV;
-	}
-
 	dsi->base = devm_ioremap_resource(dev, res);
 	if (IS_ERR(dsi->base)) {
 		DRM_ERROR("Unable to get dsi registers\n");
@@ -318,21 +313,24 @@ static int dw_mipi_dsi_stm_probe(struct platform_device *pdev)
 	dw_mipi_dsi_stm_plat_data.base = dsi->base;
 	dw_mipi_dsi_stm_plat_data.priv_data = dsi;
 
-	ret = dw_mipi_dsi_probe(pdev, &dw_mipi_dsi_stm_plat_data);
-	if (ret) {
+	platform_set_drvdata(pdev, dsi);
+
+	dsi->dsi = dw_mipi_dsi_probe(pdev, &dw_mipi_dsi_stm_plat_data);
+	if (IS_ERR(dsi->dsi)) {
 		DRM_ERROR("Failed to initialize mipi dsi host\n");
 		clk_disable_unprepare(dsi->pllref_clk);
+		return PTR_ERR(dsi->dsi);
 	}
 
-	return ret;
+	return 0;
 }
 
 static int dw_mipi_dsi_stm_remove(struct platform_device *pdev)
 {
-	struct dw_mipi_dsi_stm *dsi = dw_mipi_dsi_stm_plat_data.priv_data;
+	struct dw_mipi_dsi_stm *dsi = platform_get_drvdata(pdev);
 
 	clk_disable_unprepare(dsi->pllref_clk);
-	dw_mipi_dsi_remove(pdev);
+	dw_mipi_dsi_remove(dsi->dsi);
 
 	return 0;
 }
@@ -342,7 +340,7 @@ static struct platform_driver dw_mipi_dsi_stm_driver = {
 	.remove		= dw_mipi_dsi_stm_remove,
 	.driver		= {
 		.of_match_table = dw_mipi_dsi_stm_dt_ids,
-		.name	= "dw_mipi_dsi-stm",
+		.name	= "stm32-display-dsi",
 	},
 };
 

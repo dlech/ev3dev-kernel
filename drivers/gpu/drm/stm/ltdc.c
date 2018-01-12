@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (C) STMicroelectronics SA 2017
  *
@@ -5,8 +6,6 @@
  *          Yannick Fertre <yannick.fertre@st.com>
  *          Fabien Dessenne <fabien.dessenne@st.com>
  *          Mickael Reulier <mickael.reulier@st.com>
- *
- * License terms:  GNU General Public License (GPL), version 2
  */
 
 #include <linux/clk.h>
@@ -32,6 +31,8 @@
 #define CRTC_MASK GENMASK(NB_CRTC - 1, 0)
 
 #define MAX_IRQ 4
+
+#define MAX_ENDPOINTS 2
 
 #define HWVER_10200 0x010200
 #define HWVER_10300 0x010300
@@ -173,6 +174,8 @@
 #define LXCFBLR_CFBP	GENMASK(28, 16)	/* Color Frame Buffer Pitch in bytes */
 
 #define LXCFBLNR_CFBLN	GENMASK(10, 0)	/* Color Frame Buffer Line Number */
+
+#define CLUT_SIZE	256
 
 #define CONSTA_MAX	0xFF		/* CONSTant Alpha MAX= 1.0 */
 #define BF1_PAXCA	0x600		/* Pixel Alpha x Constant Alpha */
@@ -362,6 +365,28 @@ static irqreturn_t ltdc_irq(int irq, void *arg)
  * DRM_CRTC
  */
 
+static void ltdc_crtc_update_clut(struct drm_crtc *crtc)
+{
+	struct ltdc_device *ldev = crtc_to_ltdc(crtc);
+	struct drm_color_lut *lut;
+	u32 val;
+	int i;
+
+	if (!crtc || !crtc->state)
+		return;
+
+	if (!crtc->state->color_mgmt_changed || !crtc->state->gamma_lut)
+		return;
+
+	lut = (struct drm_color_lut *)crtc->state->gamma_lut->data;
+
+	for (i = 0; i < CLUT_SIZE; i++, lut++) {
+		val = ((lut->red << 8) & 0xff0000) | (lut->green & 0xff00) |
+			(lut->blue >> 8) | (i << 24);
+		reg_write(ldev->regs, LTDC_L1CLUTWR, val);
+	}
+}
+
 static void ltdc_crtc_atomic_enable(struct drm_crtc *crtc,
 				    struct drm_crtc_state *old_state)
 {
@@ -485,6 +510,8 @@ static void ltdc_crtc_atomic_flush(struct drm_crtc *crtc,
 
 	DRM_DEBUG_ATOMIC("\n");
 
+	ltdc_crtc_update_clut(crtc);
+
 	/* Commit shadow registers = update planes at next vblank */
 	reg_set(ldev->regs, LTDC_SRCR, SRCR_VBR);
 
@@ -532,6 +559,7 @@ static const struct drm_crtc_funcs ltdc_crtc_funcs = {
 	.reset = drm_atomic_helper_crtc_reset,
 	.atomic_duplicate_state = drm_atomic_helper_crtc_duplicate_state,
 	.atomic_destroy_state = drm_atomic_helper_crtc_destroy_state,
+	.gamma_set = drm_atomic_helper_legacy_gamma_set,
 };
 
 /*
@@ -556,7 +584,7 @@ static int ltdc_plane_atomic_check(struct drm_plane *plane,
 	src_h = state->src_h >> 16;
 
 	/* Reject scaling */
-	if ((src_w != state->crtc_w) || (src_h != state->crtc_h)) {
+	if (src_w != state->crtc_w || src_h != state->crtc_h) {
 		DRM_ERROR("Scaling is not supported");
 		return -EINVAL;
 	}
@@ -764,6 +792,9 @@ static int ltdc_crtc_init(struct drm_device *ddev, struct drm_crtc *crtc)
 
 	drm_crtc_helper_add(crtc, &ltdc_crtc_helper_funcs);
 
+	drm_mode_crtc_set_gamma_size(crtc, CLUT_SIZE);
+	drm_crtc_enable_color_mgmt(crtc, 0, false, CLUT_SIZE);
+
 	DRM_DEBUG_DRIVER("CRTC:%d created\n", crtc->base.id);
 
 	/* Add planes. Note : the first layer is used by primary plane */
@@ -856,18 +887,33 @@ int ltdc_load(struct drm_device *ddev)
 	struct ltdc_device *ldev = ddev->dev_private;
 	struct device *dev = ddev->dev;
 	struct device_node *np = dev->of_node;
-	struct drm_bridge *bridge;
-	struct drm_panel *panel;
+	struct drm_bridge *bridge[MAX_ENDPOINTS] = {NULL};
+	struct drm_panel *panel[MAX_ENDPOINTS] = {NULL};
 	struct drm_crtc *crtc;
 	struct reset_control *rstc;
 	struct resource *res;
-	int irq, ret, i;
+	int irq, ret, i, endpoint_not_ready = -ENODEV;
 
 	DRM_DEBUG_DRIVER("\n");
 
-	ret = drm_of_find_panel_or_bridge(np, 0, 0, &panel, &bridge);
-	if (ret)
-		return ret;
+	/* Get endpoints if any */
+	for (i = 0; i < MAX_ENDPOINTS; i++) {
+		ret = drm_of_find_panel_or_bridge(np, 0, i, &panel[i],
+						  &bridge[i]);
+
+		/*
+		 * If at least one endpoint is ready, continue probing,
+		 * else if at least one endpoint is -EPROBE_DEFER and
+		 * there is no previous ready endpoints, defer probing.
+		 */
+		if (!ret)
+			endpoint_not_ready = 0;
+		else if (ret == -EPROBE_DEFER && endpoint_not_ready)
+			endpoint_not_ready = -EPROBE_DEFER;
+	}
+
+	if (endpoint_not_ready)
+		return endpoint_not_ready;
 
 	rstc = devm_reset_control_get_exclusive(dev, NULL);
 
@@ -885,12 +931,6 @@ int ltdc_load(struct drm_device *ddev)
 	}
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	if (!res) {
-		DRM_ERROR("Unable to get resource\n");
-		ret = -ENODEV;
-		goto err;
-	}
-
 	ldev->regs = devm_ioremap_resource(dev, res);
 	if (IS_ERR(ldev->regs)) {
 		DRM_ERROR("Unable to get ltdc registers\n");
@@ -928,19 +968,25 @@ int ltdc_load(struct drm_device *ddev)
 
 	DRM_INFO("ltdc hw version 0x%08x - ready\n", ldev->caps.hw_version);
 
-	if (panel) {
-		bridge = drm_panel_bridge_add(panel, DRM_MODE_CONNECTOR_DPI);
-		if (IS_ERR(bridge)) {
-			DRM_ERROR("Failed to create panel-bridge\n");
-			ret = PTR_ERR(bridge);
-			goto err;
+	/* Add endpoints panels or bridges if any */
+	for (i = 0; i < MAX_ENDPOINTS; i++) {
+		if (panel[i]) {
+			bridge[i] = drm_panel_bridge_add(panel[i],
+							DRM_MODE_CONNECTOR_DPI);
+			if (IS_ERR(bridge[i])) {
+				DRM_ERROR("panel-bridge endpoint %d\n", i);
+				ret = PTR_ERR(bridge[i]);
+				goto err;
+			}
 		}
-	}
 
-	ret = ltdc_encoder_init(ddev, bridge);
-	if (ret) {
-		DRM_ERROR("Failed to init encoder\n");
-		goto err;
+		if (bridge[i]) {
+			ret = ltdc_encoder_init(ddev, bridge[i]);
+			if (ret) {
+				DRM_ERROR("init encoder endpoint %d\n", i);
+				goto err;
+			}
+		}
 	}
 
 	crtc = devm_kzalloc(dev, sizeof(*crtc), GFP_KERNEL);
@@ -968,7 +1014,8 @@ int ltdc_load(struct drm_device *ddev)
 	return 0;
 
 err:
-	drm_panel_bridge_remove(bridge);
+	for (i = 0; i < MAX_ENDPOINTS; i++)
+		drm_panel_bridge_remove(bridge[i]);
 
 	clk_disable_unprepare(ldev->pixel_clk);
 
@@ -978,10 +1025,12 @@ err:
 void ltdc_unload(struct drm_device *ddev)
 {
 	struct ltdc_device *ldev = ddev->dev_private;
+	int i;
 
 	DRM_DEBUG_DRIVER("\n");
 
-	drm_of_panel_bridge_remove(ddev->dev->of_node, 0, 0);
+	for (i = 0; i < MAX_ENDPOINTS; i++)
+		drm_of_panel_bridge_remove(ddev->dev->of_node, 0, i);
 
 	clk_disable_unprepare(ldev->pixel_clk);
 }
