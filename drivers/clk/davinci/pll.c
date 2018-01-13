@@ -22,6 +22,7 @@
 #include <linux/of_address.h>
 #include <linux/of.h>
 #include <linux/slab.h>
+#include <linux/types.h>
 
 #include "pll.h"
 
@@ -118,43 +119,71 @@ static unsigned long davinci_pll_clk_recalc(struct clk_hw *hw,
 }
 
 /**
- * davinci_pll_get_best_rate - Calculate PLL output closest to a given rate
+ * da850_pll_get_best_rate - Calculate PLL output closest to a given rate
  * @rate: The target rate
  * @parent_rate: The PLL input clock rate
+ * @prediv: Pointer to hold the prediv value (optional)
  * @mult: Pointer to hold the multiplier value (optional)
  * @postdiv: Pointer to hold the postdiv value (optional)
  *
+ * This function is based on the OMAP-L138/AM18XX specs.
+ *
  * Returns: The closest rate less than or equal to @rate that the PLL can
- * generate. @mult and @postdiv will contain the values required to generate
- * that rate.
+ * generate. @prediv, @mult and @postdiv will contain the values required to
+ * generate that rate.
  */
-static long davinci_pll_get_best_rate(u32 rate, u32 parent_rate, u32 *mult,
-				      u32 *postdiv)
+static long da850_pll_get_best_rate(u32 rate, u32 parent_rate, u32 *prediv,
+				    u32 *mult, u32 *postdiv)
 {
-	u32 r, m, d;
+	u32 pllout, r, d1, m, d2;
 	u32 best_rate = 0;
+	u32 best_prediv = 0;
 	u32 best_mult = 0;
 	u32 best_postdiv = 0;
 
-	for (d = 1; d <= 4; d++) {
-		for (m = min(32U, rate * d / parent_rate); m > 0; m--) {
-			r = parent_rate * m / d;
+	/*
+	 * Technically, pre and post dividers can be 1 to 32, inclusive, but
+	 * in practice, we never need greater than 3, so we are using that
+	 * as the limit to reduce iterations.
+	 */
+	for (d2 = 1; d2 <= 3; d2++) {
+		for (d1 = 1; d1 <= 3; d1++) {
+			/*
+			 * Calculate maximum useable multiplier given current
+			 * divider values to reduce iterations. PLLOUT must be
+			 * 600MHz max per datasheet.
+			 */
+			m = min(rate * d2, 600000000U) / (parent_rate / d1);
+			/* PLLM must be between 4 and 32, inclusive */
+			for (m = min(32U, m); m >= 4; m--) {
+				pllout = parent_rate / d1 * m;
 
-			if (r < best_rate)
-				break;
+				/* PLLOUT must be 300MHz min per datasheet */
+				if (pllout < 300000000)
+					break;
 
-			if (r > best_rate && r <= rate) {
-				best_rate = r;
-				best_mult = m;
-				best_postdiv = d;
+				r = pllout / d2;
+
+				if (r > rate)
+					continue;
+
+				if (r < best_rate)
+					break;
+
+				/* lower multiplier uses less power */
+				if (r > best_rate ||
+				    (r == best_rate && m < best_mult)) {
+					best_rate = r;
+					best_prediv = d1;
+					best_mult = m;
+					best_postdiv = d2;
+				}
 			}
-
-			if (best_rate == rate)
-				goto out;
 		}
 	}
 
-out:
+	if (prediv)
+		*prediv = best_prediv;
 	if (mult)
 		*mult = best_mult;
 	if (postdiv)
@@ -163,14 +192,14 @@ out:
 	return best_rate;
 }
 
-static long davinci_pll_round_rate(struct clk_hw *hw, unsigned long rate,
-				   unsigned long *parent_rate)
+static long da850_pll_round_rate(struct clk_hw *hw, unsigned long rate,
+				 unsigned long *parent_rate)
 {
-	return davinci_pll_get_best_rate(rate, *parent_rate, NULL, NULL);
+	return da850_pll_get_best_rate(rate, *parent_rate, NULL, NULL, NULL);
 }
 
 /**
- * __davinci_pll_set_rate - set the output rate of a given PLL.
+ * __da850_pll_set_rate - set the output rate of a given PLL.
  *
  * Note: Currently tested to work with OMAP-L138 only.
  *
@@ -179,8 +208,8 @@ static long davinci_pll_round_rate(struct clk_hw *hw, unsigned long rate,
  * @pllm: The multiplier value. Passing 0 leads to multiply-by-one.
  * @postdiv: The post divider value. Passing 0 disables the post-divider.
  */
-static void __davinci_pll_set_rate(struct davinci_pll_clk *pll, u32 prediv,
-				   u32 mult, u32 postdiv)
+static void __da850_pll_set_rate(struct davinci_pll_clk *pll, u32 prediv,
+			 	 u32 mult, u32 postdiv)
 {
 	u32 ctrl, locktime;
 
@@ -229,14 +258,14 @@ static void __davinci_pll_set_rate(struct davinci_pll_clk *pll, u32 prediv,
 	writel(ctrl, pll->base + PLLCTL);
 }
 
-static int davinci_pll_set_rate(struct clk_hw *hw, unsigned long rate,
-				unsigned long parent_rate)
+static int da850_pll_set_rate(struct clk_hw *hw, unsigned long rate,
+			      unsigned long parent_rate)
 {
 	struct davinci_pll_clk *pll = to_davinci_pll_clk(hw);
-	u32 mult, postdiv;
+	u32 prediv, mult, postdiv;
 
-	davinci_pll_get_best_rate(rate, parent_rate, &mult, &postdiv);
-	__davinci_pll_set_rate(pll, 1, mult, postdiv);
+	da850_pll_get_best_rate(rate, parent_rate, &prediv, &mult, &postdiv);
+	__da850_pll_set_rate(pll, prediv, mult, postdiv);
 
 	return 0;
 }
@@ -306,8 +335,13 @@ static int davinci_pll_debug_init(struct clk_hw *hw, struct dentry *dentry)
 
 static const struct clk_ops davinci_pll_clk_ops = {
 	.recalc_rate	= davinci_pll_clk_recalc,
-	.round_rate	= davinci_pll_round_rate,
-	.set_rate	= davinci_pll_set_rate,
+	.debug_init	= davinci_pll_debug_init,
+};
+
+static const struct clk_ops da850_pll_clk_ops = {
+	.recalc_rate	= davinci_pll_clk_recalc,
+	.round_rate	= da850_pll_round_rate,
+	.set_rate	= da850_pll_set_rate,
 	.debug_init	= davinci_pll_debug_init,
 };
 
@@ -316,10 +350,12 @@ static const struct clk_ops davinci_pll_clk_ops = {
  * @name: The clock name
  * @parent_name: The parent clock name
  * @base: The PLL's memory region
+ * @is_da850: Is DA850/OMAP-L138/AM18XX
  */
 struct clk *davinci_pll_clk_register(const char *name,
 				     const char *parent_name,
-				     void __iomem *base)
+				     void __iomem *base,
+				     bool is_da850)
 {
 	struct clk_init_data init;
 	struct davinci_pll_clk *pll;
@@ -330,7 +366,7 @@ struct clk *davinci_pll_clk_register(const char *name,
 		return ERR_PTR(-ENOMEM);
 
 	init.name = name;
-	init.ops = &davinci_pll_clk_ops;
+	init.ops = is_da850 ? &da850_pll_clk_ops : &davinci_pll_clk_ops;
 	init.parent_names = (parent_name ? &parent_name : NULL);
 	init.num_parents = (parent_name ? 1 : 0);
 	init.flags = 0;
@@ -475,7 +511,7 @@ davinci_pll_divclk_register(const struct davinci_pll_divclk_info *info,
 	divider->flags = 0;
 
 	if (info->flags & DIVCLK_FIXED_DIV) {
-		flags |= CLK_DIVIDER_READ_ONLY;
+		divider->flags |= CLK_DIVIDER_READ_ONLY;
 		divider_ops = &clk_divider_ro_ops;
 	}
 
@@ -517,7 +553,7 @@ void of_davinci_pll_init(struct device_node *node, const char *name,
 
 	parent_name = of_clk_get_parent_name(node, 0);
 
-	clk = davinci_pll_clk_register(name, parent_name, base);
+	clk = davinci_pll_clk_register(name, parent_name, base, true);
 	if (IS_ERR(clk)) {
 		pr_err("%s: failed to register %s (%ld)\n", __func__, name,
 		       PTR_ERR(clk));

@@ -31,7 +31,7 @@ void __init da830_pll_clk_init(void __iomem *pll)
 {
 	const struct davinci_pll_divclk_info *info;
 
-	davinci_pll_clk_register("pll0", "ref_clk", pll);
+	davinci_pll_clk_register("pll0", "ref_clk", pll, false);
 	davinci_pll_aux_clk_register("pll0_aux_clk", "ref_clk", pll);
 	for (info = da830_pll_divclk_info; info->name; info++)
 		davinci_pll_divclk_register(info, pll);

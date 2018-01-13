@@ -34,7 +34,8 @@ struct clk;
 
 struct clk *davinci_pll_clk_register(const char *name,
 				     const char *parent_name,
-				     void __iomem *base);
+				     void __iomem *base,
+				     bool is_da850);
 struct clk *davinci_pll_aux_clk_register(const char *name,
 					 const char *parent_name,
 					 void __iomem *base);

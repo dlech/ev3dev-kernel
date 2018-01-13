@@ -27,13 +27,13 @@ void __init dm355_pll_clk_init(void __iomem *pll1, void __iomem *pll2)
 {
 	const struct davinci_pll_divclk_info *info;
 
-	davinci_pll_clk_register("pll1", "ref_clk", pll1);
+	davinci_pll_clk_register("pll1", "ref_clk", pll1, false);
 	for (info = dm355_pll1_divclk_info; info->name; info++)
 		davinci_pll_divclk_register(info, pll1);
 	davinci_pll_aux_clk_register("pll1_aux_clk", "ref_clk", pll1);
 	davinci_pll_bpdiv_clk_register("pll1_sysclkbp", "ref_clk", pll1);
 
-	davinci_pll_clk_register("pll2", "ref_clk", pll2);
+	davinci_pll_clk_register("pll2", "ref_clk", pll2, false);
 	for (info = dm355_pll2_divclk_info; info->name; info++)
 		davinci_pll_divclk_register(info, pll2);
 	davinci_pll_bpdiv_clk_register("pll2_sysclkbp", "ref_clk", pll2);

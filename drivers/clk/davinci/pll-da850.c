@@ -42,12 +42,12 @@ void __init da850_pll_clk_init(void __iomem *pll0, void __iomem *pll1)
 {
 	const struct davinci_pll_divclk_info *info;
 
-	davinci_pll_clk_register("pll0", "ref_clk", pll0);
+	davinci_pll_clk_register("pll0", "ref_clk", pll0, true);
 	davinci_pll_aux_clk_register("pll0_aux_clk", "ref_clk", pll0);
 	for (info = da850_pll0_divclk_info; info->name; info++)
 		davinci_pll_divclk_register(info, pll0);
 
-	davinci_pll_clk_register("pll1", "ref_clk", pll1);
+	davinci_pll_clk_register("pll1", "ref_clk", pll1, true);
 	for (info = da850_pll1_divclk_info; info->name; info++)
 		davinci_pll_divclk_register(info, pll1);
 }
