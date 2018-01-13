@@ -530,9 +530,9 @@
 			clocks = <&psc1 11>;
 			status = "disabled";
 		};
-		clocksource: timer@21000 {
+		clocksource: timer@20000 {
 			compatible = "ti,davinci-timer";
-			reg = <0x21000 0x1000>;
+			reg = <0x20000 0x1000>;
 			clocks = <&timer0_clk>;
 		};
 		wdt: wdt@21000 {
