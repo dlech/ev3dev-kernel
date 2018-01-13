@@ -180,7 +180,7 @@ static long davinci_pll_round_rate(struct clk_hw *hw, unsigned long rate,
  * @postdiv: The post divider value. Passing 0 disables the post-divider.
  */
 static void __davinci_pll_set_rate(struct davinci_pll_clk *pll, u32 prediv,
-			 	   u32 mult, u32 postdiv)
+				   u32 mult, u32 postdiv)
 {
 	u32 ctrl, locktime;
 
@@ -543,7 +543,6 @@ void of_davinci_pll_init(struct device_node *node, const char *name,
 				clk_data->clks[info->id] = clk;
 		}
 		of_clk_add_provider(child, of_clk_src_onecell_get, clk_data);
-
 	}
 	of_node_put(child);
 

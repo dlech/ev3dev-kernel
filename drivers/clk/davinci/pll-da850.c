@@ -20,8 +20,7 @@
  * currently not a need for it.
  */
 
-static const struct davinci_pll_divclk_info
-da850_pll0_divclk_info[] __initconst = {
+static const struct davinci_pll_divclk_info da850_pll0_divclk_info[] __initconst = {
 	DIVCLK(1, pll0_sysclk1, pll0, DIVCLK_FIXED_DIV),
 	DIVCLK(2, pll0_sysclk2, pll0, DIVCLK_FIXED_DIV),
 	DIVCLK(3, pll0_sysclk3, pll0, 0),
@@ -32,8 +31,7 @@ da850_pll0_divclk_info[] __initconst = {
 	{ }
 };
 
-static const struct davinci_pll_divclk_info
-da850_pll1_divclk_info[] __initconst = {
+static const struct davinci_pll_divclk_info da850_pll1_divclk_info[] __initconst = {
 	DIVCLK(1, pll1_sysclk1, pll1, DIVCLK_ALWAYS_ENABLED),
 	DIVCLK(2, pll1_sysclk2, pll1, 0),
 	DIVCLK(3, pll1_sysclk3, pll1, 0),

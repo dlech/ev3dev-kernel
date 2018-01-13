@@ -10,8 +10,7 @@
 
 #include "pll.h"
 
-static const struct davinci_pll_divclk_info 
-dm355_pll1_divclk_info[] __initconst = {
+static const struct davinci_pll_divclk_info dm355_pll1_divclk_info[] __initconst = {
 	DIVCLK(1, pll1_sysclk1, pll1, DIVCLK_FIXED_DIV),
 	DIVCLK(2, pll1_sysclk2, pll1, DIVCLK_FIXED_DIV),
 	DIVCLK(3, pll1_sysclk3, pll1, 0),
@@ -19,8 +18,7 @@ dm355_pll1_divclk_info[] __initconst = {
 	{ }
 };
 
-static const struct davinci_pll_divclk_info 
-dm355_pll2_divclk_info[] __initconst = {
+static const struct davinci_pll_divclk_info dm355_pll2_divclk_info[] __initconst = {
 	DIVCLK(1, pll2_sysclk1, pll2, DIVCLK_FIXED_DIV),
 	{ }
 };

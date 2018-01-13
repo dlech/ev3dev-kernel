@@ -246,7 +246,7 @@ davinci_psc_register_clocks(void __iomem *base,
 		struct clk *clk;
 
 		clk = davinci_psc_clk_register(info->name, info->parent, regmap,
-					info->lpsc, info->pd, info->flags);
+					       info->lpsc, info->pd, info->flags);
 		if (IS_ERR(clk)) {
 			pr_warn("%s: Failed to register %s (%ld)\n", __func__,
 				info->name, PTR_ERR(clk));

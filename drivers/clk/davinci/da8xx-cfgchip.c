@@ -65,7 +65,7 @@ static void da8xx_cfgchip_gate_clk_init(struct device_node *np, u32 reg,
 
 	of_property_read_string(np, "clock-output-names", &name);
 	parent_name = of_clk_get_parent_name(np, 0);
-	
+
 	regmap = syscon_node_to_regmap(of_get_parent(np));
 	if (IS_ERR(regmap)) {
 		pr_err("%s: no regmap for syscon parent of %s (%ld)\n",
@@ -74,10 +74,8 @@ static void da8xx_cfgchip_gate_clk_init(struct device_node *np, u32 reg,
 	}
 
 	clk = kzalloc(sizeof(*clk), GFP_KERNEL);
-	if (!clk) {
-		pr_err("%s: out of memory\n", __func__);
+	if (!clk)
 		return;
-	}
 
 	init.name = name;
 	init.ops = &da8xx_cfgchip_gate_clk_ops;
@@ -171,12 +169,10 @@ static void da8xx_cfgchip_mux_clk_init(struct device_node *np, u32 reg,
 	}
 
 	of_property_read_string(np, "clock-output-names", &name);
-	
+
 	clk = kzalloc(sizeof(*clk), GFP_KERNEL);
-	if (!clk) {
-		pr_err("%s: out of memory\n", __func__);
+	if (!clk)
 		return;
-	}
 
 	init.name = name;
 	init.ops = &da8xx_cfgchip_mux_clk_ops;
@@ -199,9 +195,9 @@ static void da8xx_cfgchip_mux_clk_init(struct device_node *np, u32 reg,
 	of_clk_add_hw_provider(np, of_clk_hw_simple_get, &clk->hw);
 }
 
-static void da8xx_aysnc3_init(struct device_node *np)
+static void da8xx_async3_init(struct device_node *np)
 {
 	da8xx_cfgchip_mux_clk_init(np, CFGCHIP(3), CFGCHIP3_ASYNC3_CLKSRC);
 }
-CLK_OF_DECLARE(da8xx_aysnc3, "ti,da850-async3-clock", da8xx_aysnc3_init);
+CLK_OF_DECLARE(da8xx_async3, "ti,da850-async3-clock", da8xx_async3_init);
 #endif

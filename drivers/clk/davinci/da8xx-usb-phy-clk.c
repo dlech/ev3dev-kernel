@@ -88,6 +88,16 @@ static void da8xx_usb0_phy_clk_disable(struct clk_hw *hw)
 	regmap_write_bits(clk->regmap, CFGCHIP(2), val, val);
 }
 
+static int da8xx_usb0_phy_clk_is_enabled(struct clk_hw *hw)
+{
+	struct da8xx_usb0_phy_clk *clk = to_da8xx_usb0_phy_clk(hw);
+	unsigned int val;
+
+	regmap_read(clk->regmap, CFGCHIP(2), &val);
+
+	return !!(val & CFGCHIP2_PHYCLKGD);
+}
+
 static unsigned long da8xx_usb0_phy_clk_recalc_rate(struct clk_hw *hw,
 						    unsigned long parent_rate)
 {
@@ -145,7 +155,6 @@ static int da8xx_usb0_phy_clk_set_parent(struct clk_hw *hw, u8 index)
 	struct da8xx_usb0_phy_clk *clk = to_da8xx_usb0_phy_clk(hw);
 	unsigned int mask, val;
 
-
 	/* Set the mux depending on the parent clock. */
 	mask = CFGCHIP2_USB2PHYCLKMUX;
 	switch (index) {
@@ -182,6 +191,7 @@ static const struct clk_ops da8xx_usb0_phy_clk_ops = {
 	.unprepare	= da8xx_usb0_phy_clk_unprepare,
 	.enable		= da8xx_usb0_phy_clk_enable,
 	.disable	= da8xx_usb0_phy_clk_disable,
+	.is_enabled	= da8xx_usb0_phy_clk_is_enabled,
 	.recalc_rate	= da8xx_usb0_phy_clk_recalc_rate,
 	.round_rate	= da8xx_usb0_phy_clk_round_rate,
 	.set_parent	= da8xx_usb0_phy_clk_set_parent,
@@ -196,7 +206,7 @@ static const struct clk_ops da8xx_usb0_phy_clk_ops = {
  * @usb0_psc_clk: The USB 2.0 PSC clock
  * @regmap: The CFGCHIP regmap
  */
-struct clk* da8xx_usb0_phy_clk_register(const char *name,
+struct clk *da8xx_usb0_phy_clk_register(const char *name,
 					const char *parent0,
 					const char *parent1,
 					struct clk *usb0_psc_clk,
@@ -288,7 +298,7 @@ static const struct clk_ops da8xx_usb1_phy_clk_ops = {
  * @parent1: The name of the USB_REFCLKIN clock
  * @regmap: The CFGCHIP regmap
  */
-struct clk* da8xx_usb1_phy_clk_register(const char *name,
+struct clk *da8xx_usb1_phy_clk_register(const char *name,
 					const char *parent0,
 					const char *parent1,
 					struct regmap *regmap)
@@ -323,7 +333,7 @@ static void da8xx_usb0_phy_clk_init(struct device_node *np)
 	struct regmap *regmap;
 	struct clk *usb0_psc_clk, *clk;
 	int ret;
-	
+
 	regmap = syscon_node_to_regmap(of_get_parent(np));
 	if (IS_ERR(regmap)) {
 		pr_err("%s: No regmap for syscon parent of %s (%ld)\n",
@@ -376,7 +386,7 @@ static void da8xx_usb1_phy_clk_init(struct device_node *np)
 	struct regmap *regmap;
 	struct clk *clk;
 	int ret;
-	
+
 	regmap = syscon_node_to_regmap(of_get_parent(np));
 	if (IS_ERR(regmap)) {
 		pr_err("%s: No regmap for syscon parent of %s (%ld)\n",
