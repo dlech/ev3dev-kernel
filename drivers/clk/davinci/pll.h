@@ -34,8 +34,8 @@ struct davinci_pll_clk_info {
 	u32 pllm_mask;
 	u32 pllm_min;
 	u32 pllm_max;
-	u32 pllout_min_rate;
-	u32 pllout_max_rate;
+	unsigned long pllout_min_rate;
+	unsigned long pllout_max_rate;
 	u32 flags;
 };
 
