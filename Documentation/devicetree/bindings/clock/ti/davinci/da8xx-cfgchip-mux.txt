@@ -5,7 +5,7 @@ registers call CFGCHIPn. Some of these registers function as clock
 multiplexers. This document describes the bindings for those clocks.
 
 Required properties:
-- compatible: shall be "ti,da850-async3-clock".
+- compatible: shall be "ti,da850-async3-clksrc".
 - #clock-cells: from common clock binding; shall be set to 0.
 - clocks: phandle list of clocks corresponding to clock-names
 - clock-names: must include the following: "pll0_sysclk2", "pll1_sysclk2".
@@ -27,7 +27,7 @@ Examples:
                 reg = <0x1417c 0x14>;
 
                 async3_clk: async3 {
-                        compatible = "ti,da850-async3-clock";
+                        compatible = "ti,da850-async3-clksrc";
                         #clock-cells = <0>;
                         clocks = <&pll0_sysclk 2>, <&pll1_sysclk 2>;
                         clock-names = "pll0_sysclk2", "pll1_sysclk2";

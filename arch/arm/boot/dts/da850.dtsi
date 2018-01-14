@@ -162,6 +162,7 @@
 		pll0: clock-controller@11000 {
 			compatible = "ti,da850-pll0";
 			reg = <0x11000 0x1000>;
+			#clock-cells = <0>;
 			clocks = <&ref_clk>;
 
 			pll0_sysclk: sysclk {
@@ -169,6 +170,10 @@
 			};
 
 			pll0_aux_clk: auxclk {
+				#clock-cells = <0>;
+			};
+
+			pll0_obsclk: obsclk {
 				#clock-cells = <0>;
 			};
 		};
@@ -416,21 +421,32 @@
 				clock-output-names = "usb1_phy_clk";
 			};
 
-			ehrpwm_tbclk: tbclk {
-				compatible = "ti,da830-tbclk";
+			ehrpwm_tbclk: ehrpwm_tbclk {
+				compatible = "ti,da830-tbclksync";
 				#clock-cells = <0>;
 				clocks = <&psc1 17>;
-				clock-output-names = "ehrpwm_tbclk";
+			};
+
+			div4p5_clk: div4.5 {
+				compatible = "ti,da830-div4p5ena";
+				#clock-cells = <0>;
+				clocks = <&pll0>;
 			};
 
 			async3_clk: async3 {
-				compatible = "ti,da850-async3-clock";
+				compatible = "ti,da850-async3-clksrc";
 				#clock-cells = <0>;
 				clocks = <&pll0_sysclk 2>, <&pll1_sysclk 2>;
 				clock-names = "pll0_sysclk2", "pll1_sysclk2";
 				assigned-clocks = <&async3_clk>;
 				assigned-clock-parents = <&pll1_sysclk 2>;
-				clock-output-names = "async3";
+			};
+
+			ema_clk: ema_clksrc {
+				compatible = "ti,da830-ema-clksrc";
+				#clock-cells = <0>;
+				clocks = <&pll0_sysclk 3>, <&div4p5_clk>;
+				clock-names = "pll0_sysclk3", "div4.5";
 			};
 		};
 		edma0: edma@0 {

@@ -5,7 +5,7 @@ registers call CFGCHIPn. Some of these registers function as clock
 gates. This document describes the bindings for those clocks.
 
 Required properties:
-- compatible: shall be "ti,da830-tbclk".
+- compatible: shall be "ti,da830-tbclksync".
 - #clock-cells: from common clock binding; shall be set to 0.
 - clocks: phandle to the parent clock
 
@@ -26,7 +26,7 @@ Examples:
 		reg = <0x1417c 0x14>;
 
 		ehrpwm_tbclk: tbclk {
-			compatible = "ti,da830-tbclk";
+			compatible = "ti,da830-tbclksync";
 			#clock-cells = <0>;
 			clocks = <&psc1 17>;
 			clock-output-names = "ehrpwm_tbclk";
