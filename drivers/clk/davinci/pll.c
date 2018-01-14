@@ -14,6 +14,8 @@
  * Copyright (C) 2008-2009 Deep Root Systems, LLC
  */
 
+#define pr_fmt(fmt) "%s: " fmt "\n", __func__
+
 #include <linux/clk-provider.h>
 #include <linux/delay.h>
 #include <linux/err.h>
@@ -25,6 +27,8 @@
 #include <linux/types.h>
 
 #include "pll.h"
+
+#define MAX_NAME_SIZE 20
 
 #define REVID		0x000
 #define PLLCTL		0x100
@@ -80,30 +84,36 @@
  */
 #define PLL_BYPASS_TIME		1
 /* From OMAP-L138 datasheet table 6-4. Units are micro seconds */
+
 #define PLL_RESET_TIME		1
+
 /*
  * From OMAP-L138 datasheet table 6-4; assuming prediv = 1, sqrt(pllm) = 4
  * Units are micro seconds.
  */
 #define PLL_LOCK_TIME		20
 
+
 /**
- * struct davinci_pll_clk - Main PLL clock
+ * struct davinci_pll_pllout_clk - Main PLL clock
  * @hw: clk_hw for the pll
  * @base: Base memory address
- * @parent_rate: Saved parent rate used by some child clocks
  */
-struct davinci_pll_clk {
+struct davinci_pll_pllout_clk {
 	struct clk_hw hw;
 	void __iomem *base;
+	u32 pllm_min;
+	u32 pllm_max;
+	u32 pllm_mask;
 };
 
-#define to_davinci_pll_clk(_hw) container_of((_hw), struct davinci_pll_clk, hw)
+#define to_davinci_pll_pllout_clk(_hw) \
+	container_of((_hw), struct davinci_pll_pllout_clk, hw)
 
 static unsigned long davinci_pll_clk_recalc(struct clk_hw *hw,
 					    unsigned long parent_rate)
 {
-	struct davinci_pll_clk *pll = to_davinci_pll_clk(hw);
+	struct davinci_pll_pllout_clk *pll = to_davinci_pll_pllout_clk(hw);
 	unsigned long rate = parent_rate;
 	u32 prediv, mult, postdiv;
 
@@ -114,6 +124,19 @@ static unsigned long davinci_pll_clk_recalc(struct clk_hw *hw,
 	rate /= prediv + 1;
 	rate *= mult + 1;
 	rate /= postdiv + 1;
+
+	return rate;
+}
+
+static unsigned long davinci_pll_pllout_recalc_rate(struct clk_hw *hw,
+						    unsigned long parent_rate)
+{
+	struct davinci_pll_pllout_clk *pll = to_davinci_pll_pllout_clk(hw);
+	unsigned long rate = parent_rate;
+	u32 mult;
+
+	mult = readl(pll->base + PLLM) & pll->pllm_mask;
+	rate *= mult + 1;
 
 	return rate;
 }
@@ -208,7 +231,7 @@ static long da850_pll_round_rate(struct clk_hw *hw, unsigned long rate,
  * @pllm: The multiplier value. Passing 0 leads to multiply-by-one.
  * @postdiv: The post divider value. Passing 0 disables the post-divider.
  */
-static void __da850_pll_set_rate(struct davinci_pll_clk *pll, u32 prediv,
+static void __da850_pll_set_rate(struct davinci_pll_pllout_clk *pll, u32 prediv,
 			 	 u32 mult, u32 postdiv)
 {
 	u32 ctrl, locktime;
@@ -261,7 +284,7 @@ static void __da850_pll_set_rate(struct davinci_pll_clk *pll, u32 prediv,
 static int da850_pll_set_rate(struct clk_hw *hw, unsigned long rate,
 			      unsigned long parent_rate)
 {
-	struct davinci_pll_clk *pll = to_davinci_pll_clk(hw);
+	struct davinci_pll_pllout_clk *pll = to_davinci_pll_pllout_clk(hw);
 	u32 prediv, mult, postdiv;
 
 	da850_pll_get_best_rate(rate, parent_rate, &prediv, &mult, &postdiv);
@@ -309,7 +332,7 @@ static const struct debugfs_reg32 davinci_pll_regs[] = {
 
 static int davinci_pll_debug_init(struct clk_hw *hw, struct dentry *dentry)
 {
-	struct davinci_pll_clk *pll = to_davinci_pll_clk(hw);
+	struct davinci_pll_pllout_clk *pll = to_davinci_pll_pllout_clk(hw);
 	struct debugfs_regset32 *regset;
 	struct dentry *d;
 
@@ -333,6 +356,11 @@ static int davinci_pll_debug_init(struct clk_hw *hw, struct dentry *dentry)
 #define davinci_pll_debug_init NULL
 #endif
 
+static const struct clk_ops davinci_pll_pllout_ops = {
+	.recalc_rate	= davinci_pll_pllout_recalc_rate,
+	.debug_init	= davinci_pll_debug_init,
+};
+
 static const struct clk_ops davinci_pll_clk_ops = {
 	.recalc_rate	= davinci_pll_clk_recalc,
 	.debug_init	= davinci_pll_debug_init,
@@ -345,45 +373,151 @@ static const struct clk_ops da850_pll_clk_ops = {
 	.debug_init	= davinci_pll_debug_init,
 };
 
-/**
- * davinci_pll_clk_register - Register a PLL clock
- * @name: The clock name
- * @parent_name: The parent clock name
- * @base: The PLL's memory region
- * @is_da850: Is DA850/OMAP-L138/AM18XX
- */
-struct clk *davinci_pll_clk_register(const char *name,
-				     const char *parent_name,
-				     void __iomem *base,
-				     bool is_da850)
+static const struct clk_ops davinci_pll_pllen_ops = {
+};
+
+static struct clk *davinci_pll_div_register(const char *name,
+					    const char *parent_name,
+					    void __iomem *reg)
 {
-	struct clk_init_data init;
-	struct davinci_pll_clk *pll;
+	const char * const *parent_names = parent_name ? &parent_name : NULL;
+	int num_parents = parent_name ? 1 : 0;
+	struct clk_gate *gate;
+	struct clk_divider *divider;
 	struct clk *clk;
 
-	pll = kzalloc(sizeof(*pll), GFP_KERNEL);
-	if (!pll)
+	gate = kzalloc(sizeof(*gate), GFP_KERNEL);
+	if (!gate)
 		return ERR_PTR(-ENOMEM);
 
-	init.name = name;
-	init.ops = is_da850 ? &da850_pll_clk_ops : &davinci_pll_clk_ops;
-	init.parent_names = (parent_name ? &parent_name : NULL);
-	init.num_parents = (parent_name ? 1 : 0);
-	init.flags = 0;
+	gate->reg = reg;
+	gate->bit_idx = PLLDIV_ENABLE_SHIFT;
 
-	pll->base = base;
-	pll->hw.init = &init;
+	divider = kzalloc(sizeof(*divider), GFP_KERNEL);
+	if (!divider) {
+		kfree(gate);
+		return ERR_PTR(-ENOMEM);
+	}
 
-	clk = clk_register(NULL, &pll->hw);
-	if (IS_ERR(clk))
-		kfree(pll);
+	divider->reg = reg;
+	divider->width = PLLDIV_RATIO_WIDTH;
+	divider->flags = CLK_DIVIDER_READ_ONLY;
+
+	clk = clk_register_composite(NULL, name, parent_names, num_parents,
+				     NULL, NULL,
+				     &divider->hw, &clk_divider_ro_ops,
+				     &gate->hw, &clk_gate_ops, 0);
+	if (IS_ERR(clk)) {
+		kfree(divider);
+		kfree(gate);
+	}
 
 	return clk;
 }
 
+/**
+ * davinci_pll_clk_register - Register a PLL clock
+ * @info: The device-specific clock info
+ * @parent_name: The parent clock name
+ * @base: The PLL's memory region
+ *
+ * This creates a series of clocks that represent the PLL.
+ *
+ *     OSCIN > [PREDIV >] PLLOUT > [POSTDIV >] PLLEN
+ *
+ * - OSCIN is the parent clock.
+ * - PREDIV and POSTDIV are optional
+ * - PLLOUT is the PLL output
+ * - PLLEN is the bypass multiplexer
+ *
+ * Returns: The PLLOUT clock or a negative error code.
+ */
+struct clk *davinci_pll_clk_register(const struct davinci_pll_clk_info *info,
+				     const char *parent_name,
+				     void __iomem *base)
+{
+	char prediv_name[MAX_NAME_SIZE];
+	char pllout_name[MAX_NAME_SIZE];
+	char postdiv_name[MAX_NAME_SIZE];
+	char pllen_name[MAX_NAME_SIZE];
+	struct clk_init_data init;
+	struct davinci_pll_pllout_clk *pllout, *pllen;
+	struct clk *pllout_clk, *clk;
+
+	if (info->flags & PLL_HAS_PREDIV) {
+		snprintf(prediv_name, MAX_NAME_SIZE, "%s_prediv", info->name);
+		clk = davinci_pll_div_register(prediv_name, parent_name,
+					       base + PREDIV);
+		if (IS_ERR(clk))
+			return clk;
+		parent_name = prediv_name;
+	}
+
+	pllout = kzalloc(sizeof(*pllout), GFP_KERNEL);
+	if (!pllout)
+		return ERR_PTR(-ENOMEM);
+
+	snprintf(pllout_name, MAX_NAME_SIZE, "%s_pllout", info->name);
+
+	init.name = pllout_name;
+	init.ops = &davinci_pll_pllout_ops;
+	init.parent_names = &parent_name;
+	init.num_parents = 1;
+	init.flags = 0;
+
+	if (info->flags & PLL_HAS_PREDIV)
+		inti.flags |= CLK_SET_RATE_PARENT;
+
+	pllout->hw.init = &init;
+	pllout->base = base;
+	pllout->pllm_mask = info->pllm_mask;
+	pllout->pllm_min = info->pllm_min;
+	pllout->pllm_max = info->pllm_max;
+
+	pllout_clk = clk_register(NULL, &pllout->hw);
+	if (IS_ERR(pllout_clk)) {
+		kfree(pllout);
+		return pllout_clk;
+	}
+
+	parent_name = pllout_name;
+
+	if (info->flags & PLL_HAS_POSTDIV) {
+		snprintf(postdiv_name, MAX_NAME_SIZE, "%s_postdiv",info->name);
+		clk = davinci_pll_div_register(postdiv_name, parent_name,
+					       base + POSTDIV);
+		if (IS_ERR(clk))
+			return clk;
+		parent_name = postdiv_name;
+	}
+
+	pllen = kzalloc(sizeof(*pllout), GFP_KERNEL);
+	if (!pllen)
+		return ERR_PTR(-ENOMEM);
+
+	snprintf(pllen_name, MAX_NAME_SIZE, "%s_pllen", info->name);
+
+	init.name = pllen_name;
+	init.ops = &davinci_pll_pllen_ops;
+	init.parent_names = &parent_name;
+	init.num_parents = 1; /* FIXME: two parents */
+	init.flags = CLK_SET_RATE_PARENT;
+
+	pllen->hw.init = &init;
+	pllen->base = base;
+
+	clk = clk_register(NULL, &pllen->hw);
+	if (IS_ERR(clk)) {
+		kfree(pllen);
+		return clk;
+	}
+
+	return pllout_clk;
+}
+
 struct davinci_pll_aux_clk {
 	struct clk_hw hw;
-	struct davinci_pll_clk *pll;
+	struct davinci_pll_pllout_clk *pll;
 };
 
 /**
@@ -534,10 +668,10 @@ davinci_pll_divclk_register(const struct davinci_pll_divclk_info *info,
 }
 
 #ifdef CONFIG_OF
-#define MAX_NAME_SIZE 20
 
-void of_davinci_pll_init(struct device_node *node, const char *name,
-			 const struct davinci_pll_divclk_info *info,
+void of_davinci_pll_init(struct device_node *node,
+			 const struct davinci_pll_clk_info *info,
+			 const struct davinci_pll_divclk_info *div_info,
 			 u8 max_divclk_id)
 {
 	struct device_node *child;
@@ -547,36 +681,35 @@ void of_davinci_pll_init(struct device_node *node, const char *name,
 
 	base = of_iomap(node, 0);
 	if (!base) {
-		pr_err("%s: ioremap failed\n", __func__);
+		pr_err("ioremap failed");
 		return;
 	}
 
 	parent_name = of_clk_get_parent_name(node, 0);
 
-	clk = davinci_pll_clk_register(name, parent_name, base, true);
+	clk = davinci_pll_clk_register(info, parent_name, base);
 	if (IS_ERR(clk)) {
-		pr_err("%s: failed to register %s (%ld)\n", __func__, name,
-		       PTR_ERR(clk));
+		pr_err("failed to register %s (%ld)", info->name, PTR_ERR(clk));
 		return;
 	}
+
+	of_clk_add_provider(node, of_clk_src_simple_get, clk);
 
 	child = of_get_child_by_name(node, "sysclk");
 	if (child && of_device_is_available(child)) {
 		struct clk_onecell_data *clk_data;
 
 		clk_data = clk_alloc_onecell_data(max_divclk_id + 1);
-		if (!clk_data) {
-			pr_err("%s: out of memory\n", __func__);
+		if (!clk_data)
 			return;
-		}
 
-		for (; info->name; info++) {
-			clk = davinci_pll_divclk_register(info, base);
+		for (; div_info->name; div_info++) {
+			clk = davinci_pll_divclk_register(div_info, base);
 			if (IS_ERR(clk))
-				pr_warn("%s: failed to register %s (%ld)\n",
-					__func__, info->name, PTR_ERR(clk));
+				pr_warn("failed to register %s (%ld)",
+					div_info->name, PTR_ERR(clk));
 			else
-				clk_data->clks[info->id] = clk;
+				clk_data->clks[div_info->id] = clk;
 		}
 		of_clk_add_provider(child, of_clk_src_onecell_get, clk_data);
 	}
@@ -586,12 +719,12 @@ void of_davinci_pll_init(struct device_node *node, const char *name,
 	if (child && of_device_is_available(child)) {
 		char child_name[MAX_NAME_SIZE];
 
-		snprintf(child_name, MAX_NAME_SIZE, "%s_aux_clk", name);
+		snprintf(child_name, MAX_NAME_SIZE, "%s_aux_clk", info->name);
 
 		clk = davinci_pll_aux_clk_register(child_name, parent_name, base);
 		if (IS_ERR(clk))
-			pr_warn("%s: failed to register %s (%ld)\n", __func__,
-				child_name, PTR_ERR(clk));
+			pr_warn("failed to register %s (%ld)", child_name,
+				PTR_ERR(clk));
 		else
 			of_clk_add_provider(child, of_clk_src_simple_get, clk);
 	}

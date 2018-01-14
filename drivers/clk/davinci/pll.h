@@ -11,6 +11,34 @@
 #include <linux/bitops.h>
 #include <linux/types.h>
 
+#define PLL_HAS_PREDIV			BIT(0) /* has prediv before PLL */
+#define PLL_PREDIV_ALWAYS_ENABLED	BIT(1) /* don't disable */
+#define PLL_PREDIV_FIXED_DIV		BIT(2) /* fixed divider value */
+#define PLL_HAS_POSTDIV			BIT(3) /* has postdiv after PLL */
+#define PLL_POSTDIV_ALWAYS_ENABLED	BIT(4) /* don't disable */
+#define PLL_POSTDIV_FIXED_DIV		BIT(5) /* fixed divider value */
+#define PLL_HAS_EXTCLKSRC		BIT(6)
+#define PLL_PLLM_2X			BIT(7)
+
+/** davinci_pll_clk_info - controller-specific PLL info
+ * @name: The name of the PLL
+ * @pllm_mask: Bitmask for PLLM[PLLM] value
+ * @pllm_min: Minimum allowable value for PLLM[PLLM]
+ * @pllm_max: Maximum allowable value for PLLM[PLLM]
+ * @pllout_min_rate: Minimum allowable rate for PLLOUT
+ * @pllout_max_rate: Maximum allowable rate for PLLOUT
+ * @flags: Bitmap of PLL_* flags.
+ */
+struct davinci_pll_clk_info {
+	const char *name;
+	u32 pllm_mask;
+	u32 pllm_min;
+	u32 pllm_max;
+	u32 pllout_min_rate;
+	u32 pllout_max_rate;
+	u32 flags;
+};
+
 #define DIVCLK_ARM_RATE		BIT(0) /* Controls ARM rate */
 #define DIVCLK_FIXED_DIV	BIT(1) /* Fixed divider */
 #define DIVCLK_ALWAYS_ENABLED	BIT(2) /* Or bad things happen */
@@ -32,10 +60,9 @@ struct davinci_pll_divclk_info {
 
 struct clk;
 
-struct clk *davinci_pll_clk_register(const char *name,
+struct clk *davinci_pll_clk_register(const struct davinci_pll_clk_info *info,
 				     const char *parent_name,
-				     void __iomem *base,
-				     bool is_da850);
+				     void __iomem *base);
 struct clk *davinci_pll_aux_clk_register(const char *name,
 					 const char *parent_name,
 					 void __iomem *base);
@@ -54,8 +81,9 @@ davinci_pll_divclk_register(const struct davinci_pll_divclk_info *info,
 #ifdef CONFIG_OF
 struct device_node;
 
-void of_davinci_pll_init(struct device_node *node, const char *name,
-			 const struct davinci_pll_divclk_info *info,
+void of_davinci_pll_init(struct device_node *node,
+			 const struct davinci_pll_clk_info *info,
+			 const struct davinci_pll_divclk_info *div_info,
 			 u8 max_divclk_id);
 #endif
 
