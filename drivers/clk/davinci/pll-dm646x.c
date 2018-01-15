@@ -25,7 +25,6 @@ static const struct davinci_pll_sysclk_info dm646x_pll1_sysclk_info[] __initcons
 	SYSCLK(4, pll1_sysclk4, pll1_pllen, 4, 0),
 	SYSCLK(5, pll1_sysclk5, pll1_pllen, 4, 0),
 	SYSCLK(6, pll1_sysclk6, pll1_pllen, 4, 0),
-	SYSCLK(7, pll1_sysclk7, pll1_pllen, 4, 0),
 	SYSCLK(8, pll1_sysclk8, pll1_pllen, 4, 0),
 	SYSCLK(9, pll1_sysclk9, pll1_pllen, 4, 0),
 	{ }
