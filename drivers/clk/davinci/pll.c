@@ -65,11 +65,11 @@
 #define PLLCTL_PLLENSRC	BIT(5)
 #define PLLCTL_CLKMODE	BIT(8)
 
-#define PLLDIV_RATIO_WIDTH	5
-#define PLLDIV_ENABLE_SHIFT	15
-#define OSCDIV_RATIO_WIDTH	5
-#define BPDIV_RATIO_SHIFT	0
-#define BPDIV_RATIO_WIDTH	5
+/* shared by most *DIV registers */
+#define DIV_RATIO_SHIFT		0
+#define DIV_RATIO_WIDTH		5
+#define DIV_ENABLE_SHIFT	15
+
 #define CKEN_OBSCLK_SHIFT	1
 #define CKEN_AUXEN_SHIFT	0
 
@@ -220,7 +220,7 @@ static struct clk *davinci_pll_div_register(const char *name,
 		return ERR_PTR(-ENOMEM);
 
 	gate->reg = reg;
-	gate->bit_idx = PLLDIV_ENABLE_SHIFT;
+	gate->bit_idx = DIV_ENABLE_SHIFT;
 
 	divider = kzalloc(sizeof(*divider), GFP_KERNEL);
 	if (!divider) {
@@ -229,7 +229,8 @@ static struct clk *davinci_pll_div_register(const char *name,
 	}
 
 	divider->reg = reg;
-	divider->width = PLLDIV_RATIO_WIDTH;
+	divider->shift = DIV_RATIO_SHIFT;
+	divider->width = DIV_RATIO_WIDTH;
 
 	if (fixed) {
 		divider->flags |= CLK_DIVIDER_READ_ONLY;
@@ -447,7 +448,7 @@ struct clk *davinci_pll_bpdiv_clk_register(const char *name,
 					   void __iomem *base)
 {
 	return clk_register_divider(NULL, name, parent_name, 0, base + BPDIV,
-				    BPDIV_RATIO_SHIFT, BPDIV_RATIO_WIDTH,
+				    DIV_RATIO_SHIFT, DIV_RATIO_WIDTH,
 				    CLK_DIVIDER_READ_ONLY, NULL);
 }
 
@@ -495,7 +496,8 @@ struct clk *davinci_pll_obs_clk_register(const char *name,
 	}
 
 	divider->reg = base + OSCDIV;
-	divider->width = OSCDIV_RATIO_WIDTH;
+	divider->shift = DIV_RATIO_SHIFT;
+	divider->width = DIV_RATIO_WIDTH;
 
 	clk = clk_register_composite(NULL, name, parent_names, num_parents,
 				     &mux->hw, &clk_mux_ops,
@@ -532,7 +534,7 @@ davinci_pll_divclk_register(const struct davinci_pll_divclk_info *info,
 		return ERR_PTR(-ENOMEM);
 
 	gate->reg = base + reg;
-	gate->bit_idx = PLLDIV_ENABLE_SHIFT;
+	gate->bit_idx = DIV_ENABLE_SHIFT;
 
 	divider = kzalloc(sizeof(*divider), GFP_KERNEL);
 	if (!divider) {
@@ -541,7 +543,8 @@ davinci_pll_divclk_register(const struct davinci_pll_divclk_info *info,
 	}
 
 	divider->reg = base + reg;
-	divider->width = PLLDIV_RATIO_WIDTH;
+	divider->shift = DIV_RATIO_SHIFT;
+	divider->width = DIV_RATIO_WIDTH;
 	divider->flags = 0;
 
 	if (info->flags & DIVCLK_FIXED_DIV) {
