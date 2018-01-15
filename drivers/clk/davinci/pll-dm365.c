@@ -33,6 +33,22 @@ static const struct davinci_pll_sysclk_info dm365_pll1_sysclk_info[] __initconst
 	{ }
 };
 
+static const char * const dm365_pll_obsclk_parent_names[] __initconst = {
+	"oscin",
+};
+
+static u32 dm365_pll_obsclk_table[] = {
+	BIT(4),
+};
+
+static const struct davinci_pll_obsclk_info dm365_pll1_obsclk_info __initconst = {
+	.name = "pll1_obsclk",
+	.parent_names = dm365_pll_obsclk_parent_names,
+	.num_parents = ARRAY_SIZE(dm365_pll_obsclk_parent_names),
+	.table = dm365_pll_obsclk_table,
+	.ocsrc_mask = BIT(4),
+};
+
 static const struct davinci_pll_clk_info dm365_pll2_info __initconst = {
 	.name = "pll2",
 	.pllm_mask = GENMASK(9, 0),
@@ -50,13 +66,12 @@ static const struct davinci_pll_sysclk_info dm365_pll2_sysclk_info[] __initconst
 	{ }
 };
 
-/* both OBSCLKs are the same, so this info is shared */
-static const char * const dm365_pll_obsclk_parent_names[] __initconst = {
-	"oscin",
-};
-
-static u32 dm365_pll_obsclk_table[] = {
-	0x10,
+static const struct davinci_pll_obsclk_info dm365_pll2_obsclk_info __initconst = {
+	.name = "pll2_obsclk",
+	.parent_names = dm365_pll_obsclk_parent_names,
+	.num_parents = ARRAY_SIZE(dm365_pll_obsclk_parent_names),
+	.table = dm365_pll_obsclk_table,
+	.ocsrc_mask = BIT(4),
 };
 
 void __init dm365_pll_clk_init(void __iomem *pll1, void __iomem *pll2)
@@ -66,17 +81,13 @@ void __init dm365_pll_clk_init(void __iomem *pll1, void __iomem *pll2)
 	davinci_pll_clk_register(&dm365_pll1_info, "ref_clk", pll1);
 	davinci_pll_auxclk_register("pll1_aux_clk", "oscin", pll1);
 	davinci_pll_sysclkbp_clk_register("pll1_sysclkbp", "oscin", pll1);
-	davinci_pll_obsclk_register("clkout0", dm365_pll_obsclk_parent_names,
-				    ARRAY_SIZE(dm365_pll_obsclk_parent_names),
-				    pll1, dm365_pll_obsclk_table);
+	davinci_pll_obsclk_register(&dm365_pll1_obsclk_info, pll1);
 	for (info = dm365_pll1_sysclk_info; info->name; info++)
 		davinci_pll_sysclk_register(info, pll1);
 
 	davinci_pll_clk_register(&dm365_pll2_info, "oscin", pll2);
-	davinci_pll_auxclk_register("clkout1", "oscin", pll2);
-	davinci_pll_obsclk_register("clkout1", dm365_pll_obsclk_parent_names,
-				    ARRAY_SIZE(dm365_pll_obsclk_parent_names),
-				    pll2, dm365_pll_obsclk_table);
+	davinci_pll_auxclk_register("pll2_aux_clk", "oscin", pll2);
+	davinci_pll_obsclk_register(&dm365_pll2_obsclk_info, pll2);
 	for (info = dm365_pll2_sysclk_info; info->name; info++)
 		davinci_pll_sysclk_register(info, pll2);
 }

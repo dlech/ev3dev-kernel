@@ -68,6 +68,14 @@ static u32 da850_pll0_obsclk_table[] = {
 	0x1e,
 };
 
+static const struct davinci_pll_obsclk_info da850_pll0_obsclk_info __initconst = {
+	.name = "pll0_obsclk",
+	.parent_names = da850_pll0_obsclk_parent_names,
+	.num_parents = ARRAY_SIZE(da850_pll0_obsclk_parent_names),
+	.table = da850_pll0_obsclk_table,
+	.ocsrc_mask = GENMASK(4, 0),
+};
+
 static const struct davinci_pll_clk_info da850_pll1_info __initconst = {
 	.name = "pll1",
 	.pllm_mask = GENMASK(4, 0),
@@ -99,6 +107,14 @@ static u32 da850_pll1_obsclk_table[] = {
 	0x19,
 };
 
+static const struct davinci_pll_obsclk_info da850_pll1_obsclk_info __initconst = {
+	.name = "pll1_obsclk",
+	.parent_names = da850_pll1_obsclk_parent_names,
+	.num_parents = ARRAY_SIZE(da850_pll1_obsclk_parent_names),
+	.table = da850_pll1_obsclk_table,
+	.ocsrc_mask = GENMASK(4, 0),
+};
+
 void __init da850_pll_clk_init(void __iomem *pll0, void __iomem *pll1)
 {
 	const struct davinci_pll_sysclk_info *info;
@@ -107,30 +123,26 @@ void __init da850_pll_clk_init(void __iomem *pll0, void __iomem *pll1)
 	davinci_pll_auxclk_register("pll0_aux_clk", "oscin", pll0);
 	for (info = da850_pll0_sysclk_info; info->name; info++)
 		davinci_pll_sysclk_register(info, pll0);
-	davinci_pll_obsclk_register("pll0_obsclk",
-				    da850_pll0_obsclk_parent_names,
-				    ARRAY_SIZE(da850_pll0_obsclk_parent_names),
-				    pll0, da850_pll0_obsclk_table);
+	davinci_pll_obsclk_register(&da850_pll0_obsclk_info, pll0);
 
 	davinci_pll_clk_register(&da850_pll1_info, "oscin", pll1);
 	for (info = da850_pll1_sysclk_info; info->name; info++)
 		davinci_pll_sysclk_register(info, pll1);
-	davinci_pll_obsclk_register("pll1_obsclk",
-				    da850_pll1_obsclk_parent_names,
-				    ARRAY_SIZE(da850_pll1_obsclk_parent_names),
-				    pll1, da850_pll1_obsclk_table);
+	davinci_pll_obsclk_register(&da850_pll1_obsclk_info, pll1);
 }
 
 #ifdef CONFIG_OF
 static void __init of_da850_pll0_auxclk_init(struct device_node *node)
 {
-	of_davinci_pll_init(node, &da850_pll0_info, da850_pll0_sysclk_info, 7);
+	of_davinci_pll_init(node, &da850_pll0_info, &da850_pll0_obsclk_info,
+			    da850_pll0_sysclk_info, 7);
 }
 CLK_OF_DECLARE(da850_pll0_auxclk, "ti,da850-pll0", of_da850_pll0_auxclk_init);
 
 static void __init of_da850_pll1_auxclk_init(struct device_node *node)
 {
-	of_davinci_pll_init(node, &da850_pll1_info, da850_pll1_sysclk_info, 3);
+	of_davinci_pll_init(node, &da850_pll1_info, &da850_pll1_obsclk_info,
+			    da850_pll1_sysclk_info, 3);
 }
 CLK_OF_DECLARE(da850_pll1_auxclk, "ti,da850-pll1", of_da850_pll1_auxclk_init);
 #endif

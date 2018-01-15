@@ -459,18 +459,12 @@ struct clk *davinci_pll_sysclkbp_clk_register(const char *name,
 
 /**
  * davinci_pll_obsclk_register - Register oscillator divider clock (OBSCLK)
- * @name: The clock name
- * @parent_names: The parent clock names
- * @num_parents: The number of paren clocks
+ * @info: The clock info
  * @base: The PLL memory region
- * @table: A table of values cooresponding to the parent clocks (see OCSEL
- *         register in SRM for values)
  */
-struct clk *davinci_pll_obsclk_register(const char *name,
-					const char * const *parent_names,
-					u8 num_parents,
-					void __iomem *base,
-					u32 *table)
+struct clk *
+davinci_pll_obsclk_register(const struct davinci_pll_obsclk_info *info,
+			    void __iomem *base)
 {
 	struct clk_mux *mux;
 	struct clk_gate *gate;
@@ -483,7 +477,8 @@ struct clk *davinci_pll_obsclk_register(const char *name,
 		return ERR_PTR(-ENOMEM);
 
 	mux->reg = base + OCSEL;
-	mux->table = table;
+	mux->table = info->table;
+	mux->mask = info->ocsrc_mask;
 
 	gate = kzalloc(sizeof(*gate), GFP_KERNEL);
 	if (!gate) {
@@ -510,7 +505,8 @@ struct clk *davinci_pll_obsclk_register(const char *name,
 	oscdiv |= BIT(DIV_ENABLE_SHIFT);
 	writel(oscdiv, base + OSCDIV);
 
-	clk = clk_register_composite(NULL, name, parent_names, num_parents,
+	clk = clk_register_composite(NULL, info->name, info->parent_names,
+				     info->num_parents,
 				     &mux->hw, &clk_mux_ops,
 				     &divider->hw, &clk_divider_ops,
 				     &gate->hw, &clk_gate_ops, 0);
@@ -585,6 +581,7 @@ davinci_pll_sysclk_register(const struct davinci_pll_sysclk_info *info,
 
 void of_davinci_pll_init(struct device_node *node,
 			 const struct davinci_pll_clk_info *info,
+			 const struct davinci_pll_obsclk_info *obsclk_info,
 			 const struct davinci_pll_sysclk_info *div_info,
 			 u8 max_sysclk_id)
 {
@@ -644,6 +641,16 @@ void of_davinci_pll_init(struct device_node *node,
 		if (IS_ERR(clk))
 			pr_warn("failed to register %s (%ld)", child_name,
 				PTR_ERR(clk));
+		else
+			of_clk_add_provider(child, of_clk_src_simple_get, clk);
+	}
+	of_node_put(child);
+
+	child = of_get_child_by_name(node, "obsclk");
+	if (child && of_device_is_available(child)) {
+		clk = davinci_pll_obsclk_register(obsclk_info, base);
+		if (IS_ERR(clk))
+			pr_warn("failed to register obsclk (%ld)", PTR_ERR(clk));
 		else
 			of_clk_add_provider(child, of_clk_src_simple_get, clk);
 	}

@@ -59,6 +59,14 @@ struct davinci_pll_sysclk_info {
 	.flags		= (f),	\
 }
 
+struct davinci_pll_obsclk_info {
+	const char *name;
+	const char * const * parent_names;
+	u8 num_parents;
+	u32 *table;
+	u32 ocsrc_mask;
+};
+
 struct clk;
 
 struct clk *davinci_pll_clk_register(const struct davinci_pll_clk_info *info,
@@ -70,11 +78,9 @@ struct clk *davinci_pll_auxclk_register(const char *name,
 struct clk *davinci_pll_sysclkbp_clk_register(const char *name,
 					      const char *parent_name,
 					      void __iomem *base);
-struct clk *davinci_pll_obsclk_register(const char *name,
-					const char * const *parent_names,
-					u8 num_parents,
-					void __iomem *base,
-					u32 *table);
+struct clk *
+davinci_pll_obsclk_register(const struct davinci_pll_obsclk_info *info,
+			    void __iomem *base);
 struct clk *
 davinci_pll_sysclk_register(const struct davinci_pll_sysclk_info *info,
 			    void __iomem *base);
@@ -84,6 +90,7 @@ struct device_node;
 
 void of_davinci_pll_init(struct device_node *node,
 			 const struct davinci_pll_clk_info *info,
+			 const struct davinci_pll_obsclk_info *obsclk_info,
 			 const struct davinci_pll_sysclk_info *div_info,
 			 u8 max_sysclk_id);
 #endif

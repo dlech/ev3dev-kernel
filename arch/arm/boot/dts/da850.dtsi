@@ -722,6 +722,10 @@
 			pll1_sysclk: sysclk {
 				#clock-cells = <1>;
 			};
+
+			pll1_obsclk: obsclk {
+				#clock-cells = <0>;
+			};
 		};
 		mdio: mdio@224000 {
 			compatible = "ti,davinci_mdio";
