@@ -216,10 +216,6 @@ static const struct clk_ops dm365_pll_ops = {
 	.debug_init	= davinci_pll_debug_init,
 };
 
-static const struct clk_ops davinci_pllen_ops = {
-	/* this clocks just uses the clock notification feature */
-};
-
 static struct clk *davinci_pll_div_register(const char *name,
 					    const char *parent_name,
 					    void __iomem *reg,
@@ -265,6 +261,18 @@ static struct clk *davinci_pll_div_register(const char *name,
 	return clk;
 }
 
+struct davinci_pllen_clk {
+	struct clk_hw hw;
+	void __iomem *base;
+};
+
+#define to_davinci_pllen_clk(_hw) \
+	container_of((_hw), struct davinci_pllen_clk, hw)
+
+static const struct clk_ops davinci_pllen_ops = {
+	/* this clocks just uses the clock notification feature */
+};
+
 /*
  * The PLL has to be switched into bypass mode while we are chaning the rate,
  * so we do that on the PLLEN clock since it is the end of the line. This will
@@ -276,7 +284,7 @@ static int davinci_pllen_rate_change(struct notifier_block *nb,
 {
 	struct clk_notifier_data *cnd = data;
 	struct clk_hw *hw = __clk_get_hw(cnd->clk);
-	struct davinci_pll_clk *pll = to_davinci_pll_clk(hw);
+	struct davinci_pllen_clk *pll = to_davinci_pllen_clk(hw);
 	u32 ctrl;
 
 	ctrl = readl(pll->base + PLLCTL);
@@ -338,7 +346,8 @@ struct clk *davinci_pll_clk_register(const struct davinci_pll_clk_info *info,
 	char postdiv_name[MAX_NAME_SIZE];
 	char pllen_name[MAX_NAME_SIZE];
 	struct clk_init_data init;
-	struct davinci_pll_clk *pllout, *pllen;
+	struct davinci_pll_clk *pllout;
+	struct davinci_pllen_clk *pllen;
 	struct clk *pllout_clk, *clk;
 
 	if (info->flags & PLL_HAS_OSCIN) {
@@ -545,7 +554,7 @@ static int davinci_pll_sysclk_rate_change(struct notifier_block *nb,
 {
 	struct clk_notifier_data *cnd = data;
 	struct clk_hw *hw = __clk_get_hw(clk_get_parent(cnd->clk));
-	struct davinci_pll_clk *pll = to_davinci_pll_clk(hw);
+	struct davinci_pllen_clk *pll = to_davinci_pllen_clk(hw);
 	u32 pllcmd, pllstat;
 
 	switch (flags) {
