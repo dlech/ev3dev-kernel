@@ -48,14 +48,16 @@ struct davinci_pll_sysclk_info {
 	const char *name;
 	const char *parent_name;
 	u32 id;
+	u32 ratio_width;
 	u32 flags;
 };
 
-#define SYSCLK(i, n, p, f)	\
+#define SYSCLK(i, n, p, w, f)	\
 {				\
 	.name		= #n,	\
 	.parent_name	= #p,	\
 	.id		= (i),	\
+	.ratio_width	= (w),	\
 	.flags		= (f),	\
 }
 

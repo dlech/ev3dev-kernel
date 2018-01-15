@@ -22,10 +22,10 @@ static const struct davinci_pll_clk_info dm644x_pll1_info __initconst = {
 };
 
 static const struct davinci_pll_sysclk_info dm644x_pll1_sysclk_info[] __initconst = {
-	SYSCLK(1, pll1_sysclk1, pll1_pllen, SYSCLK_FIXED_DIV),
-	SYSCLK(2, pll1_sysclk2, pll1_pllen, SYSCLK_FIXED_DIV),
-	SYSCLK(3, pll1_sysclk3, pll1_pllen, SYSCLK_FIXED_DIV),
-	SYSCLK(5, pll1_sysclk5, pll1_pllen, SYSCLK_FIXED_DIV),
+	SYSCLK(1, pll1_sysclk1, pll1_pllen, 4, SYSCLK_FIXED_DIV),
+	SYSCLK(2, pll1_sysclk2, pll1_pllen, 4, SYSCLK_FIXED_DIV),
+	SYSCLK(3, pll1_sysclk3, pll1_pllen, 4, SYSCLK_FIXED_DIV),
+	SYSCLK(5, pll1_sysclk5, pll1_pllen, 4, SYSCLK_FIXED_DIV),
 	{ }
 };
 
@@ -40,8 +40,8 @@ static const struct davinci_pll_clk_info dm644x_pll2_info __initconst = {
 };
 
 static const struct davinci_pll_sysclk_info dm644x_pll2_sysclk_info[] __initconst = {
-	SYSCLK(1, pll2_sysclk1, pll2_pllen, 0),
-	SYSCLK(2, pll2_sysclk2, pll2_pllen, 0),
+	SYSCLK(1, pll2_sysclk1, pll2_pllen, 4, 0),
+	SYSCLK(2, pll2_sysclk2, pll2_pllen, 4, 0),
 	{ }
 };
 

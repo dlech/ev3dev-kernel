@@ -29,12 +29,12 @@ static const struct davinci_pll_clk_info da830_pll_info __initconst = {
  */
 
 static const struct davinci_pll_sysclk_info da830_pll_sysclk_info[] __initconst = {
-	SYSCLK(2, pll0_sysclk2, pll0_pllen, SYSCLK_FIXED_DIV),
-	SYSCLK(3, pll0_sysclk3, pll0_pllen, 0),
-	SYSCLK(4, pll0_sysclk4, pll0_pllen, SYSCLK_FIXED_DIV),
-	SYSCLK(5, pll0_sysclk5, pll0_pllen, 0),
-	SYSCLK(6, pll0_sysclk6, pll0_pllen, SYSCLK_FIXED_DIV),
-	SYSCLK(7, pll0_sysclk7, pll0_pllen, 0),
+	SYSCLK(2, pll0_sysclk2, pll0_pllen, 5, SYSCLK_FIXED_DIV),
+	SYSCLK(3, pll0_sysclk3, pll0_pllen, 5, 0),
+	SYSCLK(4, pll0_sysclk4, pll0_pllen, 5, SYSCLK_FIXED_DIV),
+	SYSCLK(5, pll0_sysclk5, pll0_pllen, 5, 0),
+	SYSCLK(6, pll0_sysclk6, pll0_pllen, 5, SYSCLK_FIXED_DIV),
+	SYSCLK(7, pll0_sysclk7, pll0_pllen, 5, 0),
 	{ }
 };
 

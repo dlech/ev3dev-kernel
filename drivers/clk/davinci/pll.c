@@ -581,7 +581,7 @@ davinci_pll_sysclk_register(const struct davinci_pll_sysclk_info *info,
 
 	divider->reg = base + reg;
 	divider->shift = DIV_RATIO_SHIFT;
-	divider->width = DIV_RATIO_WIDTH;
+	divider->width = info->ratio_width;
 	divider->flags = 0;
 
 	if (info->flags & SYSCLK_FIXED_DIV) {
