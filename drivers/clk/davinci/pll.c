@@ -432,15 +432,15 @@ struct clk *davinci_pll_auxclk_register(const char *name,
 }
 
 /**
- * davinci_pll_bpdiv_clk_register - Register bypass divider clock (SYSCLKBP)
+ * davinci_pll_sysclkbp_clk_register - Register bypass divider clock (SYSCLKBP)
  * @name: The clock name
  * @parent_name: The parent clock name (usually "ref_clk" since this bypasses
  *               the PLL)
  * @base: The PLL memory region
  */
-struct clk *davinci_pll_bpdiv_clk_register(const char *name,
-					   const char *parent_name,
-					   void __iomem *base)
+struct clk *davinci_pll_sysclkbp_clk_register(const char *name,
+					      const char *parent_name,
+					      void __iomem *base)
 {
 	return clk_register_divider(NULL, name, parent_name, 0, base + BPDIV,
 				    DIV_RATIO_SHIFT, DIV_RATIO_WIDTH,
