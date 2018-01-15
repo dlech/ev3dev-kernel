@@ -4,12 +4,7 @@
  *
  * Copyright (C) 2017 David Lechner <david@lechnology.com>
  *
- * Based on drivers/clk/keystone/pll.c
- * Copyright (C) 2013 Texas Instruments Inc.
- *	Murali Karicheri <m-karicheri2@ti.com>
- *	Santosh Shilimkar <santosh.shilimkar@ti.com>
- *
- * And on arch/arm/mach-davinci/clock.c
+ * Based on arch/arm/mach-davinci/clock.c
  * Copyright (C) 2006-2007 Texas Instruments.
  * Copyright (C) 2008-2009 Deep Root Systems, LLC
  */
