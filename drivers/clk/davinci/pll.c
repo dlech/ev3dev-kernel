@@ -359,8 +359,13 @@ struct clk *davinci_pll_clk_register(const struct davinci_pll_clk_info *info,
 		if (info->flags & PLL_PREDIV_ALWAYS_ENABLED)
 			flags |= CLK_IS_CRITICAL;
 
-		clk = davinci_pll_div_register(prediv_name, parent_name,
-					       base + PREDIV, fixed, flags);
+		/* Some? DM355 chips don't correctly report the PREDIV value */
+		if (info->flags & PLL_PREDIV_FIXED8)
+			clk = clk_register_fixed_factor(NULL, prediv_name,
+						parent_name, flags, 1, 8);
+		else
+			clk = davinci_pll_div_register(prediv_name, parent_name,
+						base + PREDIV, fixed, flags);
 		if (IS_ERR(clk))
 			return clk;
 

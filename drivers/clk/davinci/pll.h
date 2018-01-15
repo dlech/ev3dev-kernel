@@ -20,6 +20,7 @@
 #define PLL_POSTDIV_FIXED_DIV		BIT(6) /* fixed divider value */
 #define PLL_HAS_EXTCLKSRC		BIT(7) /* has selectable bypass */
 #define PLL_PLLM_2X			BIT(8) /* PLLM value is 2x (DM365) */
+#define PLL_PREDIV_FIXED8		BIT(9) /* DM355 quirk */
 
 /** davinci_pll_clk_info - controller-specific PLL info
  * @name: The name of the PLL
