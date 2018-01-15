@@ -47,7 +47,7 @@ void __init dm355_pll_clk_init(void __iomem *pll1, void __iomem *pll2)
 	davinci_pll_clk_register(&dm355_pll1_info, "ref_clk", pll1);
 	for (info = dm355_pll1_sysclk_info; info->name; info++)
 		davinci_pll_sysclk_register(info, pll1);
-	davinci_pll_auxclk_register("pll1_auxclk", "oscin", pll1);
+	davinci_pll_auxclk_register("pll1_auxclk", pll1);
 	davinci_pll_sysclkbp_clk_register("pll1_sysclkbp", "oscin", pll1);
 
 	davinci_pll_clk_register(&dm355_pll2_info, "oscin", pll2);

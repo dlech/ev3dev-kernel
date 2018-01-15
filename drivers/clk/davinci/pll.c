@@ -429,15 +429,12 @@ struct clk *davinci_pll_clk_register(const struct davinci_pll_clk_info *info,
 /**
  * davinci_pll_auxclk_register - Register bypass clock (AUXCLK)
  * @name: The clock name
- * @parent_name: The parent clock name (usually "oscin" since this bypasses
- *               the PLL)
  * @base: The PLL memory region
  */
 struct clk *davinci_pll_auxclk_register(const char *name,
-					const char *parent_name,
 					void __iomem *base)
 {
-	return clk_register_gate(NULL, name, parent_name, 0, base + CKEN,
+	return clk_register_gate(NULL, name, OSCIN_CLK_NAME, 0, base + CKEN,
 				 CKEN_AUXEN_SHIFT, 0, NULL);
 }
 
@@ -637,7 +634,7 @@ void of_davinci_pll_init(struct device_node *node,
 
 		snprintf(child_name, MAX_NAME_SIZE, "%s_auxclk", info->name);
 
-		clk = davinci_pll_auxclk_register(child_name, parent_name, base);
+		clk = davinci_pll_auxclk_register(child_name, base);
 		if (IS_ERR(clk))
 			pr_warn("failed to register %s (%ld)", child_name,
 				PTR_ERR(clk));
