@@ -603,8 +603,6 @@ void of_davinci_pll_init(struct device_node *node,
 
 	of_clk_add_provider(node, of_clk_src_simple_get, clk);
 
-	parent_name = OSCIN_CLK_NAME;
-
 	child = of_get_child_by_name(node, "sysclk");
 	if (child && of_device_is_available(child)) {
 		struct clk_onecell_data *clk_data;
