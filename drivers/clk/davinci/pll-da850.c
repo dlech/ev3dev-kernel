@@ -39,8 +39,7 @@ static const struct davinci_pll_sysclk_info da850_pll0_sysclk_info[] __initconst
 	SYSCLK(3, pll0_sysclk3, pll0_pllen, 5, 0),
 	SYSCLK(4, pll0_sysclk4, pll0_pllen, 5, SYSCLK_FIXED_DIV),
 	SYSCLK(5, pll0_sysclk5, pll0_pllen, 5, 0),
-	SYSCLK(6, pll0_sysclk6, pll0_pllen, 5,
-	       SYSCLK_ARM_RATE | SYSCLK_FIXED_DIV),
+	SYSCLK(6, pll0_sysclk6, pll0_pllen, 5, SYSCLK_ARM_RATE | SYSCLK_FIXED_DIV),
 	SYSCLK(7, pll0_sysclk7, pll0_pllen, 5, 0),
 	{ }
 };
