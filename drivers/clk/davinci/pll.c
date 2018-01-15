@@ -187,64 +187,7 @@ static int davinci_pll_set_rate(struct clk_hw *hw, unsigned long rate,
 }
 
 #ifdef CONFIG_DEBUG_FS
-#include <linux/debugfs.h>
-
-#define DEBUG_REG(n)	\
-{			\
-	.name	= #n,	\
-	.offset	= n,	\
-}
-
-static const struct debugfs_reg32 davinci_pll_regs[] = {
-	DEBUG_REG(REVID),
-	DEBUG_REG(PLLCTL),
-	DEBUG_REG(OCSEL),
-	DEBUG_REG(PLLSECCTL),
-	DEBUG_REG(PLLM),
-	DEBUG_REG(PREDIV),
-	DEBUG_REG(PLLDIV1),
-	DEBUG_REG(PLLDIV2),
-	DEBUG_REG(PLLDIV3),
-	DEBUG_REG(OSCDIV),
-	DEBUG_REG(POSTDIV),
-	DEBUG_REG(BPDIV),
-	DEBUG_REG(PLLCMD),
-	DEBUG_REG(PLLSTAT),
-	DEBUG_REG(ALNCTL),
-	DEBUG_REG(DCHANGE),
-	DEBUG_REG(CKEN),
-	DEBUG_REG(CKSTAT),
-	DEBUG_REG(SYSTAT),
-	DEBUG_REG(PLLDIV4),
-	DEBUG_REG(PLLDIV5),
-	DEBUG_REG(PLLDIV6),
-	DEBUG_REG(PLLDIV7),
-	DEBUG_REG(PLLDIV8),
-	DEBUG_REG(PLLDIV9),
-};
-
-static int davinci_pll_debug_init(struct clk_hw *hw, struct dentry *dentry)
-{
-	struct davinci_pll_clk *pll = to_davinci_pll_clk(hw);
-	struct debugfs_regset32 *regset;
-	struct dentry *d;
-
-	regset = kzalloc(sizeof(regset), GFP_KERNEL);
-	if (!regset)
-		return -ENOMEM;
-
-	regset->regs = davinci_pll_regs;
-	regset->nregs = ARRAY_SIZE(davinci_pll_regs);
-	regset->base = pll->base;
-
-	d = debugfs_create_regset32("registers", 0400, dentry, regset);
-	if (IS_ERR(d)) {
-		kfree(regset);
-		return PTR_ERR(d);
-	}
-
-	return 0;
-}
+static int davinci_pll_debug_init(struct clk_hw *hw, struct dentry *dentry);
 #else
 #define davinci_pll_debug_init NULL
 #endif
@@ -686,5 +629,66 @@ void of_davinci_pll_init(struct device_node *node,
 			of_clk_add_provider(child, of_clk_src_simple_get, clk);
 	}
 	of_node_put(child);
+}
+#endif
+
+#ifdef CONFIG_DEBUG_FS
+#include <linux/debugfs.h>
+
+#define DEBUG_REG(n)	\
+{			\
+	.name	= #n,	\
+	.offset	= n,	\
+}
+
+static const struct debugfs_reg32 davinci_pll_regs[] = {
+	DEBUG_REG(REVID),
+	DEBUG_REG(PLLCTL),
+	DEBUG_REG(OCSEL),
+	DEBUG_REG(PLLSECCTL),
+	DEBUG_REG(PLLM),
+	DEBUG_REG(PREDIV),
+	DEBUG_REG(PLLDIV1),
+	DEBUG_REG(PLLDIV2),
+	DEBUG_REG(PLLDIV3),
+	DEBUG_REG(OSCDIV),
+	DEBUG_REG(POSTDIV),
+	DEBUG_REG(BPDIV),
+	DEBUG_REG(PLLCMD),
+	DEBUG_REG(PLLSTAT),
+	DEBUG_REG(ALNCTL),
+	DEBUG_REG(DCHANGE),
+	DEBUG_REG(CKEN),
+	DEBUG_REG(CKSTAT),
+	DEBUG_REG(SYSTAT),
+	DEBUG_REG(PLLDIV4),
+	DEBUG_REG(PLLDIV5),
+	DEBUG_REG(PLLDIV6),
+	DEBUG_REG(PLLDIV7),
+	DEBUG_REG(PLLDIV8),
+	DEBUG_REG(PLLDIV9),
+};
+
+static int davinci_pll_debug_init(struct clk_hw *hw, struct dentry *dentry)
+{
+	struct davinci_pll_clk *pll = to_davinci_pll_clk(hw);
+	struct debugfs_regset32 *regset;
+	struct dentry *d;
+
+	regset = kzalloc(sizeof(regset), GFP_KERNEL);
+	if (!regset)
+		return -ENOMEM;
+
+	regset->regs = davinci_pll_regs;
+	regset->nregs = ARRAY_SIZE(davinci_pll_regs);
+	regset->base = pll->base;
+
+	d = debugfs_create_regset32("registers", 0400, dentry, regset);
+	if (IS_ERR(d)) {
+		kfree(regset);
+		return PTR_ERR(d);
+	}
+
+	return 0;
 }
 #endif
