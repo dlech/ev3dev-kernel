@@ -36,7 +36,7 @@ static const struct davinci_pll_clk_info dm644x_pll2_info __initconst = {
 	.pllm_max = 32,
 	.pllout_min_rate = 400000000,
 	.pllout_max_rate = 900000000,
-	.flags = PLL_HAS_POSTDIV,
+	.flags = PLL_HAS_POSTDIV | PLL_POSTDIV_FIXED_DIV,
 };
 
 static const struct davinci_pll_sysclk_info dm644x_pll2_sysclk_info[] __initconst = {
