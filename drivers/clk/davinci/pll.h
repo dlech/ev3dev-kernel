@@ -69,11 +69,11 @@ struct clk *davinci_pll_aux_clk_register(const char *name,
 struct clk *davinci_pll_bpdiv_clk_register(const char *name,
 					   const char *parent_name,
 					   void __iomem *base);
-struct clk *davinci_pll_obs_clk_register(const char *name,
-					 const char * const *parent_names,
-					 u8 num_parents,
-					 void __iomem *base,
-					 u32 *table);
+struct clk *davinci_pll_obsclk_register(const char *name,
+					const char * const *parent_names,
+					u8 num_parents,
+					void __iomem *base,
+					u32 *table);
 struct clk *
 davinci_pll_divclk_register(const struct davinci_pll_divclk_info *info,
 			    void __iomem *base);

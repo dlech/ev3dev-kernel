@@ -9,6 +9,7 @@
 #include <linux/clk-provider.h>
 #include <linux/clkdev.h>
 #include <linux/init.h>
+#include <linux/kernel.h>
 #include <linux/of.h>
 #include <linux/types.h>
 
@@ -42,6 +43,30 @@ static const struct davinci_pll_divclk_info da850_pll0_divclk_info[] __initconst
 	{ }
 };
 
+static const char * const da850_pll0_obsclk_parent_names[] __initconst = {
+	"ref_clk",
+	"pll0_sysclk1",
+	"pll0_sysclk2",
+	"pll0_sysclk3",
+	"pll0_sysclk4",
+	"pll0_sysclk5",
+	"pll0_sysclk6",
+	"pll0_sysclk7",
+	"pll1_obsclk",
+};
+
+static u32 da850_pll0_obsclk_table[] = {
+	0x14,
+	0x17,
+	0x18,
+	0x19,
+	0x1a,
+	0x1b,
+	0x1c,
+	0x1d,
+	0x1e,
+};
+
 static const struct davinci_pll_clk_info da850_pll1_info __initconst = {
 	.name = "pll1",
 	.pllm_mask = GENMASK(4, 0),
@@ -59,6 +84,20 @@ static const struct davinci_pll_divclk_info da850_pll1_divclk_info[] __initconst
 	{ }
 };
 
+static const char * const da850_pll1_obsclk_parent_names[] __initconst = {
+	"ref_clk",
+	"pll1_sysclk1",
+	"pll1_sysclk2",
+	"pll1_sysclk3",
+};
+
+static u32 da850_pll1_obsclk_table[] = {
+	0x14,
+	0x17,
+	0x18,
+	0x19,
+};
+
 void __init da850_pll_clk_init(void __iomem *pll0, void __iomem *pll1)
 {
 	const struct davinci_pll_divclk_info *info;
@@ -67,10 +106,18 @@ void __init da850_pll_clk_init(void __iomem *pll0, void __iomem *pll1)
 	davinci_pll_aux_clk_register("pll0_aux_clk", "ref_clk", pll0);
 	for (info = da850_pll0_divclk_info; info->name; info++)
 		davinci_pll_divclk_register(info, pll0);
+	davinci_pll_obsclk_register("pll0_obsclk",
+				    da850_pll0_obsclk_parent_names,
+				    ARRAY_SIZE(da850_pll0_obsclk_parent_names),
+				    pll0, da850_pll0_obsclk_table);
 
 	davinci_pll_clk_register(&da850_pll1_info, "ref_clk", pll1);
 	for (info = da850_pll1_divclk_info; info->name; info++)
 		davinci_pll_divclk_register(info, pll1);
+	davinci_pll_obsclk_register("pll1_obsclk",
+				    da850_pll1_obsclk_parent_names,
+				    ARRAY_SIZE(da850_pll1_obsclk_parent_names),
+				    pll1, da850_pll1_obsclk_table);
 }
 
 #ifdef CONFIG_OF

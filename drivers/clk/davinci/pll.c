@@ -80,8 +80,8 @@
  * is ~25MHz. Units are micro seconds.
  */
 #define PLL_BYPASS_TIME		1
-/* From OMAP-L138 datasheet table 6-4. Units are micro seconds */
 
+/* From OMAP-L138 datasheet table 6-4. Units are micro seconds */
 #define PLL_RESET_TIME		1
 
 /*
@@ -453,7 +453,7 @@ struct clk *davinci_pll_bpdiv_clk_register(const char *name,
 }
 
 /**
- * davinci_pll_obs_clk_register - Register oscillator divider clock (OBSCLK)
+ * davinci_pll_obsclk_register - Register oscillator divider clock (OBSCLK)
  * @name: The clock name
  * @parent_names: The parent clock names
  * @num_parents: The number of paren clocks
@@ -461,16 +461,17 @@ struct clk *davinci_pll_bpdiv_clk_register(const char *name,
  * @table: A table of values cooresponding to the parent clocks (see OCSEL
  *         register in SRM for values)
  */
-struct clk *davinci_pll_obs_clk_register(const char *name,
-					 const char * const *parent_names,
-					 u8 num_parents,
-					 void __iomem *base,
-					 u32 *table)
+struct clk *davinci_pll_obsclk_register(const char *name,
+					const char * const *parent_names,
+					u8 num_parents,
+					void __iomem *base,
+					u32 *table)
 {
 	struct clk_mux *mux;
 	struct clk_gate *gate;
 	struct clk_divider *divider;
 	struct clk *clk;
+	u32 oscdiv;
 
 	mux = kzalloc(sizeof(*mux), GFP_KERNEL);
 	if (!mux)
@@ -498,6 +499,11 @@ struct clk *davinci_pll_obs_clk_register(const char *name,
 	divider->reg = base + OSCDIV;
 	divider->shift = DIV_RATIO_SHIFT;
 	divider->width = DIV_RATIO_WIDTH;
+
+	/* make sure divider is enabled just in case bootloader disabled it */
+	oscdiv = readl(base + OSCDIV);
+	oscdiv |= BIT(DIV_ENABLE_SHIFT);
+	writel(oscdiv, base + OSCDIV);
 
 	clk = clk_register_composite(NULL, name, parent_names, num_parents,
 				     &mux->hw, &clk_mux_ops,

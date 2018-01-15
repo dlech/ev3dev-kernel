@@ -12,14 +12,6 @@
 
 #include "pll.h"
 
-static const char * const dm365_pll_obsclk_parent_names[] = {
-	"ref_clk",
-};
-
-static u32 dm365_pll_obsclk_table[] = {
-	0x10,
-};
-
 static const struct davinci_pll_clk_info dm365_pll1_info __initconst = {
 	.name = "pll1",
 	.pllm_mask = GENMASK(9, 0),
@@ -62,6 +54,15 @@ static const struct davinci_pll_divclk_info dm365_pll2_divclk_info[] __initconst
 	{ }
 };
 
+/* both OBSCLKs are the same, so this info is shared */
+static const char * const dm365_pll_obsclk_parent_names[] __initconst = {
+	"ref_clk",
+};
+
+static u32 dm365_pll_obsclk_table[] = {
+	0x10,
+};
+
 void __init dm365_pll_clk_init(void __iomem *pll1, void __iomem *pll2)
 {
 	const struct davinci_pll_divclk_info *info;
@@ -69,15 +70,15 @@ void __init dm365_pll_clk_init(void __iomem *pll1, void __iomem *pll2)
 	davinci_pll_clk_register(&dm365_pll1_info, "ref_clk", pll1);
 	davinci_pll_aux_clk_register("pll1_aux_clk", "ref_clk", pll1);
 	davinci_pll_bpdiv_clk_register("pll1_sysclkbp", "ref_clk", pll1);
-	davinci_pll_obs_clk_register("clkout0", dm365_pll_obsclk_parent_names,
-				     ARRAY_SIZE(dm365_pll_obsclk_parent_names),
-				     pll1, dm365_pll_obsclk_table);
+	davinci_pll_obsclk_register("clkout0", dm365_pll_obsclk_parent_names,
+				    ARRAY_SIZE(dm365_pll_obsclk_parent_names),
+				    pll1, dm365_pll_obsclk_table);
 	for (info = dm365_pll1_divclk_info; info->name; info++)
 		davinci_pll_divclk_register(info, pll1);
 
 	davinci_pll_clk_register(&dm365_pll2_info, "ref_clk", pll2);
 	davinci_pll_aux_clk_register("clkout1", "ref_clk", pll2);
-	davinci_pll_obs_clk_register("clkout1", dm365_pll_obsclk_parent_names,
+	davinci_pll_obsclk_register("clkout1", dm365_pll_obsclk_parent_names,
 				    ARRAY_SIZE(dm365_pll_obsclk_parent_names),
 				    pll2, dm365_pll_obsclk_table);
 	for (info = dm365_pll2_divclk_info; info->name; info++)
