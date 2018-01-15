@@ -17,19 +17,20 @@ static const struct davinci_pll_clk_info dm365_pll1_info __initconst = {
 	.pllm_mask = GENMASK(9, 0),
 	.pllm_min = 1,
 	.pllm_max = 1023,
-	.flags = PLL_HAS_OSCIN | PLL_HAS_PREDIV | PLL_HAS_POSTDIV | PLL_PLLM_2X,
+	.flags = PLL_HAS_OSCIN | PLL_HAS_PREDIV | PLL_HAS_POSTDIV |
+		 PLL_POSTDIV_ALWAYS_ENABLED | PLL_PLLM_2X,
 };
 
 static const struct davinci_pll_sysclk_info dm365_pll1_sysclk_info[] __initconst = {
-	SYSCLK(1, pll1_sysclk1, pll1_pllen, 5, 0),
-	SYSCLK(2, pll1_sysclk2, pll1_pllen, 5, 0),
-	SYSCLK(3, pll1_sysclk3, pll1_pllen, 5, 0),
-	SYSCLK(4, pll1_sysclk4, pll1_pllen, 5, 0),
-	SYSCLK(5, pll1_sysclk5, pll1_pllen, 5, 0),
-	SYSCLK(6, pll1_sysclk6, pll1_pllen, 5, 0),
-	SYSCLK(7, pll1_sysclk7, pll1_pllen, 5, 0),
-	SYSCLK(8, pll1_sysclk8, pll1_pllen, 5, 0),
-	SYSCLK(9, pll1_sysclk9, pll1_pllen, 5, 0),
+	SYSCLK(1, pll1_sysclk1, pll1_pllen, 5, SYSCLK_ALWAYS_ENABLED),
+	SYSCLK(2, pll1_sysclk2, pll1_pllen, 5, SYSCLK_ALWAYS_ENABLED),
+	SYSCLK(3, pll1_sysclk3, pll1_pllen, 5, SYSCLK_ALWAYS_ENABLED),
+	SYSCLK(4, pll1_sysclk4, pll1_pllen, 5, SYSCLK_ALWAYS_ENABLED),
+	SYSCLK(5, pll1_sysclk5, pll1_pllen, 5, SYSCLK_ALWAYS_ENABLED),
+	SYSCLK(6, pll1_sysclk6, pll1_pllen, 5, SYSCLK_ALWAYS_ENABLED),
+	SYSCLK(7, pll1_sysclk7, pll1_pllen, 5, SYSCLK_ALWAYS_ENABLED),
+	SYSCLK(8, pll1_sysclk8, pll1_pllen, 5, SYSCLK_ALWAYS_ENABLED),
+	SYSCLK(9, pll1_sysclk9, pll1_pllen, 5, SYSCLK_ALWAYS_ENABLED),
 	{ }
 };
 
@@ -54,15 +55,16 @@ static const struct davinci_pll_clk_info dm365_pll2_info __initconst = {
 	.pllm_mask = GENMASK(9, 0),
 	.pllm_min = 1,
 	.pllm_max = 1023,
-	.flags = PLL_HAS_PREDIV | PLL_HAS_POSTDIV | PLL_PLLM_2X,
+	.flags = PLL_HAS_PREDIV | PLL_HAS_POSTDIV | PLL_POSTDIV_ALWAYS_ENABLED |
+		 PLL_PLLM_2X,
 };
 
 static const struct davinci_pll_sysclk_info dm365_pll2_sysclk_info[] __initconst = {
-	SYSCLK(1, pll2_sysclk1, pll2_pllen, 5, 0),
-	SYSCLK(2, pll2_sysclk2, pll2_pllen, 5, 0),
-	SYSCLK(3, pll2_sysclk3, pll2_pllen, 5, 0),
-	SYSCLK(4, pll2_sysclk4, pll2_pllen, 5, 0),
-	SYSCLK(5, pll2_sysclk5, pll2_pllen, 5, 0),
+	SYSCLK(1, pll2_sysclk1, pll2_pllen, 5, SYSCLK_ALWAYS_ENABLED),
+	SYSCLK(2, pll2_sysclk2, pll2_pllen, 5, SYSCLK_ALWAYS_ENABLED),
+	SYSCLK(3, pll2_sysclk3, pll2_pllen, 5, SYSCLK_ALWAYS_ENABLED),
+	SYSCLK(4, pll2_sysclk4, pll2_pllen, 5, SYSCLK_ALWAYS_ENABLED),
+	SYSCLK(5, pll2_sysclk5, pll2_pllen, 5, SYSCLK_ALWAYS_ENABLED),
 	{ }
 };
 

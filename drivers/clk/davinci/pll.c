@@ -198,6 +198,24 @@ static const struct clk_ops davinci_pll_ops = {
 	.debug_init	= davinci_pll_debug_init,
 };
 
+static unsigned long dm365_pll_recalc_rate(struct clk_hw *hw,
+					   unsigned long parent_rate)
+{
+	struct davinci_pll_clk *pll = to_davinci_pll_clk(hw);
+	unsigned long rate = parent_rate;
+	u32 mult;
+
+	mult = readl(pll->base + PLLM) & pll->pllm_mask;
+	rate *= mult * 2;
+
+	return rate;
+}
+
+static const struct clk_ops dm365_pll_ops = {
+	.recalc_rate	= dm365_pll_recalc_rate,
+	.debug_init	= davinci_pll_debug_init,
+};
+
 static const struct clk_ops davinci_pllen_ops = {
 	/* this clocks just uses the clock notification feature */
 };
@@ -356,7 +374,10 @@ struct clk *davinci_pll_clk_register(const struct davinci_pll_clk_info *info,
 	snprintf(pllout_name, MAX_NAME_SIZE, "%s_pllout", info->name);
 
 	init.name = pllout_name;
-	init.ops = &davinci_pll_ops;
+	if (info->flags & PLL_PLLM_2X)
+		init.ops = &dm365_pll_ops;
+	else
+		init.ops = &davinci_pll_ops;
 	init.parent_names = &parent_name;
 	init.num_parents = 1;
 	init.flags = 0;
