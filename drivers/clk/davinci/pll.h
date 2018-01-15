@@ -39,18 +39,18 @@ struct davinci_pll_clk_info {
 	u32 flags;
 };
 
-#define DIVCLK_ARM_RATE		BIT(0) /* Controls ARM rate */
-#define DIVCLK_FIXED_DIV	BIT(1) /* Fixed divider */
-#define DIVCLK_ALWAYS_ENABLED	BIT(2) /* Or bad things happen */
+#define SYSCLK_ARM_RATE		BIT(0) /* Controls ARM rate */
+#define SYSCLK_FIXED_DIV	BIT(1) /* Fixed divider */
+#define SYSCLK_ALWAYS_ENABLED	BIT(2) /* Or bad things happen */
 
-struct davinci_pll_divclk_info {
+struct davinci_pll_sysclk_info {
 	const char *name;
 	const char *parent_name;
 	u32 id;
 	u32 flags;
 };
 
-#define DIVCLK(i, n, p, f)	\
+#define SYSCLK(i, n, p, f)	\
 {				\
 	.name		= #n,	\
 	.parent_name	= #p,	\
@@ -75,7 +75,7 @@ struct clk *davinci_pll_obsclk_register(const char *name,
 					void __iomem *base,
 					u32 *table);
 struct clk *
-davinci_pll_divclk_register(const struct davinci_pll_divclk_info *info,
+davinci_pll_sysclk_register(const struct davinci_pll_sysclk_info *info,
 			    void __iomem *base);
 
 #ifdef CONFIG_OF
@@ -83,8 +83,8 @@ struct device_node;
 
 void of_davinci_pll_init(struct device_node *node,
 			 const struct davinci_pll_clk_info *info,
-			 const struct davinci_pll_divclk_info *div_info,
-			 u8 max_divclk_id);
+			 const struct davinci_pll_sysclk_info *div_info,
+			 u8 max_sysclk_id);
 #endif
 
 #endif /* __CLK_DAVINCI_PLL_H___ */

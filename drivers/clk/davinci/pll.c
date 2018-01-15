@@ -519,7 +519,7 @@ struct clk *davinci_pll_obsclk_register(const char *name,
 }
 
 struct clk *
-davinci_pll_divclk_register(const struct davinci_pll_divclk_info *info,
+davinci_pll_sysclk_register(const struct davinci_pll_sysclk_info *info,
 			    void __iomem *base)
 {
 	const struct clk_ops *divider_ops = &clk_divider_ops;
@@ -553,16 +553,16 @@ davinci_pll_divclk_register(const struct davinci_pll_divclk_info *info,
 	divider->width = DIV_RATIO_WIDTH;
 	divider->flags = 0;
 
-	if (info->flags & DIVCLK_FIXED_DIV) {
+	if (info->flags & SYSCLK_FIXED_DIV) {
 		divider->flags |= CLK_DIVIDER_READ_ONLY;
 		divider_ops = &clk_divider_ro_ops;
 	}
 
 	/* Only the ARM clock can change the parent PLL rate */
-	if (info->flags & DIVCLK_ARM_RATE)
+	if (info->flags & SYSCLK_ARM_RATE)
 		flags |= CLK_SET_RATE_PARENT;
 
-	if (info->flags & DIVCLK_ALWAYS_ENABLED)
+	if (info->flags & SYSCLK_ALWAYS_ENABLED)
 		flags |= CLK_IS_CRITICAL;
 
 	clk = clk_register_composite(NULL, info->name, &info->parent_name, 1,
@@ -580,8 +580,8 @@ davinci_pll_divclk_register(const struct davinci_pll_divclk_info *info,
 
 void of_davinci_pll_init(struct device_node *node,
 			 const struct davinci_pll_clk_info *info,
-			 const struct davinci_pll_divclk_info *div_info,
-			 u8 max_divclk_id)
+			 const struct davinci_pll_sysclk_info *div_info,
+			 u8 max_sysclk_id)
 {
 	struct device_node *child;
 	const char *parent_name;
@@ -608,12 +608,12 @@ void of_davinci_pll_init(struct device_node *node,
 	if (child && of_device_is_available(child)) {
 		struct clk_onecell_data *clk_data;
 
-		clk_data = clk_alloc_onecell_data(max_divclk_id + 1);
+		clk_data = clk_alloc_onecell_data(max_sysclk_id + 1);
 		if (!clk_data)
 			return;
 
 		for (; div_info->name; div_info++) {
-			clk = davinci_pll_divclk_register(div_info, base);
+			clk = davinci_pll_sysclk_register(div_info, base);
 			if (IS_ERR(clk))
 				pr_warn("failed to register %s (%ld)",
 					div_info->name, PTR_ERR(clk));
