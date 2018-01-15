@@ -508,6 +508,11 @@ davinci_pll_obsclk_register(const struct davinci_pll_obsclk_info *info,
 	return clk;
 }
 
+/**
+ * davinci_pll_sysclk_register - Register divider clocks (SYSCLKn)
+ * @info: The clock info
+ * @base: The PLL memory region
+ */
 struct clk *
 davinci_pll_sysclk_register(const struct davinci_pll_sysclk_info *info,
 			    void __iomem *base)
