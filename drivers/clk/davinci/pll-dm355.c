@@ -16,8 +16,6 @@ static const struct davinci_pll_clk_info dm355_pll1_info __initconst = {
 	.pllm_mask = GENMASK(7, 0),
 	.pllm_min = 92,
 	.pllm_max = 184,
-	.pllout_min_rate = 300000000, /* FIXME */
-	.pllout_max_rate = 600000000, /* FIXME */
 	.flags = PLL_HAS_PREDIV | PLL_HAS_POSTDIV,
 };
 
@@ -34,8 +32,6 @@ static const struct davinci_pll_clk_info dm355_pll2_info __initconst = {
 	.pllm_mask = GENMASK(7, 0),
 	.pllm_min = 92,
 	.pllm_max = 184,
-	.pllout_min_rate = 300000000, /* FIXME */
-	.pllout_max_rate = 600000000, /* FIXME */
 	.flags = PLL_HAS_PREDIV | PLL_HAS_POSTDIV,
 };
 
