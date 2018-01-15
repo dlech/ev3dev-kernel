@@ -79,14 +79,14 @@ void __init dm365_pll_clk_init(void __iomem *pll1, void __iomem *pll2)
 	const struct davinci_pll_sysclk_info *info;
 
 	davinci_pll_clk_register(&dm365_pll1_info, "ref_clk", pll1);
-	davinci_pll_auxclk_register("pll1_aux_clk", "oscin", pll1);
+	davinci_pll_auxclk_register("pll1_auxclk", "oscin", pll1);
 	davinci_pll_sysclkbp_clk_register("pll1_sysclkbp", "oscin", pll1);
 	davinci_pll_obsclk_register(&dm365_pll1_obsclk_info, pll1);
 	for (info = dm365_pll1_sysclk_info; info->name; info++)
 		davinci_pll_sysclk_register(info, pll1);
 
 	davinci_pll_clk_register(&dm365_pll2_info, "oscin", pll2);
-	davinci_pll_auxclk_register("pll2_aux_clk", "oscin", pll2);
+	davinci_pll_auxclk_register("pll2_auxclk", "oscin", pll2);
 	davinci_pll_obsclk_register(&dm365_pll2_obsclk_info, pll2);
 	for (info = dm365_pll2_sysclk_info; info->name; info++)
 		davinci_pll_sysclk_register(info, pll2);

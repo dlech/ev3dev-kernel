@@ -795,11 +795,11 @@ void __init da850_init_time(void)
 	parent = clk_hw_get_parent_by_index(__clk_get_hw(clk), 1);
 	clk_set_parent(clk, parent->clk);
 	da850_psc_clk_init(psc0, psc1);
-	clk = clk_register_fixed_factor(NULL, "i2c0", "pll0_aux_clk", 0, 1, 1);
+	clk = clk_register_fixed_factor(NULL, "i2c0", "pll0_auxclk", 0, 1, 1);
 	clk_register_clkdev(clk, NULL, "i2c_davinci.1");
-	clk = clk_register_fixed_factor(NULL, "timer0", "pll0_aux_clk", 0, 1, 1);
+	clk = clk_register_fixed_factor(NULL, "timer0", "pll0_auxclk", 0, 1, 1);
 	clk_register_clkdev(clk, "timer0", NULL);
-	clk = clk_register_fixed_factor(NULL, "timer1", "pll0_aux_clk", 0, 1, 1);
+	clk = clk_register_fixed_factor(NULL, "timer1", "pll0_auxclk", 0, 1, 1);
 	clk_register_clkdev(clk, NULL, "davinci-wdt");
 	clk = clk_register_fixed_factor(NULL, "rmii", "pll0_sysclk7", 0, 1, 1);
 	clk_register_clkdev(clk, "rmii", NULL);

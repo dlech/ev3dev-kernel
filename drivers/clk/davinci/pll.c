@@ -635,7 +635,7 @@ void of_davinci_pll_init(struct device_node *node,
 	if (child && of_device_is_available(child)) {
 		char child_name[MAX_NAME_SIZE];
 
-		snprintf(child_name, MAX_NAME_SIZE, "%s_aux_clk", info->name);
+		snprintf(child_name, MAX_NAME_SIZE, "%s_auxclk", info->name);
 
 		clk = davinci_pll_auxclk_register(child_name, parent_name, base);
 		if (IS_ERR(clk))

@@ -37,7 +37,7 @@ Examples:
 		usb0_phy_clk: usb0-phy-clock {
 			compatible = "ti,da830-usb0-phy-clock";
 			#clock-cells = <0>;
-			clocks = <&usb_refclkin>, <&pll0_aux_clk>, <&psc1 1>;
+			clocks = <&usb_refclkin>, <&pll0_auxclk>, <&psc1 1>;
 			clock-names = "usb_refclkin", "auxclk", "usb0_lpsc";
 			clock-output-names = "usb0_phy_clk";
 		};

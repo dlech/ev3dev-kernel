@@ -110,7 +110,7 @@
 			#clock-cells = <0>;
 			clock-div = <1>;
 			clock-mult = <1>;
-			clocks = <&pll0_aux_clk>;
+			clocks = <&pll0_auxclk>;
 			clock-output-names = "i2c0";
 		};
 
@@ -119,7 +119,7 @@
 			#clock-cells = <0>;
 			clock-div = <1>;
 			clock-mult = <1>;
-			clocks = <&pll0_aux_clk>;
+			clocks = <&pll0_auxclk>;
 			clock-output-names = "timer0";
 		};
 
@@ -128,7 +128,7 @@
 			#clock-cells = <0>;
 			clock-div = <1>;
 			clock-mult = <1>;
-			clocks = <&pll0_aux_clk>;
+			clocks = <&pll0_auxclk>;
 			clock-output-names = "timer1";
 		};
 	};
@@ -169,7 +169,7 @@
 				#clock-cells = <1>;
 			};
 
-			pll0_aux_clk: auxclk {
+			pll0_auxclk: auxclk {
 				#clock-cells = <0>;
 			};
 
@@ -406,7 +406,7 @@
 			usb0_phy_clk: usb0-phy-clock {
 				compatible = "ti,da830-usb0-phy-clock";
 				#clock-cells = <0>;
-				clocks = <&usb_refclkin>, <&pll0_aux_clk>,
+				clocks = <&usb_refclkin>, <&pll0_auxclk>,
 					 <&psc1 1>;
 				clock-names = "usb_refclkin", "auxclk",
 					      "usb0_lpsc";

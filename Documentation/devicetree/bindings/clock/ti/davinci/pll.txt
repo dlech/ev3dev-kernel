@@ -38,7 +38,7 @@ Examples:
 			#clock-cells = <1>;
 		};
 
-		pll0_aux_clk: auxclk {
+		pll0_auxclk: auxclk {
 			#clock-cells = <0>;
 		};
 	};

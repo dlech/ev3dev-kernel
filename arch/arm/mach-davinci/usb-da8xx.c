@@ -144,7 +144,7 @@ int __init da8xx_register_usb20_phy_clock(void)
 		return PTR_ERR(usb0_psc_clk);
 
 	clk = da8xx_usb0_phy_clk_register("usb0_phy_clk", "usb_refclkin",
-					"pll0_aux_clk", usb0_psc_clk, cfgchip);
+					  "pll0_auxclk", usb0_psc_clk, cfgchip);
 	if (IS_ERR(clk)) {
 		clk_put(usb0_psc_clk);
 		return PTR_ERR(clk);
