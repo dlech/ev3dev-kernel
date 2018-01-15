@@ -64,7 +64,7 @@ void __init dm365_pll_clk_init(void __iomem *pll1, void __iomem *pll2)
 	const struct davinci_pll_sysclk_info *info;
 
 	davinci_pll_clk_register(&dm365_pll1_info, "ref_clk", pll1);
-	davinci_pll_aux_clk_register("pll1_aux_clk", "ref_clk", pll1);
+	davinci_pll_auxclk_register("pll1_aux_clk", "ref_clk", pll1);
 	davinci_pll_bpdiv_clk_register("pll1_sysclkbp", "ref_clk", pll1);
 	davinci_pll_obsclk_register("clkout0", dm365_pll_obsclk_parent_names,
 				    ARRAY_SIZE(dm365_pll_obsclk_parent_names),
@@ -73,7 +73,7 @@ void __init dm365_pll_clk_init(void __iomem *pll1, void __iomem *pll2)
 		davinci_pll_sysclk_register(info, pll1);
 
 	davinci_pll_clk_register(&dm365_pll2_info, "ref_clk", pll2);
-	davinci_pll_aux_clk_register("clkout1", "ref_clk", pll2);
+	davinci_pll_auxclk_register("clkout1", "ref_clk", pll2);
 	davinci_pll_obsclk_register("clkout1", dm365_pll_obsclk_parent_names,
 				    ARRAY_SIZE(dm365_pll_obsclk_parent_names),
 				    pll2, dm365_pll_obsclk_table);
