@@ -11,14 +11,15 @@
 #include <linux/bitops.h>
 #include <linux/types.h>
 
-#define PLL_HAS_PREDIV			BIT(0) /* has prediv before PLL */
-#define PLL_PREDIV_ALWAYS_ENABLED	BIT(1) /* don't disable */
-#define PLL_PREDIV_FIXED_DIV		BIT(2) /* fixed divider value */
-#define PLL_HAS_POSTDIV			BIT(3) /* has postdiv after PLL */
-#define PLL_POSTDIV_ALWAYS_ENABLED	BIT(4) /* don't disable */
-#define PLL_POSTDIV_FIXED_DIV		BIT(5) /* fixed divider value */
-#define PLL_HAS_EXTCLKSRC		BIT(6)
-#define PLL_PLLM_2X			BIT(7)
+#define PLL_HAS_OSCIN			BIT(0) /* register OSCIN clock */
+#define PLL_HAS_PREDIV			BIT(1) /* has prediv before PLL */
+#define PLL_PREDIV_ALWAYS_ENABLED	BIT(2) /* don't clear DEN bit */
+#define PLL_PREDIV_FIXED_DIV		BIT(3) /* fixed divider value */
+#define PLL_HAS_POSTDIV			BIT(4) /* has postdiv after PLL */
+#define PLL_POSTDIV_ALWAYS_ENABLED	BIT(5) /* don't clear DEN bit */
+#define PLL_POSTDIV_FIXED_DIV		BIT(6) /* fixed divider value */
+#define PLL_HAS_EXTCLKSRC		BIT(7) /* has selectable bypass */
+#define PLL_PLLM_2X			BIT(8)
 
 /** davinci_pll_clk_info - controller-specific PLL info
  * @name: The name of the PLL

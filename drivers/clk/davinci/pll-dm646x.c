@@ -15,7 +15,7 @@ static const struct davinci_pll_clk_info dm646x_pll1_info __initconst = {
 	.pllm_mask = GENMASK(4, 0),
 	.pllm_min = 14,
 	.pllm_max = 32,
-	.flags = 0,
+	.flags = PLL_HAS_OSCIN,
 };
 
 static const struct davinci_pll_sysclk_info dm646x_pll1_sysclk_info[] __initconst = {
@@ -51,10 +51,10 @@ void __init dm646x_pll_clk_init(void __iomem *pll1, void __iomem *pll2)
 	davinci_pll_clk_register(&dm646x_pll1_info, "ref_clk", pll1);
 	for (info = dm646x_pll1_sysclk_info; info->name; info++)
 		davinci_pll_sysclk_register(info, pll1);
-	davinci_pll_sysclkbp_clk_register("pll1_sysclkbp", "ref_clk", pll1);
-	davinci_pll_auxclk_register("pll1_aux_clk", "ref_clk", pll1);
+	davinci_pll_sysclkbp_clk_register("pll1_sysclkbp", "oscin", pll1);
+	davinci_pll_auxclk_register("pll1_aux_clk", "oscin", pll1);
 
-	davinci_pll_clk_register(&dm646x_pll2_info, "ref_clk", pll2);
+	davinci_pll_clk_register(&dm646x_pll2_info, "oscin", pll2);
 	for (info = dm646x_pll2_sysclk_info; info->name; info++)
 		davinci_pll_sysclk_register(info, pll2);
 }

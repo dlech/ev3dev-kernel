@@ -30,7 +30,8 @@
 
 #include "pll.h"
 
-#define MAX_NAME_SIZE 20
+#define MAX_NAME_SIZE	20
+#define OSCIN_CLK_NAME	"oscin"
 
 #define REVID		0x000
 #define PLLCTL		0x100
@@ -305,8 +306,8 @@ static struct notifier_block davinci_pllen_notifier = {
  *
  *     OSCIN > [PREDIV >] PLL > [POSTDIV >] PLLEN
  *
- * - OSCIN is the parent clock.
- * - PREDIV and POSTDIV are optional
+ * - OSCIN is the parent clock (on secondary PLL, may come from primary PLL)
+ * - PREDIV and POSTDIV are optional (depends on the PLL controller)
  * - PLL is the PLL output (aka PLLOUT)
  * - PLLEN is the bypass multiplexer
  *
@@ -323,6 +324,15 @@ struct clk *davinci_pll_clk_register(const struct davinci_pll_clk_info *info,
 	struct clk_init_data init;
 	struct davinci_pll_clk *pllout, *pllen;
 	struct clk *pllout_clk, *clk;
+
+	if (info->flags & PLL_HAS_OSCIN) {
+		clk = clk_register_fixed_factor(NULL, OSCIN_CLK_NAME,
+						parent_name, 0, 1, 1);
+		if (IS_ERR(clk))
+			return clk;
+
+		parent_name = OSCIN_CLK_NAME;
+	}
 
 	if (info->flags & PLL_HAS_PREDIV) {
 		bool fixed = info->flags & PLL_PREDIV_FIXED_DIV;
@@ -419,7 +429,7 @@ struct clk *davinci_pll_clk_register(const struct davinci_pll_clk_info *info,
 /**
  * davinci_pll_auxclk_register - Register bypass clock (AUXCLK)
  * @name: The clock name
- * @parent_name: The parent clock name (usually "ref_clk" since this bypasses
+ * @parent_name: The parent clock name (usually "oscin" since this bypasses
  *               the PLL)
  * @base: The PLL memory region
  */
@@ -434,7 +444,7 @@ struct clk *davinci_pll_auxclk_register(const char *name,
 /**
  * davinci_pll_sysclkbp_clk_register - Register bypass divider clock (SYSCLKBP)
  * @name: The clock name
- * @parent_name: The parent clock name (usually "ref_clk" since this bypasses
+ * @parent_name: The parent clock name (usually "oscin" since this bypasses
  *               the PLL)
  * @base: The PLL memory region
  */
@@ -589,7 +599,10 @@ void of_davinci_pll_init(struct device_node *node,
 		return;
 	}
 
-	parent_name = of_clk_get_parent_name(node, 0);
+	if (info->flags & PLL_HAS_OSCIN)
+		parent_name = of_clk_get_parent_name(node, 0);
+	else
+		parent_name = OSCIN_CLK_NAME;
 
 	clk = davinci_pll_clk_register(info, parent_name, base);
 	if (IS_ERR(clk)) {
@@ -598,6 +611,8 @@ void of_davinci_pll_init(struct device_node *node,
 	}
 
 	of_clk_add_provider(node, of_clk_src_simple_get, clk);
+
+	parent_name = OSCIN_CLK_NAME;
 
 	child = of_get_child_by_name(node, "sysclk");
 	if (child && of_device_is_available(child)) {

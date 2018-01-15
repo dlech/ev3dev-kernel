@@ -22,7 +22,8 @@ static const struct davinci_pll_clk_info da850_pll0_info __initconst = {
 	.pllm_max = 32,
 	.pllout_min_rate = 300000000,
 	.pllout_max_rate = 600000000,
-	.flags = PLL_HAS_PREDIV | PLL_HAS_POSTDIV | PLL_HAS_EXTCLKSRC,
+	.flags = PLL_HAS_OSCIN | PLL_HAS_PREDIV | PLL_HAS_POSTDIV |
+		 PLL_HAS_EXTCLKSRC,
 };
 
 /*
@@ -44,7 +45,7 @@ static const struct davinci_pll_sysclk_info da850_pll0_sysclk_info[] __initconst
 };
 
 static const char * const da850_pll0_obsclk_parent_names[] __initconst = {
-	"ref_clk",
+	"oscin",
 	"pll0_sysclk1",
 	"pll0_sysclk2",
 	"pll0_sysclk3",
@@ -85,7 +86,7 @@ static const struct davinci_pll_sysclk_info da850_pll1_sysclk_info[] __initconst
 };
 
 static const char * const da850_pll1_obsclk_parent_names[] __initconst = {
-	"ref_clk",
+	"oscin",
 	"pll1_sysclk1",
 	"pll1_sysclk2",
 	"pll1_sysclk3",
@@ -103,7 +104,7 @@ void __init da850_pll_clk_init(void __iomem *pll0, void __iomem *pll1)
 	const struct davinci_pll_sysclk_info *info;
 
 	davinci_pll_clk_register(&da850_pll0_info, "ref_clk", pll0);
-	davinci_pll_auxclk_register("pll0_aux_clk", "ref_clk", pll0);
+	davinci_pll_auxclk_register("pll0_aux_clk", "oscin", pll0);
 	for (info = da850_pll0_sysclk_info; info->name; info++)
 		davinci_pll_sysclk_register(info, pll0);
 	davinci_pll_obsclk_register("pll0_obsclk",
@@ -111,7 +112,7 @@ void __init da850_pll_clk_init(void __iomem *pll0, void __iomem *pll1)
 				    ARRAY_SIZE(da850_pll0_obsclk_parent_names),
 				    pll0, da850_pll0_obsclk_table);
 
-	davinci_pll_clk_register(&da850_pll1_info, "ref_clk", pll1);
+	davinci_pll_clk_register(&da850_pll1_info, "oscin", pll1);
 	for (info = da850_pll1_sysclk_info; info->name; info++)
 		davinci_pll_sysclk_register(info, pll1);
 	davinci_pll_obsclk_register("pll1_obsclk",

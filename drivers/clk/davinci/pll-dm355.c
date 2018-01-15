@@ -16,7 +16,7 @@ static const struct davinci_pll_clk_info dm355_pll1_info __initconst = {
 	.pllm_mask = GENMASK(7, 0),
 	.pllm_min = 92,
 	.pllm_max = 184,
-	.flags = PLL_HAS_PREDIV | PLL_HAS_POSTDIV,
+	.flags = PLL_HAS_OSCIN | PLL_HAS_PREDIV | PLL_HAS_POSTDIV,
 };
 
 static const struct davinci_pll_sysclk_info dm355_pll1_sysclk_info[] __initconst = {
@@ -47,11 +47,11 @@ void __init dm355_pll_clk_init(void __iomem *pll1, void __iomem *pll2)
 	davinci_pll_clk_register(&dm355_pll1_info, "ref_clk", pll1);
 	for (info = dm355_pll1_sysclk_info; info->name; info++)
 		davinci_pll_sysclk_register(info, pll1);
-	davinci_pll_auxclk_register("pll1_aux_clk", "ref_clk", pll1);
-	davinci_pll_sysclkbp_clk_register("pll1_sysclkbp", "ref_clk", pll1);
+	davinci_pll_auxclk_register("pll1_aux_clk", "oscin", pll1);
+	davinci_pll_sysclkbp_clk_register("pll1_sysclkbp", "oscin", pll1);
 
-	davinci_pll_clk_register(&dm355_pll2_info, "ref_clk", pll2);
+	davinci_pll_clk_register(&dm355_pll2_info, "oscin", pll2);
 	for (info = dm355_pll2_sysclk_info; info->name; info++)
 		davinci_pll_sysclk_register(info, pll2);
-	davinci_pll_sysclkbp_clk_register("pll2_sysclkbp", "ref_clk", pll2);
+	davinci_pll_sysclkbp_clk_register("pll2_sysclkbp", "oscin", pll2);
 }

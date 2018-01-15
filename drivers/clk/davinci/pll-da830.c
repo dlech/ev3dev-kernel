@@ -18,7 +18,7 @@ static const struct davinci_pll_clk_info da830_pll_info __initconst = {
 	.pllm_max = 32,
 	.pllout_min_rate = 300000000,
 	.pllout_max_rate = 600000000,
-	.flags = PLL_HAS_PREDIV | PLL_HAS_POSTDIV,
+	.flags = PLL_HAS_OSCIN | PLL_HAS_PREDIV | PLL_HAS_POSTDIV,
 };
 
 /*
@@ -43,7 +43,7 @@ void __init da830_pll_clk_init(void __iomem *pll)
 	const struct davinci_pll_sysclk_info *info;
 
 	davinci_pll_clk_register(&da830_pll_info, "ref_clk", pll);
-	davinci_pll_auxclk_register("pll0_aux_clk", "ref_clk", pll);
+	davinci_pll_auxclk_register("pll0_aux_clk", "oscin", pll);
 	for (info = da830_pll_sysclk_info; info->name; info++)
 		davinci_pll_sysclk_register(info, pll);
 }
