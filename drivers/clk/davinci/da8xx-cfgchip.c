@@ -16,10 +16,14 @@
 #include <linux/slab.h>
 
 #ifdef CONFIG_OF
+
+#define CFGCHIP_GATE_CLOCK_IS_DIV4P5	BIT(1)
+
 struct da8xx_cfgchip_gate_clk_info {
 	const char *name;
 	u32 cfgchip;
 	u32 bit;
+	u32 flags;
 };
 
 struct da8xx_cfgchip_gate_clk {
@@ -56,10 +60,23 @@ static int da8xx_cfgchip_gate_clk_is_enabled(struct clk_hw *hw)
 	return !!(val & clk->mask);
 }
 
+static unsigned long da8xx_cfgchip_div4p5_recalc_rate(struct clk_hw *hw,
+						      unsigned long parent_rate)
+{
+	return parent_rate * 2 / 9;
+}
+
 static const struct clk_ops da8xx_cfgchip_gate_clk_ops = {
 	.enable		= da8xx_cfgchip_gate_clk_enable,
 	.disable	= da8xx_cfgchip_gate_clk_disable,
 	.is_enabled	= da8xx_cfgchip_gate_clk_is_enabled,
+};
+
+static const struct clk_ops da8xx_cfgchip_div4p5_clk_ops = {
+	.enable		= da8xx_cfgchip_gate_clk_enable,
+	.disable	= da8xx_cfgchip_gate_clk_disable,
+	.is_enabled	= da8xx_cfgchip_gate_clk_is_enabled,
+	.recalc_rate	= da8xx_cfgchip_div4p5_recalc_rate,
 };
 
 static struct clk * __init
@@ -75,7 +92,10 @@ da8xx_cfgchip_gate_clk_register(const struct da8xx_cfgchip_gate_clk_info *info,
 		return ERR_PTR(-ENOMEM);
 
 	init.name = info->name;
-	init.ops = &da8xx_cfgchip_gate_clk_ops;
+	if (info->flags & CFGCHIP_GATE_CLOCK_IS_DIV4P5)
+		init.ops = &da8xx_cfgchip_div4p5_clk_ops;
+	else
+		init.ops = &da8xx_cfgchip_gate_clk_ops;
 	init.parent_names = parent_name ? &parent_name : NULL;
 	init.num_parents = parent_name ? 1 : 0;
 	init.flags = 0;
@@ -131,6 +151,7 @@ static const struct da8xx_cfgchip_gate_clk_info da8xx_div4p5ena_info __initconst
 	.name = "div4.5",
 	.cfgchip = CFGCHIP(1),
 	.bit = CFGCHIP3_DIV45PENA,
+	.flags = CFGCHIP_GATE_CLOCK_IS_DIV4P5,
 };
 
 static void __init da8xx_div4p5ena_init(struct device_node *np)
