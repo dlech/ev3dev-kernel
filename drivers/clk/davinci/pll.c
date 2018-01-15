@@ -54,17 +54,20 @@
 #define PLLDIV8		0x170
 #define PLLDIV9		0x174
 
-#define PLLCTL_PLLEN	BIT(0)
-#define PLLCTL_PLLPWRDN	BIT(1)
-#define PLLCTL_PLLRST	BIT(3)
-#define PLLCTL_PLLDIS	BIT(4)
-#define PLLCTL_PLLENSRC	BIT(5)
-#define PLLCTL_CLKMODE	BIT(8)
+#define PLLCTL_PLLEN		BIT(0)
+#define PLLCTL_PLLPWRDN		BIT(1)
+#define PLLCTL_PLLRST		BIT(3)
+#define PLLCTL_PLLDIS		BIT(4)
+#define PLLCTL_PLLENSRC		BIT(5)
+#define PLLCTL_CLKMODE		BIT(8)
 
 /* shared by most *DIV registers */
 #define DIV_RATIO_SHIFT		0
 #define DIV_RATIO_WIDTH		5
 #define DIV_ENABLE_SHIFT	15
+
+#define PLLCMD_GOSET		BIT(0)
+#define PLLSTAT_GOSTAT		BIT(0)
 
 #define CKEN_OBSCLK_SHIFT	1
 #define CKEN_AUXEN_SHIFT	0
@@ -508,6 +511,39 @@ davinci_pll_obsclk_register(const struct davinci_pll_obsclk_info *info,
 	return clk;
 }
 
+/*
+ * The PLL SYSCLKn clocks have a mechanism for synchronizing rate changes.
+ */
+static int davinci_pll_sysclk_rate_change(struct notifier_block *nb,
+					  unsigned long flags, void *data)
+{
+	struct clk_notifier_data *cnd = data;
+	struct clk_hw *hw = __clk_get_hw(clk_get_parent(cnd->clk));
+	struct davinci_pll_clk *pll = to_davinci_pll_clk(hw);
+	u32 pllcmd, pllstat;
+
+	switch (flags) {
+	case POST_RATE_CHANGE:
+		/* apply the changes */
+		pllcmd = readl(pll->base + PLLCMD);
+		pllcmd |= PLLCMD_GOSET;
+		writel(pllcmd, pll->base + PLLCMD);
+		/* fallthrough */
+	case PRE_RATE_CHANGE:
+		/* Wait until for outstanding changes to take effect */
+		do {
+			pllstat = readl(pll->base + PLLSTAT);
+		} while (pllstat & PLLSTAT_GOSTAT);
+		break;
+	}
+
+	return NOTIFY_OK;
+}
+
+static struct notifier_block davinci_pll_sysclk_notifier = {
+	.notifier_call = davinci_pll_sysclk_rate_change,
+};
+
 /**
  * davinci_pll_sysclk_register - Register divider clocks (SYSCLKn)
  * @info: The clock info
@@ -567,6 +603,8 @@ davinci_pll_sysclk_register(const struct davinci_pll_sysclk_info *info,
 		kfree(divider);
 		kfree(gate);
 	}
+
+	clk_notifier_register(clk, &davinci_pll_sysclk_notifier);
 
 	return clk;
 }
