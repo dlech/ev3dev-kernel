@@ -75,7 +75,6 @@ struct clk *davinci_pll_clk_register(const struct davinci_pll_clk_info *info,
 struct clk *davinci_pll_auxclk_register(const char *name,
 					void __iomem *base);
 struct clk *davinci_pll_sysclkbp_clk_register(const char *name,
-					      const char *parent_name,
 					      void __iomem *base);
 struct clk *
 davinci_pll_obsclk_register(const struct davinci_pll_obsclk_info *info,
