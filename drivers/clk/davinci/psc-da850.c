@@ -35,6 +35,7 @@ static const struct davinci_psc_clk_info da850_psc1_info[] __initconst = {
 	LPSC(1, 0, usb0, pll0_sysclk2, 0),
 	LPSC(2, 0, usb1, pll0_sysclk4, 0),
 	LPSC(3, 0, gpio, pll0_sysclk4, 0),
+	LPSC(4, 0, hpi, pll0_sysclk2, 0),
 	LPSC(5, 0, emac, pll0_sysclk4, 0),
 	LPSC(6, 0, ddr, pll0_sysclk2, LPSC_ALWAYS_ENABLED),
 	LPSC(7, 0, mcasp0, async3, 0),
@@ -49,8 +50,10 @@ static const struct davinci_psc_clk_info da850_psc1_info[] __initconst = {
 	LPSC(16, 0, lcdc, pll0_sysclk2, 0),
 	LPSC(17, 0, ehrpwm, async3, 0),
 	LPSC(18, 0, mmcsd1, pll0_sysclk2, 0),
+	LPSC(19, 0, upp, pll0_sysclk2, 0),
 	LPSC(20, 0, ecap, async3, 0),
 	LPSC(21, 0, tptc2, pll0_sysclk2, LPSC_ALWAYS_ENABLED),
+	LPSC(31, 1, shared_ram, pll0_sysclk2, LPSC_ALWAYS_ENABLED),
 	{ }
 };
 
