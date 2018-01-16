@@ -645,7 +645,6 @@ davinci_pll_sysclk_register(const struct davinci_pll_sysclk_info *info,
 }
 
 #ifdef CONFIG_OF
-
 void of_davinci_pll_init(struct device_node *node,
 			 const struct davinci_pll_clk_info *info,
 			 const struct davinci_pll_obsclk_info *obsclk_info,
@@ -674,10 +673,13 @@ void of_davinci_pll_init(struct device_node *node,
 		return;
 	}
 
-	of_clk_add_provider(node, of_clk_src_simple_get, clk);
+	child = of_get_child_by_name(node, "pllout");
+	if (of_device_is_available(child))
+		of_clk_add_provider(child, of_clk_src_simple_get, clk);
+	of_node_put(child);
 
 	child = of_get_child_by_name(node, "sysclk");
-	if (child && of_device_is_available(child)) {
+	if (of_device_is_available(child)) {
 		struct clk_onecell_data *clk_data;
 
 		clk_data = clk_alloc_onecell_data(max_sysclk_id + 1);
@@ -697,7 +699,7 @@ void of_davinci_pll_init(struct device_node *node,
 	of_node_put(child);
 
 	child = of_get_child_by_name(node, "auxclk");
-	if (child && of_device_is_available(child)) {
+	if (of_device_is_available(child)) {
 		char child_name[MAX_NAME_SIZE];
 
 		snprintf(child_name, MAX_NAME_SIZE, "%s_auxclk", info->name);
@@ -712,8 +714,12 @@ void of_davinci_pll_init(struct device_node *node,
 	of_node_put(child);
 
 	child = of_get_child_by_name(node, "obsclk");
-	if (child && of_device_is_available(child)) {
-		clk = davinci_pll_obsclk_register(obsclk_info, base);
+	if (of_device_is_available(child)) {
+		if (obsclk_info)
+			clk = davinci_pll_obsclk_register(obsclk_info, base);
+		else
+			clk = ERR_PTR(-EINVAL);
+
 		if (IS_ERR(clk))
 			pr_warn("failed to register obsclk (%ld)", PTR_ERR(clk));
 		else

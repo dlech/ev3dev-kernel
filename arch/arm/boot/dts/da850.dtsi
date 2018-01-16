@@ -147,8 +147,12 @@
 		pll0: clock-controller@11000 {
 			compatible = "ti,da850-pll0";
 			reg = <0x11000 0x1000>;
-			#clock-cells = <0>;
-			clocks = <&ref_clk>;
+			clocks = <&ref_clk>, <&pll1_sysclk 3>;
+			clock-names = "clksrc", "extclksrc";
+
+			pll0_pllout: pllout {
+				#clock-cells = <0>;
+			};
 
 			pll0_sysclk: sysclk {
 				#clock-cells = <1>;
@@ -405,7 +409,7 @@
 			div4p5_clk: div4.5 {
 				compatible = "ti,da830-div4p5ena";
 				#clock-cells = <0>;
-				clocks = <&pll0>;
+				clocks = <&pll0_pllout>;
 				clock-names = "pll0_pllout";
 			};
 
@@ -694,6 +698,7 @@
 			compatible = "ti,da850-pll1";
 			reg = <0x21a000 0x1000>;
 			clocks = <&ref_clk>;
+			clock-names = "clksrc";
 
 			pll1_sysclk: sysclk {
 				#clock-cells = <1>;
