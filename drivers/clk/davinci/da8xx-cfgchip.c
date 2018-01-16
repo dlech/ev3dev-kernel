@@ -270,7 +270,21 @@ static void __init da8xx_upp_tx_clksrc_init(struct device_node *np)
 CLK_OF_DECLARE(da8xx_upp_tx_clksrc, "ti,da850-upp-tx-clksrc",
 	       da8xx_upp_tx_clksrc_init);
 
-static const struct da8xx_cfgchip_mux_clk_info da8xx_async3_clksrc_info __initconst = {
+static const struct da8xx_cfgchip_mux_clk_info da850_async1_info __initconst = {
+	.name = "async1",
+	.parent0 = "pll0_sysclk3",
+	.parent1 = "div4.5",
+	.cfgchip = CFGCHIP(3),
+	.bit = CFGCHIP3_EMA_CLKSRC,
+};
+
+static void __init da850_async1_init(struct device_node *np)
+{
+	da8xx_cfgchip_mux_clk_init(np, &da850_async1_info);
+}
+CLK_OF_DECLARE(da850_async1, "ti,da850-async1-clksrc", da850_async1_init);
+
+static const struct da8xx_cfgchip_mux_clk_info da850_async3_info __initconst = {
 	.name = "async3",
 	.parent0 = "pll0_sysclk2",
 	.parent1 = "pll1_sysclk2",
@@ -278,37 +292,9 @@ static const struct da8xx_cfgchip_mux_clk_info da8xx_async3_clksrc_info __initco
 	.bit = CFGCHIP3_ASYNC3_CLKSRC,
 };
 
-static void __init da8xx_async3_init(struct device_node *np)
+static void __init da850_async3_init(struct device_node *np)
 {
-	da8xx_cfgchip_mux_clk_init(np, &da8xx_async3_clksrc_info);
+	da8xx_cfgchip_mux_clk_init(np, &da850_async3_info);
 }
-CLK_OF_DECLARE(da8xx_async3_clksrc, "ti,da850-async3-clksrc", da8xx_async3_init);
-
-static const struct da8xx_cfgchip_mux_clk_info da8xx_ema_clksrc_info __initconst = {
-	.name = "ema_clksrc",
-	.parent0 = "pll0_sysclk3",
-	.parent1 = "div4.5",
-	.cfgchip = CFGCHIP(3),
-	.bit = CFGCHIP3_EMA_CLKSRC,
-};
-
-static void __init da8xx_ema_clksrc_init(struct device_node *np)
-{
-	da8xx_cfgchip_mux_clk_init(np, &da8xx_ema_clksrc_info);
-}
-CLK_OF_DECLARE(da8xx_ema_clksrc, "ti,da830-ema-clksrc", da8xx_ema_clksrc_init);
-
-static const struct da8xx_cfgchip_mux_clk_info da8xx_emb_clksrc_info __initconst = {
-	.name = "emb_clksrc",
-	.parent0 = "pll0_sysclk5",
-	.parent1 = "div4.5",
-	.cfgchip = CFGCHIP(3),
-	.bit = CFGCHIP3_EMB_CLKSRC,
-};
-
-static void __init da8xx_emb_clksrc_init(struct device_node *np)
-{
-	da8xx_cfgchip_mux_clk_init(np, &da8xx_emb_clksrc_info);
-}
-CLK_OF_DECLARE(da8xx_emb_clksrc, "ti,da830-emb-clksrc", da8xx_emb_clksrc_init);
+CLK_OF_DECLARE(da850_async3, "ti,da850-async3-clksrc", da850_async3_init);
 #endif

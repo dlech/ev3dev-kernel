@@ -17,7 +17,7 @@ static const struct davinci_psc_clk_info da850_psc0_info[] __initconst = {
 	LPSC(0, 0, tpcc0, pll0_sysclk2, LPSC_ALWAYS_ENABLED),
 	LPSC(1, 0, tptc0, pll0_sysclk2, LPSC_ALWAYS_ENABLED),
 	LPSC(2, 0, tptc1, pll0_sysclk2, LPSC_ALWAYS_ENABLED),
-	LPSC(3, 0, emifa, ema_clksrc, 0),
+	LPSC(3, 0, emifa, async1, 0),
 	LPSC(4, 0, spi0, pll0_sysclk2, 0),
 	LPSC(5, 0, mmcsd0, pll0_sysclk2, 0),
 	LPSC(6, 0, aintc, pll0_sysclk4, LPSC_ALWAYS_ENABLED),

@@ -433,6 +433,13 @@
 				clocks = <&pll0>;
 			};
 
+			async1_clk: async1 {
+				compatible = "ti,da850-async1-clksrc";
+				#clock-cells = <0>;
+				clocks = <&pll0_sysclk 3>, <&div4p5_clk>;
+				clock-names = "pll0_sysclk3", "div4.5";
+			};
+
 			async3_clk: async3 {
 				compatible = "ti,da850-async3-clksrc";
 				#clock-cells = <0>;
@@ -440,13 +447,6 @@
 				clock-names = "pll0_sysclk2", "pll1_sysclk2";
 				assigned-clocks = <&async3_clk>;
 				assigned-clock-parents = <&pll1_sysclk 2>;
-			};
-
-			ema_clk: ema_clksrc {
-				compatible = "ti,da830-ema-clksrc";
-				#clock-cells = <0>;
-				clocks = <&pll0_sysclk 3>, <&div4p5_clk>;
-				clock-names = "pll0_sysclk3", "div4.5";
 			};
 		};
 		edma0: edma@0 {
