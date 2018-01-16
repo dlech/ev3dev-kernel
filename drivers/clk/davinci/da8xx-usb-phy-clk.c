@@ -11,6 +11,8 @@
  * as a syscon regmap since it is shared with other devices.
  */
 
+#define pr_fmt(fmt) "%s: " fmt "\n", __func__
+
 #include <linux/clk.h>
 #include <linux/clk-provider.h>
 #include <linux/mfd/da8xx-cfgchip.h>
@@ -326,100 +328,49 @@ struct clk *da8xx_usb1_phy_clk_register(const char *name,
 }
 
 #ifdef CONFIG_OF
-static void da8xx_usb0_phy_clk_init(struct device_node *np)
+static void da8xx_usb_phy_clk_init(struct device_node *np)
 {
-	const char *name = np->name;
-	const char *parent0, *parent1;
+	struct clk_onecell_data *clk_data;
 	struct regmap *regmap;
-	struct clk *usb0_psc_clk, *clk;
-	int ret;
+	struct clk *usb0_clk, *clk;
 
 	regmap = syscon_node_to_regmap(of_get_parent(np));
 	if (IS_ERR(regmap)) {
-		pr_err("%s: No regmap for syscon parent of %s (%ld)\n",
-		       __func__, np->full_name, PTR_ERR(regmap));
+		pr_err("No regmap for syscon parent (%ld)", PTR_ERR(regmap));
 		return;
 	}
 
-	ret = of_property_match_string(np, "clock-names", "usb_refclkin");
-	parent0 = of_clk_get_parent_name(np, ret);
-	if (!parent0) {
-		pr_err("%s: Could not get usb_refclkin (%d)\n", __func__, ret);
+	usb0_clk = of_clk_get(np, 0);
+	if (IS_ERR(usb0_clk)) {
+		pr_err("Missing usb0 clock (%ld)", PTR_ERR(usb0_clk));
 		return;
 	}
 
-	ret = of_property_match_string(np, "clock-names", "auxclk");
-	parent1 = of_clk_get_parent_name(np, ret);
-	if (!parent1) {
-		pr_err("%s: Could not get auxclk (%d)\n", __func__, ret);
+	clk_data = clk_alloc_onecell_data(2);
+	if (!clk_data) {
+		clk_put(usb0_clk);
 		return;
 	}
 
-	usb0_psc_clk = of_clk_get_by_name(np, "usb0_lpsc");
-	if (IS_ERR(usb0_psc_clk)) {
-		pr_err("%s: Could not get usb0_lpsc (%ld)\n", __func__,
-		       PTR_ERR(usb0_psc_clk));
-		return;
-	}
-
-	of_property_read_string(np, "clock-output-names", &name);
-
-	clk = da8xx_usb0_phy_clk_register(name, parent0, parent1, usb0_psc_clk,
-					  regmap);
+	clk = da8xx_usb0_phy_clk_register("usb0_clk48", "usb_refclkin",
+					  "pll0_auxclk", usb0_clk, regmap);
 	if (IS_ERR(clk)) {
-		pr_err("%s: Failed to register clock %s (%ld)\n",  __func__,
-		       np->full_name, PTR_ERR(clk));
-		clk_put(usb0_psc_clk);
-		return;
+		pr_warn("Failed to register usb0_clk48 (%ld)", PTR_ERR(clk));
+		clk_put(usb0_clk);
+	} else {
+		clk_data->clks[0] = clk;
 	}
 
-	of_clk_add_provider(np, of_clk_src_simple_get, clk);
+	clk = da8xx_usb1_phy_clk_register("usb1_clk48", "usb0_clk48",
+					  "usb_refclkin", regmap);
+	if (IS_ERR(clk))
+		pr_warn("Failed to register usb1_clk48 (%ld)", PTR_ERR(clk));
+	else
+		clk_data->clks[1] = clk;
+
+	of_clk_add_provider(np, of_clk_src_onecell_get, clk_data);
 }
 
-CLK_OF_DECLARE(da8xx_usb0_phy_clk, "ti,da830-usb0-phy-clock",
-	       da8xx_usb0_phy_clk_init);
-
-static void da8xx_usb1_phy_clk_init(struct device_node *np)
-{
-	const char *name = np->name;
-	const char *parent0, *parent1;
-	struct regmap *regmap;
-	struct clk *clk;
-	int ret;
-
-	regmap = syscon_node_to_regmap(of_get_parent(np));
-	if (IS_ERR(regmap)) {
-		pr_err("%s: No regmap for syscon parent of %s (%ld)\n",
-		       __func__, np->full_name, PTR_ERR(regmap));
-		return;
-	}
-
-	ret = of_property_match_string(np, "clock-names", "usb0_phy");
-	parent0 = of_clk_get_parent_name(np, ret);
-	if (!parent0) {
-		pr_err("%s: Could not get usb0_phy (%d)\n", __func__, ret);
-		return;
-	}
-
-	ret = of_property_match_string(np, "clock-names", "usb_refclkin");
-	parent1 = of_clk_get_parent_name(np, ret);
-	if (!parent1) {
-		pr_err("%s: Could not get usb_refclkin (%d)\n", __func__, ret);
-		return;
-	}
-
-	of_property_read_string(np, "clock-output-names", &name);
-
-	clk = da8xx_usb1_phy_clk_register(name, parent0, parent1, regmap);
-	if (IS_ERR(clk)) {
-		pr_err("%s: Failed to register clock %s (%ld)\n",
-		       __func__, np->full_name, PTR_ERR(clk));
-		return;
-	}
-
-	of_clk_add_provider(np, of_clk_src_simple_get, clk);
-}
-
-CLK_OF_DECLARE(da8xx_usb1_phy_clk, "ti,da830-usb1-phy-clock",
-	       da8xx_usb1_phy_clk_init);
+CLK_OF_DECLARE(da8xx_usb_phy_clk, "ti,da830-usb-phy-clocks",
+	       da8xx_usb_phy_clk_init);
 #endif

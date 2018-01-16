@@ -398,27 +398,15 @@
 			usb_phy: usb-phy {
 				compatible = "ti,da830-usb-phy";
 				#phy-cells = <1>;
-				clocks = <&usb0_phy_clk>, <&usb1_phy_clk>;
+				clocks = <&usb_phy_clk 0>, <&usb_phy_clk 1>;
 				clock-names = "usb20_phy", "usb11_phy";
 				status = "disabled";
 			};
 
-			usb0_phy_clk: usb0-phy-clock {
-				compatible = "ti,da830-usb0-phy-clock";
-				#clock-cells = <0>;
-				clocks = <&usb_refclkin>, <&pll0_auxclk>,
-					 <&psc1 1>;
-				clock-names = "usb_refclkin", "auxclk",
-					      "usb0_lpsc";
-				clock-output-names = "usb0_phy_clk";
-			};
-
-			usb1_phy_clk: usb1-phy-clock {
-				compatible = "ti,da830-usb1-phy-clock";
-				#clock-cells = <0>;
-				clocks = <&usb0_phy_clk>, <&usb_refclkin>;
-				clock-names = "usb0_phy", "usb_refclkin";
-				clock-output-names = "usb1_phy_clk";
+			usb_phy_clk: usb-phy-clocks {
+				compatible = "ti,da830-usb-phy-clocks";
+				#clock-cells = <1>;
+				clocks = <&psc1 1>;
 			};
 
 			ehrpwm_tbclk: ehrpwm_tbclk {

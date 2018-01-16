@@ -143,7 +143,7 @@ int __init da8xx_register_usb20_phy_clock(void)
 	if (IS_ERR(usb0_psc_clk))
 		return PTR_ERR(usb0_psc_clk);
 
-	clk = da8xx_usb0_phy_clk_register("usb0_phy_clk", "usb_refclkin",
+	clk = da8xx_usb0_phy_clk_register("usb0_clk48", "usb_refclkin",
 					  "pll0_auxclk", usb0_psc_clk, cfgchip);
 	if (IS_ERR(clk)) {
 		clk_put(usb0_psc_clk);
@@ -164,7 +164,7 @@ int __init da8xx_register_usb11_phy_clock(void)
 	if (IS_ERR(cfgchip))
 		return PTR_ERR(cfgchip);
 
-	clk = da8xx_usb1_phy_clk_register("usb1_phy_clk", "usb0_phy_clk",
+	clk = da8xx_usb1_phy_clk_register("usb1_clk48", "usb0_clk48",
 					  "usb_refclkin", cfgchip);
 	if (IS_ERR(clk))
 		return PTR_ERR(clk);
