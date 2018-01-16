@@ -34,6 +34,7 @@ Examples:
 			compatible = "ti,da830-usb-phy-clocks";
 			#clock-cells = <1>;
 			clocks = <&psc1 1>;
+			clock-names = "fck";
 			assigned-clocks = <&usb_phy_clk 0>, <&usb_phy_clk 1>;
 			assigned-clock-parents = <&pll0_auxclk>, <&usb_phy_clk 0>;
 		};
@@ -55,6 +56,7 @@ Examples:
 			compatible = "ti,da830-usb-phy-clocks";
 			#clock-cells = <1>;
 			clocks = <&psc1 1>;
+			clock-names = "fck";
 			assigned-clocks = <&usb_phy_clk 0>, <&usb_phy_clk 1>;
 			assigned-clock-parents = <&usb_refclkin>, <&usb_refclkin>;
 		};

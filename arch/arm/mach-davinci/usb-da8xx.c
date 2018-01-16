@@ -131,7 +131,7 @@ int __init da8xx_register_usb11(struct da8xx_ohci_root_hub *pdata)
 int __init da8xx_register_usb20_phy_clock(void)
 {
 	struct regmap *cfgchip;
-	struct clk *usb0_psc_clk, *clk;
+	struct clk *fck_clk, *clk;
 
 	cfgchip = syscon_regmap_lookup_by_compatible("ti,da830-cfgchip");
 	if (IS_ERR(cfgchip))
@@ -139,14 +139,14 @@ int __init da8xx_register_usb20_phy_clock(void)
 	if (IS_ERR(cfgchip))
 		return PTR_ERR(cfgchip);
 
-	usb0_psc_clk = clk_get(NULL, "usb20_psc_clk");
-	if (IS_ERR(usb0_psc_clk))
-		return PTR_ERR(usb0_psc_clk);
+	fck_clk = clk_get_sys("musb-da8xx", NULL);
+	if (IS_ERR(fck_clk))
+		return PTR_ERR(fck_clk);
 
 	clk = da8xx_usb0_phy_clk_register("usb0_clk48", "usb_refclkin",
-					  "pll0_auxclk", usb0_psc_clk, cfgchip);
+					  "pll0_auxclk", fck_clk, cfgchip);
 	if (IS_ERR(clk)) {
-		clk_put(usb0_psc_clk);
+		clk_put(fck_clk);
 		return PTR_ERR(clk);
 	}
 

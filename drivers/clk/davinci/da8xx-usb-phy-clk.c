@@ -205,13 +205,13 @@ static const struct clk_ops da8xx_usb0_phy_clk_ops = {
  * @name: The clock name
  * @parent0: The name of the USB_REFCLKIN clock
  * @parent1: The name of the PLL0 AUXCLK
- * @usb0_psc_clk: The USB 2.0 PSC clock
+ * @fck_clk: The USB 2.0 PSC clock
  * @regmap: The CFGCHIP regmap
  */
 struct clk *da8xx_usb0_phy_clk_register(const char *name,
 					const char *parent0,
 					const char *parent1,
-					struct clk *usb0_psc_clk,
+					struct clk *fck_clk,
 					struct regmap *regmap)
 {
 	const char * const parent_names[] = {
@@ -231,7 +231,7 @@ struct clk *da8xx_usb0_phy_clk_register(const char *name,
 	init.num_parents = 2;
 
 	clk->hw.init = &init;
-	clk->clk = usb0_psc_clk;
+	clk->clk = fck_clk;
 	clk->regmap = regmap;
 
 	return clk_register(NULL, &clk->hw);
@@ -332,7 +332,7 @@ static void da8xx_usb_phy_clk_init(struct device_node *np)
 {
 	struct clk_onecell_data *clk_data;
 	struct regmap *regmap;
-	struct clk *usb0_clk, *clk;
+	struct clk *fck_clk, *clk;
 
 	regmap = syscon_node_to_regmap(of_get_parent(np));
 	if (IS_ERR(regmap)) {
@@ -340,23 +340,23 @@ static void da8xx_usb_phy_clk_init(struct device_node *np)
 		return;
 	}
 
-	usb0_clk = of_clk_get(np, 0);
-	if (IS_ERR(usb0_clk)) {
-		pr_err("Missing usb0 clock (%ld)", PTR_ERR(usb0_clk));
+	fck_clk = of_clk_get_by_name(np, "fck");
+	if (IS_ERR(fck_clk)) {
+		pr_err("Missing fck clock (%ld)", PTR_ERR(fck_clk));
 		return;
 	}
 
 	clk_data = clk_alloc_onecell_data(2);
 	if (!clk_data) {
-		clk_put(usb0_clk);
+		clk_put(fck_clk);
 		return;
 	}
 
 	clk = da8xx_usb0_phy_clk_register("usb0_clk48", "usb_refclkin",
-					  "pll0_auxclk", usb0_clk, regmap);
+					  "pll0_auxclk", fck_clk, regmap);
 	if (IS_ERR(clk)) {
 		pr_warn("Failed to register usb0_clk48 (%ld)", PTR_ERR(clk));
-		clk_put(usb0_clk);
+		clk_put(fck_clk);
 	} else {
 		clk_data->clks[0] = clk;
 	}

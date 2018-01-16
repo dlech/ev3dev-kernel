@@ -407,6 +407,7 @@
 				compatible = "ti,da830-usb-phy-clocks";
 				#clock-cells = <1>;
 				clocks = <&psc1 1>;
+				clock-names = "fck";
 			};
 
 			ehrpwm_tbclk: ehrpwm_tbclk {

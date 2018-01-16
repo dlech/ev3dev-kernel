@@ -76,7 +76,6 @@ void __init da850_psc_clk_init(void __iomem *psc0, void __iomem *psc1)
 	if (!clk_data)
 		return;
 
-	clk_register_clkdev(clk_data->clks[1], "usb20_psc_clk", NULL);
 	clk_register_clkdev(clk_data->clks[1], NULL, "musb-da8xx");
 	clk_register_clkdev(clk_data->clks[1], NULL, "cppi41-dmaengine");
 	clk_register_clkdev(clk_data->clks[2], NULL, "ohci-da8xx");
