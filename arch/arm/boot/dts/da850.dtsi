@@ -158,6 +158,10 @@
 			compatible = "ti,da850-psc0";
 			reg = <0x10000 0x1000>;
 			#clock-cells = <1>;
+			clocks = <&pll0_sysclk 1>, <&pll0_sysclk 2>,
+				 <&pll0_sysclk 4>, <&pll0_sysclk 6>, <&async1_clk>;
+			clock_names = "pll0_sysclk1", "pll0_sysclk2",
+				      "pll0_sysclk4", "pll0_sysclk6", "async1";
 		};
 		pll0: clock-controller@11000 {
 			compatible = "ti,da850-pll0";
@@ -406,20 +410,22 @@
 			usb_phy_clk: usb-phy-clocks {
 				compatible = "ti,da830-usb-phy-clocks";
 				#clock-cells = <1>;
-				clocks = <&psc1 1>;
-				clock-names = "fck";
+				clocks = <&psc1 1>, <&usb_refclkin>, <&pll0_auxclk>;
+				clock-names = "fck", "usb_refclkin", "auxclk";
 			};
 
 			ehrpwm_tbclk: ehrpwm_tbclk {
 				compatible = "ti,da830-tbclksync";
 				#clock-cells = <0>;
 				clocks = <&psc1 17>;
+				clock-names = "fck";
 			};
 
 			div4p5_clk: div4.5 {
 				compatible = "ti,da830-div4p5ena";
 				#clock-cells = <0>;
 				clocks = <&pll0>;
+				clock-names = "pll0_pllout";
 			};
 
 			async1_clk: async1 {
@@ -772,6 +778,9 @@
 			compatible = "ti,da850-psc1";
 			reg = <0x227000 0x1000>;
 			#clock-cells = <1>;
+			clocks = <&pll0_sysclk 2>, <&pll0_sysclk 4>,
+				 <&async3_clk>;
+			clock_names = "pll0_sysclk2", "pll0_sysclk4", "async3";
 		};
 		pinconf: pin-controller@22c00c {
 			compatible = "ti,da850-pupd";
