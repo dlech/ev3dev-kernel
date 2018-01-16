@@ -105,31 +105,12 @@
 			status = "disabled";
 		};
 
-		i2c0_clk: i2c0 {
+		async2_clk: async2 {
 			compatible = "fixed-factor-clock";
 			#clock-cells = <0>;
 			clock-div = <1>;
 			clock-mult = <1>;
 			clocks = <&pll0_auxclk>;
-			clock-output-names = "i2c0";
-		};
-
-		timer0_clk: timer0 {
-			compatible = "fixed-factor-clock";
-			#clock-cells = <0>;
-			clock-div = <1>;
-			clock-mult = <1>;
-			clocks = <&pll0_auxclk>;
-			clock-output-names = "timer0";
-		};
-
-		timer1_clk: timer1 {
-			compatible = "fixed-factor-clock";
-			#clock-cells = <0>;
-			clock-div = <1>;
-			clock-mult = <1>;
-			clocks = <&pll0_auxclk>;
-			clock-output-names = "timer1";
 		};
 	};
 
@@ -529,7 +510,7 @@
 			interrupts = <15>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&i2c0_clk>;
+			clocks = <&async2_clk>;
 			status = "disabled";
 		};
 		i2c1: i2c@228000 {
@@ -544,12 +525,12 @@
 		clocksource: timer@20000 {
 			compatible = "ti,davinci-timer";
 			reg = <0x20000 0x1000>;
-			clocks = <&timer0_clk>;
+			clocks = <&async2_clk>;
 		};
 		wdt: wdt@21000 {
 			compatible = "ti,davinci-wdt";
 			reg = <0x21000 0x1000>;
-			clocks = <&timer1_clk>;
+			clocks = <&async2_clk>;
 			status = "disabled";
 		};
 		mmc0: mmc@40000 {
