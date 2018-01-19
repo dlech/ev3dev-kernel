@@ -17,6 +17,8 @@
 #include <linux/clk.h>
 #include <linux/platform_device.h>
 #include <linux/cpufreq.h>
+#include <linux/mfd/da8xx-cfgchip.h>
+#include <linux/regmap.h>
 #include <linux/regulator/consumer.h>
 #include <linux/platform_data/gpio-davinci.h>
 
@@ -39,10 +41,6 @@
 #define DA850_TIMER64P3_BASE	0x01f0d000
 
 #define DA850_REF_FREQ		24000000
-
-#define CFGCHIP3_ASYNC3_CLKSRC	BIT(4)
-#define CFGCHIP3_PLL1_MASTER_LOCK	BIT(5)
-#define CFGCHIP0_PLL_MASTER_LOCK	BIT(4)
 
 static int da850_set_armrate(struct clk *clk, unsigned long rate);
 static int da850_round_armrate(struct clk *clk, unsigned long rate);
@@ -1370,8 +1368,6 @@ static const struct davinci_soc_info davinci_soc_info_da850 = {
 
 void __init da850_init(void)
 {
-	unsigned int v;
-
 	davinci_common_init(&davinci_soc_info_da850);
 
 	da8xx_syscfg0_base = ioremap(DA8XX_SYSCFG0_BASE, SZ_4K);
@@ -1381,20 +1377,20 @@ void __init da850_init(void)
 	da8xx_syscfg1_base = ioremap(DA8XX_SYSCFG1_BASE, SZ_4K);
 	if (WARN(!da8xx_syscfg1_base, "Unable to map syscfg1 module"))
 		return;
-
-	/* Unlock writing to PLL0 registers */
-	v = __raw_readl(DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP0_REG));
-	v &= ~CFGCHIP0_PLL_MASTER_LOCK;
-	__raw_writel(v, DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP0_REG));
-
-	/* Unlock writing to PLL1 registers */
-	v = __raw_readl(DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP3_REG));
-	v &= ~CFGCHIP3_PLL1_MASTER_LOCK;
-	__raw_writel(v, DA8XX_SYSCFG0_VIRT(DA8XX_CFGCHIP3_REG));
 }
 
 void __init da850_init_time(void)
 {
+	struct regmap *cfgchip;
+
+	cfgchip = da8xx_register_cfgchip();
+	if (WARN(IS_ERR(cfgchip), "failed to register CFGCHIP syscon"))
+		return;
+
+	/* Unlock writing to PLL registers */
+	regmap_write_bits(cfgchip, CFGCHIP(0), CFGCHIP0_PLL_MASTER_LOCK, 0);
+	regmap_write_bits(cfgchip, CFGCHIP(3), CFGCHIP3_PLL1_MASTER_LOCK, 0);
+
 	davinci_clk_init(da850_clks);
 	davinci_timer_init();
 }

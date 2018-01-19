@@ -1223,6 +1223,7 @@ void __init da830_init(void)
 
 void __init da830_init_time(void)
 {
+	da8xx_register_cfgchip();
 	davinci_clk_init(da830_clks);
 	davinci_timer_init();
 }
