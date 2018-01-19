@@ -25,6 +25,8 @@
 #include <linux/mfd/syscon.h>
 #include <linux/slab.h>
 
+#define SYSCON_COMPATIBLE_SIZE 50
+
 static struct platform_driver syscon_driver;
 
 static DEFINE_SPINLOCK(syscon_list_slock);
@@ -34,6 +36,7 @@ struct syscon {
 	struct device_node *np;
 	struct regmap *regmap;
 	struct list_head list;
+	char compatible[SYSCON_COMPATIBLE_SIZE];
 };
 
 static const struct regmap_config syscon_regmap_config = {
@@ -140,8 +143,26 @@ EXPORT_SYMBOL_GPL(syscon_node_to_regmap);
 
 struct regmap *syscon_regmap_lookup_by_compatible(const char *s)
 {
+	struct syscon *entry, *syscon = NULL;
 	struct device_node *syscon_np;
 	struct regmap *regmap;
+
+	spin_lock(&syscon_list_slock);
+
+	/* Check for entries registered with syscon_register() */
+	list_for_each_entry(entry, &syscon_list, list) {
+		if (!entry->compatible)
+			continue;
+		if (!strncmp(entry->compatible, s, SYSCON_COMPATIBLE_SIZE)) {
+			syscon = entry;
+			break;
+		}
+	}
+
+	spin_unlock(&syscon_list_slock);
+
+	if (syscon)
+		return syscon->regmap;
 
 	syscon_np = of_find_compatible_node(NULL, NULL, s);
 	if (!syscon_np)
@@ -195,6 +216,56 @@ struct regmap *syscon_regmap_lookup_by_phandle(struct device_node *np,
 	return regmap;
 }
 EXPORT_SYMBOL_GPL(syscon_regmap_lookup_by_phandle);
+
+/**
+ * syscon_register - Register a new syscon regmap
+ * @start: The starting memory address of the regmap
+ * @size: The size of the regmap in bytes
+ * @compatible: Compatible string used for lookup
+ *
+ * Returns: Pointer to a regmap or a negative error code.
+ */
+struct regmap *syscon_register(resource_size_t start, size_t size,
+			       const char *compatible)
+{
+	struct regmap_config syscon_config = syscon_regmap_config;
+	struct syscon *syscon;
+	void __iomem *base;
+	int err;
+
+	syscon = kzalloc(sizeof(*syscon), GFP_KERNEL);
+	if (!syscon)
+		return ERR_PTR(-ENOMEM);
+
+	base = ioremap(start, size);
+	if (!base) {
+		err = -ENOMEM;
+		goto err_free_syscon;
+	}
+
+	strncpy(syscon->compatible, compatible, SYSCON_COMPATIBLE_SIZE);
+
+	syscon_config.max_register = size - 1;
+	syscon->regmap = regmap_init_mmio(NULL, base, &syscon_config);
+	if (IS_ERR(syscon->regmap)) {
+		err = PTR_ERR(syscon->regmap);
+		goto err_iounmap;
+	}
+
+	spin_lock(&syscon_list_slock);
+	list_add_tail(&syscon->list, &syscon_list);
+	spin_unlock(&syscon_list_slock);
+
+	return syscon->regmap;
+
+err_iounmap:
+	iounmap(base);
+err_free_syscon:
+	kfree(syscon);
+
+	return ERR_PTR(err);
+}
+EXPORT_SYMBOL_GPL(syscon_register);
 
 static int syscon_probe(struct platform_device *pdev)
 {
