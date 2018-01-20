@@ -153,8 +153,6 @@ static int da8xx_usb_phy_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	d_phy->regmap = syscon_regmap_lookup_by_compatible("ti,da830-cfgchip");
-	if (IS_ERR(d_phy->regmap))
-		d_phy->regmap = syscon_regmap_lookup_by_pdevname("syscon");
 	if (IS_ERR(d_phy->regmap)) {
 		dev_err(dev, "Failed to get syscon\n");
 		return PTR_ERR(d_phy->regmap);
