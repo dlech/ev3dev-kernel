@@ -131,7 +131,7 @@ int __init da8xx_register_usb11(struct da8xx_ohci_root_hub *pdata)
  * da8xx_register_usb20_phy_clk - register USB0PHYCLKMUX clock
  *
  * @use_usb_refclkin: Selects the parent clock - either "usb_refclkin" if true
- *	or "pll0_aux_clk" if false.
+ *	or "pll0_auxclk" if false.
  */
 int __init da8xx_register_usb20_phy_clk(bool use_usb_refclkin)
 {

@@ -382,7 +382,7 @@
 				compatible = "ti,da830-usb-phy";
 				#phy-cells = <1>;
 				clocks = <&usb_phy_clk 0>, <&usb_phy_clk 1>;
-				clock-names = "usb20_phy", "usb11_phy";
+				clock-names = "usb0_clk48", "usb1_clk48";
 				status = "disabled";
 			};
 			usb_phy_clk: usb-phy-clocks {

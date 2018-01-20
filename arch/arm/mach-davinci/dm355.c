@@ -714,7 +714,7 @@ void __init dm355_init_time(void)
 	dm355_psc_clk_init(psc);
 
 	/* NOTE:  clkout1 can be externally gated by muxing GPIO-18 */
-	clk_register_fixed_factor(NULL, "clkout1", "pll1_aux_clk", 0, 1, 1);
+	clk_register_fixed_factor(NULL, "clkout1", "pll1_auxclk", 0, 1, 1);
 	clk_register_fixed_factor(NULL, "clkout2", "pll1_sysclkbp", 0, 1, 1);
 	/* NOTE:  clkout3 can be externally gated by muxing GPIO-16 */
 	clk_register_fixed_factor(NULL, "clkout3", "pll2_sysclkbp", 0, 1, 1);
