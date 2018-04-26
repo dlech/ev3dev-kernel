@@ -56,11 +56,11 @@ static const struct davinci_pll_obsclk_info dm365_pll1_obsclk_info = {
 	.ocsrc_mask = BIT(4),
 };
 
-int dm365_pll1_init(struct device *dev, void __iomem *base)
+int dm365_pll1_init(struct device *dev, void __iomem *base, struct regmap *cfgchip)
 {
 	struct clk *clk;
 
-	davinci_pll_clk_register(dev, &dm365_pll1_info, "ref_clk", base);
+	davinci_pll_clk_register(dev, &dm365_pll1_info, "ref_clk", base, cfgchip);
 
 	clk = davinci_pll_sysclk_register(dev, &pll1_sysclk1, base);
 	clk_register_clkdev(clk, "pll1_sysclk1", "dm365-psc");
@@ -119,11 +119,11 @@ static const struct davinci_pll_obsclk_info dm365_pll2_obsclk_info = {
 	.ocsrc_mask = BIT(4),
 };
 
-int dm365_pll2_init(struct device *dev, void __iomem *base)
+int dm365_pll2_init(struct device *dev, void __iomem *base, struct regmap *cfgchip)
 {
 	struct clk *clk;
 
-	davinci_pll_clk_register(dev, &dm365_pll2_info, "oscin", base);
+	davinci_pll_clk_register(dev, &dm365_pll2_info, "oscin", base, cfgchip);
 
 	davinci_pll_sysclk_register(dev, &pll2_sysclk1, base);
 
