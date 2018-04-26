@@ -63,7 +63,7 @@ static const struct davinci_lpsc_clk_info dm644x_psc_info[] = {
 	{ }
 };
 
-static int dm644x_psc_init(struct device *dev, void __iomem *base)
+int dm644x_psc_init(struct device *dev, void __iomem *base)
 {
 	return davinci_psc_register_clocks(dev, dm644x_psc_info, 41, base);
 }
