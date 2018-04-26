@@ -15,6 +15,7 @@
 
 #include <linux/clk-provider.h>
 #include <linux/clk.h>
+#include <linux/clk/davinci.h>
 #include <linux/clkdev.h>
 #include <linux/err.h>
 #include <linux/of_address.h>
@@ -63,7 +64,7 @@ struct davinci_psc_data {
 
 /**
  * struct davinci_lpsc_clk - LPSC clock structure
- * @dev: the device that provides this LPSC
+ * @dev: the device that provides this LPSC or NULL
  * @hw: clk_hw for the LPSC
  * @pm_domain: power domain for the LPSC
  * @genpd_clk: clock reference owned by @pm_domain
@@ -221,6 +222,7 @@ static void davinci_psc_genpd_detach_dev(struct generic_pm_domain *pm_domain,
 
 /**
  * davinci_lpsc_clk_register - register LPSC clock
+ * @dev: the clocks's device or NULL
  * @name: name of this clock
  * @parent_name: name of clock's parent
  * @regmap: PSC MMIO region
@@ -238,7 +240,7 @@ davinci_lpsc_clk_register(struct device *dev, const char *name,
 	int ret;
 	bool is_on;
 
-	lpsc = devm_kzalloc(dev, sizeof(*lpsc), GFP_KERNEL);
+	lpsc = kzalloc(sizeof(*lpsc), GFP_KERNEL);
 	if (!lpsc)
 		return ERR_PTR(-ENOMEM);
 
@@ -261,9 +263,13 @@ davinci_lpsc_clk_register(struct device *dev, const char *name,
 	lpsc->pd = pd;
 	lpsc->flags = flags;
 
-	ret = devm_clk_hw_register(dev, &lpsc->hw);
+	ret = clk_hw_register(dev, &lpsc->hw);
 	if (ret < 0)
 		return ERR_PTR(ret);
+
+	/* for now, genpd is only registered when using device-tree */
+	if (!dev || !dev->of_node)
+		return lpsc;
 
 	/* genpd attach needs a way to look up this clock */
 	ret = clk_hw_register_clkdev(&lpsc->hw, name, best_dev_name(dev));
@@ -378,11 +384,11 @@ __davinci_psc_register_clocks(struct device *dev,
 	struct regmap *regmap;
 	int i, ret;
 
-	psc = devm_kzalloc(dev, sizeof(*psc), GFP_KERNEL);
+	psc = kzalloc(sizeof(*psc), GFP_KERNEL);
 	if (!psc)
 		return ERR_PTR(-ENOMEM);
 
-	clks = devm_kmalloc_array(dev, num_clks, sizeof(*clks), GFP_KERNEL);
+	clks = kmalloc_array(num_clks, sizeof(*clks), GFP_KERNEL);
 	if (!clks)
 		return ERR_PTR(-ENOMEM);
 
@@ -396,14 +402,14 @@ __davinci_psc_register_clocks(struct device *dev,
 	for (i = 0; i < num_clks; i++)
 		clks[i] = ERR_PTR(-ENOENT);
 
-	pm_domains = devm_kcalloc(dev, num_clks, sizeof(*pm_domains), GFP_KERNEL);
+	pm_domains = kcalloc(num_clks, sizeof(*pm_domains), GFP_KERNEL);
 	if (!pm_domains)
 		return ERR_PTR(-ENOMEM);
 
 	psc->pm_data.domains = pm_domains;
 	psc->pm_data.num_domains = num_clks;
 
-	regmap = devm_regmap_init_mmio(dev, base, &davinci_psc_regmap_config);
+	regmap = regmap_init_mmio(dev, base, &davinci_psc_regmap_config);
 	if (IS_ERR(regmap))
 		return ERR_CAST(regmap);
 
@@ -422,6 +428,13 @@ __davinci_psc_register_clocks(struct device *dev,
 		clks[info->md] = lpsc->hw.clk;
 		pm_domains[info->md] = &lpsc->pm_domain;
 	}
+
+	/*
+	 * for now, a reset controller is only registered when there is a device
+	 * to associate it with.
+	 */
+	if (!dev)
+		return psc;
 
 	psc->rcdev.ops = &davinci_psc_reset_ops;
 	psc->rcdev.owner = THIS_MODULE;
