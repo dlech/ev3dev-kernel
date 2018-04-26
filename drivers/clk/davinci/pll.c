@@ -11,6 +11,7 @@
 
 #include <linux/clk-provider.h>
 #include <linux/clk.h>
+#include <linux/clk/davinci.h>
 #include <linux/delay.h>
 #include <linux/err.h>
 #include <linux/io.h>
@@ -223,6 +224,7 @@ static const struct clk_ops dm365_pll_ops = {
 
 /**
  * davinci_pll_div_register - common *DIV clock implementation
+ * @dev: the clock's device node or NULL
  * @name: the clock name
  * @parent_name: the parent clock name
  * @reg: the *DIV register
@@ -241,14 +243,14 @@ static struct clk *davinci_pll_div_register(struct device *dev,
 	struct clk_gate *gate;
 	struct clk_divider *divider;
 
-	gate = devm_kzalloc(dev, sizeof(*gate), GFP_KERNEL);
+	gate = kzalloc(sizeof(*gate), GFP_KERNEL);
 	if (!gate)
 		return ERR_PTR(-ENOMEM);
 
 	gate->reg = reg;
 	gate->bit_idx = DIV_ENABLE_SHIFT;
 
-	divider = devm_kzalloc(dev, sizeof(*divider), GFP_KERNEL);
+	divider = kzalloc(sizeof(*divider), GFP_KERNEL);
 	if (!divider)
 		return ERR_PTR(-ENOMEM);
 
@@ -321,36 +323,17 @@ static int davinci_pllen_rate_change(struct notifier_block *nb,
 	return NOTIFY_OK;
 }
 
-static struct davinci_pll_platform_data *davinci_pll_get_pdata(struct device *dev)
-{
-	struct davinci_pll_platform_data *pdata = dev_get_platdata(dev);
-
-	/*
-	 * Platform data is optional, so allocate a new struct if one was not
-	 * provided. For device tree, this will always be the case.
-	 */
-	if (!pdata)
-		pdata = devm_kzalloc(dev, sizeof(*pdata), GFP_KERNEL);
-	if (!pdata)
-		return NULL;
-
-	/* for device tree, we need to fill in the struct */
-	if (dev->of_node)
-		pdata->cfgchip =
-			syscon_regmap_lookup_by_compatible("ti,da830-cfgchip");
-
-	return pdata;
-}
-
 static struct notifier_block davinci_pllen_notifier = {
 	.notifier_call = davinci_pllen_rate_change,
 };
 
 /**
  * davinci_pll_clk_register - Register a PLL clock
+ * @dev: The clock's device node or NULL
  * @info: The device-specific clock info
  * @parent_name: The parent clock name
  * @base: The PLL's memory region
+ * @cfgchip: CFGCHIP syscon regmap for info->unlock_reg or NULL
  *
  * This creates a series of clocks that represent the PLL.
  *
@@ -366,9 +349,9 @@ static struct notifier_block davinci_pllen_notifier = {
 struct clk *davinci_pll_clk_register(struct device *dev,
 				     const struct davinci_pll_clk_info *info,
 				     const char *parent_name,
-				     void __iomem *base)
+				     void __iomem *base,
+				     struct regmap *cfgchip)
 {
-	struct davinci_pll_platform_data *pdata;
 	char prediv_name[MAX_NAME_SIZE];
 	char pllout_name[MAX_NAME_SIZE];
 	char postdiv_name[MAX_NAME_SIZE];
@@ -377,10 +360,6 @@ struct clk *davinci_pll_clk_register(struct device *dev,
 	struct davinci_pll_clk *pllout;
 	struct davinci_pllen_clk *pllen;
 	struct clk *pllout_clk, *clk;
-
-	pdata = davinci_pll_get_pdata(dev);
-	if (!pdata)
-		return ERR_PTR(-ENOMEM);
 
 	if (info->flags & PLL_HAS_CLKMODE) {
 		/*
@@ -424,15 +403,15 @@ struct clk *davinci_pll_clk_register(struct device *dev,
 
 	/* Unlock writing to PLL registers */
 	if (info->unlock_reg) {
-		if (IS_ERR_OR_NULL(pdata->cfgchip))
+		if (IS_ERR_OR_NULL(cfgchip))
 			dev_warn(dev, "Failed to get CFGCHIP (%ld)\n",
-				 PTR_ERR(pdata->cfgchip));
+				 PTR_ERR(cfgchip));
 		else
-			regmap_write_bits(pdata->cfgchip, info->unlock_reg,
+			regmap_write_bits(cfgchip, info->unlock_reg,
 					  info->unlock_mask, 0);
 	}
 
-	pllout = devm_kzalloc(dev, sizeof(*pllout), GFP_KERNEL);
+	pllout = kzalloc(sizeof(*pllout), GFP_KERNEL);
 	if (!pllout)
 		return ERR_PTR(-ENOMEM);
 
@@ -456,7 +435,7 @@ struct clk *davinci_pll_clk_register(struct device *dev,
 	pllout->pllm_min = info->pllm_min;
 	pllout->pllm_max = info->pllm_max;
 
-	pllout_clk = devm_clk_register(dev, &pllout->hw);
+	pllout_clk = clk_register(dev, &pllout->hw);
 	if (IS_ERR(pllout_clk))
 		return pllout_clk;
 
@@ -482,7 +461,7 @@ struct clk *davinci_pll_clk_register(struct device *dev,
 		parent_name = postdiv_name;
 	}
 
-	pllen = devm_kzalloc(dev, sizeof(*pllout), GFP_KERNEL);
+	pllen = kzalloc(sizeof(*pllout), GFP_KERNEL);
 	if (!pllen)
 		return ERR_PTR(-ENOMEM);
 
@@ -497,7 +476,7 @@ struct clk *davinci_pll_clk_register(struct device *dev,
 	pllen->hw.init = &init;
 	pllen->base = base;
 
-	clk = devm_clk_register(dev, &pllen->hw);
+	clk = clk_register(dev, &pllen->hw);
 	if (IS_ERR(clk))
 		return clk;
 
@@ -548,7 +527,7 @@ davinci_pll_obsclk_register(struct device *dev,
 	struct clk_divider *divider;
 	u32 oscdiv;
 
-	mux = devm_kzalloc(dev, sizeof(*mux), GFP_KERNEL);
+	mux = kzalloc(sizeof(*mux), GFP_KERNEL);
 	if (!mux)
 		return ERR_PTR(-ENOMEM);
 
@@ -556,14 +535,14 @@ davinci_pll_obsclk_register(struct device *dev,
 	mux->table = info->table;
 	mux->mask = info->ocsrc_mask;
 
-	gate = devm_kzalloc(dev, sizeof(*gate), GFP_KERNEL);
+	gate = kzalloc(sizeof(*gate), GFP_KERNEL);
 	if (!gate)
 		return ERR_PTR(-ENOMEM);
 
 	gate->reg = base + CKEN;
 	gate->bit_idx = CKEN_OBSCLK_SHIFT;
 
-	divider = devm_kzalloc(dev, sizeof(*divider), GFP_KERNEL);
+	divider = kzalloc(sizeof(*divider), GFP_KERNEL);
 	if (!divider)
 		return ERR_PTR(-ENOMEM);
 
@@ -637,14 +616,14 @@ davinci_pll_sysclk_register(struct device *dev,
 	else
 		reg = PLLDIV4 + 4 * (info->id - 4);
 
-	gate = devm_kzalloc(dev, sizeof(*gate), GFP_KERNEL);
+	gate = kzalloc(sizeof(*gate), GFP_KERNEL);
 	if (!gate)
 		return ERR_PTR(-ENOMEM);
 
 	gate->reg = base + reg;
 	gate->bit_idx = DIV_ENABLE_SHIFT;
 
-	divider = devm_kzalloc(dev, sizeof(*divider), GFP_KERNEL);
+	divider = kzalloc(sizeof(*divider), GFP_KERNEL);
 	if (!divider)
 		return ERR_PTR(-ENOMEM);
 
@@ -676,14 +655,14 @@ davinci_pll_sysclk_register(struct device *dev,
 	return clk;
 }
 
-int of_davinci_pll_init(struct device *dev,
+int of_davinci_pll_init(struct device *dev, struct device_node *node,
 			const struct davinci_pll_clk_info *info,
 			const struct davinci_pll_obsclk_info *obsclk_info,
 			const struct davinci_pll_sysclk_info **div_info,
 			u8 max_sysclk_id,
-			void __iomem *base)
+			void __iomem *base,
+			struct regmap *cfgchip)
 {
-	struct device_node *node = dev->of_node;
 	struct device_node *child;
 	const char *parent_name;
 	struct clk *clk;
@@ -693,7 +672,7 @@ int of_davinci_pll_init(struct device *dev,
 	else
 		parent_name = OSCIN_CLK_NAME;
 
-	clk = davinci_pll_clk_register(dev, info, parent_name, base);
+	clk = davinci_pll_clk_register(dev, info, parent_name, base, cfgchip);
 	if (IS_ERR(clk)) {
 		dev_err(dev, "failed to register %s\n", info->name);
 		return PTR_ERR(clk);
@@ -711,11 +690,11 @@ int of_davinci_pll_init(struct device *dev,
 		int n_clks =  max_sysclk_id + 1;
 		int i;
 
-		clk_data = devm_kzalloc(dev, sizeof(*clk_data), GFP_KERNEL);
+		clk_data = kzalloc(sizeof(*clk_data), GFP_KERNEL);
 		if (!clk_data)
 			return -ENOMEM;
 
-		clks = devm_kmalloc_array(dev, n_clks, sizeof(*clks), GFP_KERNEL);
+		clks = kmalloc_array(n_clks, sizeof(*clks), GFP_KERNEL);
 		if (!clks)
 			return -ENOMEM;
 
@@ -770,6 +749,27 @@ int of_davinci_pll_init(struct device *dev,
 	return 0;
 }
 
+static struct davinci_pll_platform_data *davinci_pll_get_pdata(struct device *dev)
+{
+	struct davinci_pll_platform_data *pdata = dev_get_platdata(dev);
+
+	/*
+	 * Platform data is optional, so allocate a new struct if one was not
+	 * provided. For device tree, this will always be the case.
+	 */
+	if (!pdata)
+		pdata = devm_kzalloc(dev, sizeof(*pdata), GFP_KERNEL);
+	if (!pdata)
+		return NULL;
+
+	/* for device tree, we need to fill in the struct */
+	if (dev->of_node)
+		pdata->cfgchip =
+			syscon_regmap_lookup_by_compatible("ti,da830-cfgchip");
+
+	return pdata;
+}
+
 static const struct of_device_id davinci_pll_of_match[] = {
 	{ .compatible = "ti,da850-pll0", .data = of_da850_pll0_init },
 	{ .compatible = "ti,da850-pll1", .data = of_da850_pll1_init },
@@ -791,11 +791,13 @@ static const struct platform_device_id davinci_pll_id_table[] = {
 	{ }
 };
 
-typedef int (*davinci_pll_init)(struct device *dev, void __iomem *base);
+typedef int (*davinci_pll_init)(struct device *dev, void __iomem *base,
+				struct regmap *cfgchip);
 
 static int davinci_pll_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
+	struct davinci_pll_platform_data *pdata;
 	const struct of_device_id *of_id;
 	davinci_pll_init pll_init = NULL;
 	struct resource *res;
@@ -812,12 +814,18 @@ static int davinci_pll_probe(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
+	pdata = davinci_pll_get_pdata(dev);
+	if (!pdata) {
+		dev_err(dev, "missing platform data\n");
+		return -EINVAL;
+	}
+
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	base = devm_ioremap_resource(dev, res);
 	if (IS_ERR(base))
 		return PTR_ERR(base);
 
-	return pll_init(dev, base);
+	return pll_init(dev, base, pdata->cfgchip);
 }
 
 static struct platform_driver davinci_pll_driver = {
