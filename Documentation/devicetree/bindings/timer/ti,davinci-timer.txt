@@ -1,0 +1,24 @@
+* Device tree bindings for Texas Instruments DaVinci timer
+
+This document provides bindings for the 64-bit timer in the DaVinci
+architecture devices. The timer can be configured as a general-purpose 64-bit
+timer, dual general-purpose 32-bit timers. When configured as dual 32-bit
+timers, each half can operate in conjunction (chain mode) or independently
+(unchained mode) of each other.
+
+It is global timer is a free running up-counter and can generate interrupt
+when the counter reaches preset counter values.
+
+Required properties:
+
+- compatible : should be "ti,davinci-timer".
+- reg : specifies base physical address and count of the registers.
+- clocks : the clock feeding the timer clock.
+
+Example:
+
+	clocksource: timer@20000 {
+		compatible = "ti,davinci-timer";
+		reg = <0x20000 0x1000>;
+		clocks = <&pll0_auxclk>;
+	};
